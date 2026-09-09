@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import {
   createContext,
   useContext,
@@ -845,7 +844,6 @@ function Studio({ session }: { session?: AtlasSession }) {
         <div className="brand">
           <Image className="brand-owl" src="/images/owl-engraved.png" alt="" width={35} height={35} sizes="35px" />
           <span>Minerva</span>
-          <Link href="/workspaces">Workspaces</Link>
         </div>
         <div className="workspace-heading">
           <span className="instrument-label">Studio / {perspective}</span>
