@@ -31,10 +31,11 @@ import {
   type Viewport,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import type { AtlasFixture, Thought } from "./domain";
+import type { AtlasFixture, Thought, Relationship } from "./domain";
 import type { AtlasSession, LayoutRecord } from "../workspaces/graph-domain";
 import { relationshipsFor } from "./domain";
 import { mallFixture } from "./fixture";
+import { wanderSchema, weaveSchema, type GeneratedCard, type LiveFeature } from "./generation";
 import ExplorationPanel, { ProposalDecisions } from "../exploration/panel";
 
 type CardNode = Node<{ thought: Thought; members?: string[]; geometry?: { width: number; height: number; circular: boolean } }, "thought">;
@@ -43,6 +44,9 @@ const MIN_ZOOM = 0.24;
 
 type Panel = "inspect" | "compare" | "moves" | "index" | "text" | "explore" | null;
 const Interaction = createContext<{
+  live?: { sources: Thought[]; feature: LiveFeature; error?: string };
+  busy?: boolean;
+  retry?: () => void;
   overview: boolean;
   zoom: number;
   compact: boolean;
@@ -216,6 +220,14 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
           </div>
           <button className="card-title nodrag">{thought.title}</button>
           <p className="card-summary">{thought.summary}</p>
+          {ui.live?.sources.some((source) => source.id === id) && (
+            <div className="generation-status nodrag nopan" aria-live="polite">
+              {ui.busy ? <p>{ui.live.feature === "wander" ? "Wandering…" : "Weaving…"}</p> : ui.live.error && <>
+                <p role="alert">{ui.live.error}</p>
+                <button onClick={ui.retry}>Retry {ui.live.feature === "wander" ? "Wander" : "Weave"}</button>
+              </>}
+            </div>
+          )}
           <div className="card-state">
             {thought.decision === "unkept draft"
               ? "○ Unkept draft"
@@ -420,7 +432,12 @@ function Studio({ session }: { session?: AtlasSession }) {
     })),
     ...groups,
   ];
-  const edges = fixture.relationships.map((edge) => ({
+  const [liveEdges, setLiveEdges] = useState<Relationship[]>([]);
+  const relationships = [...fixture.relationships, ...liveEdges];
+  const [live, setLive] = useState<{ sources: Thought[]; feature: LiveFeature; error?: string }>();
+  const [busy, setBusy] = useState(false);
+  const generating = useRef(false);
+  const edges = relationships.map((edge) => ({
     id: edge.id,
     source: edge.from,
     target: edge.to,
@@ -470,6 +487,69 @@ function Studio({ session }: { session?: AtlasSession }) {
       style: { stroke: "#28686a", strokeWidth: 2 / viewport.zoom },
     })),
   ];
+  async function generate(feature: LiveFeature, sources: Thought[]) {
+    if (session || generating.current || sources.length !== (feature === "wander" ? 1 : 2)) return;
+    generating.current = true;
+    setBusy(true);
+    setLive({ feature, sources });
+    setPanel(null);
+    focus(sources[0].id);
+    try {
+      const response = await fetch(`/api/${feature}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(feature === "wander" ? sources[0] : sources),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || response.statusText);
+      let cards: GeneratedCard[];
+      let contributions: string[] = [];
+      if (feature === "wander") cards = wanderSchema.parse(result).cards;
+      else {
+        const parsed = weaveSchema.parse(result);
+        cards = [parsed.card];
+        contributions = parsed.contributions;
+      }
+      const existing = flow.getNodes();
+      const parentNodes = existing.filter((node) => sources.some((source) => source.id === node.id));
+      let x = Math.max(...parentNodes.map((node) => node.position.x + (node.measured?.width ?? 290))) + 90;
+      const y = Math.min(...parentNodes.map((node) => node.position.y)) - (cards.length - 1) * 190;
+      // Use the next free column beside the parents, including earlier results.
+      const height = cards.length * 380;
+      while (existing.some((node) => node.position.x < x + 290 && node.position.x + (node.measured?.width ?? 290) > x &&
+        node.position.y < y + height && node.position.y + (node.measured?.height ?? 300) > y)) x += 380;
+      const added = cards.map<CardNode>((card, index) => {
+        const id = crypto.randomUUID();
+        return {
+          id, type: "thought", position: { x, y: y + index * 380 }, dragHandle: ".card-grip", ariaLabel: card.title,
+          data: { thought: { ...card, id, revision: 1,
+            kind: feature === "wander" ? "exploration" : "recombination",
+            decision: "unkept draft", evidence: "unknown",
+            contribution: feature === "wander" ? `Derived from ${sources[0].title}.` : contributions.join(" "),
+            move: { title: "Explore this direction", question: "Where could this idea lead?", preview: card.summary },
+          } },
+        };
+      });
+      setNodes((current) => [...current, ...added]);
+      setLiveEdges((current) => [...current, ...added.flatMap((node) => sources.map((source, index) => ({
+        id: `${source.id}-${node.id}`, from: source.id, to: node.id,
+        kind: feature === "wander" ? "derivation" as const : "recombination" as const,
+        label: feature === "wander" ? "Wander" : "Weave", sourceRevision: source.revision,
+        contribution: feature === "weave" ? contributions[index] : undefined,
+      })))]);
+      setLive(undefined);
+      setSelected(added.map((node) => node.id));
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        void flow.fitView({ nodes: [...parentNodes, ...added], padding: 0.2, maxZoom: 1 });
+      }));
+    } catch (error) {
+      setLive({ feature, sources, error: error instanceof Error ? error.message : String(error) });
+      focus(sources[0].id);
+    } finally {
+      generating.current = false;
+      setBusy(false);
+    }
+  }
   function fit() {
     void flow.fitView({
       padding: dense ? 0.5 : 0.18,
@@ -706,6 +786,9 @@ function Studio({ session }: { session?: AtlasSession }) {
     };
   }, [flow]);
   function changeScene() {
+    if (generating.current) return;
+    setLiveEdges([]);
+    setLive(undefined);
     setDense(!dense);
     setNodes(presentNodes(!dense));
     setSelected([]);
@@ -763,6 +846,9 @@ function Studio({ session }: { session?: AtlasSession }) {
       >
         <Interaction.Provider
           value={{
+            live,
+            busy,
+            retry: () => { if (live) void generate(live.feature, live.sources); },
             overview,
             compact,
             zoom: viewport.zoom,
@@ -896,7 +982,8 @@ function Studio({ session }: { session?: AtlasSession }) {
             Thoughts <span>{nodes.length}</span>
           </button>
           <button onClick={() => open("text")}>Read as text</button>
-          {!session && <button onClick={changeScene}>
+          {!session && <span className="demo-note">Select 1 to Wander · 2 to Weave · Reload resets</span>}
+          {!session && <button disabled={busy} onClick={changeScene}>
             {dense ? "Mall demo" : "Denser study"}
           </button>}
           {session && <>
@@ -936,7 +1023,10 @@ function Studio({ session }: { session?: AtlasSession }) {
           <div className="selection-bar">
             <span>{selected.length} selected</span>
             <button onClick={() => open("compare")}>Compare</button>
-            <button onClick={() => move(selected)}>Weave · preview</button>
+            {session ? <button onClick={() => move(selected)}>Weave · preview</button> : <>
+              <button disabled={busy || selected.length !== 1} onClick={() => void generate("wander", selected.map((id) => byId.get(id)!))}>Wander</button>
+              <button disabled={busy || selected.length !== 2} onClick={() => void generate("weave", selected.map((id) => byId.get(id)!))}>Weave</button>
+            </>}
             {session && selected.length === 2 && <details className="layout-menu"><summary>Connect selected</summary>
               <p>From {byId.get(selected[0])?.title} to {byId.get(selected[1])?.title}</p>
               <label>Relationship<select value={relationshipKind} onChange={(e) => setRelationshipKind(e.target.value as typeof relationshipKind)}>
@@ -1055,7 +1145,7 @@ function Studio({ session }: { session?: AtlasSession }) {
                 establish inheritance.
               </p>
               <ul className="relationship-list">
-                {relationshipsFor(active, fixture.relationships).map((edge) => (
+                {relationshipsFor(active, relationships).map((edge) => (
                   <li key={edge.id}>
                     <span className="instrument-label">
                       {edge.direction} / {edge.kind}
@@ -1188,7 +1278,7 @@ function Studio({ session }: { session?: AtlasSession }) {
                           <p>Contribution: {n.data.thought.contribution}</p>
                           <p>Evidence: {n.data.thought.evidence}</p>
                           <ul>
-                            {relationshipsFor(n.id, fixture.relationships).map(
+                            {relationshipsFor(n.id, relationships).map(
                               (e) => (
                                 <li key={e.id}>
                                   {e.direction} {e.kind}:{" "}

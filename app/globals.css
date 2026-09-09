@@ -717,3 +717,9 @@ summary {
 @media (max-width: 650px) {
   .workspace-columns { grid-template-columns: 1fr; gap: 16px; }
 }
+
+.generation-status { padding: 0 16px 12px; overflow-wrap: anywhere; color: var(--ink); }
+.generation-status p { margin: 8px 0; }
+.generation-status [role="alert"] { color: #923d29; }
+.demo-note { align-self: center; padding: 6px; font-size: 11px; }
+.selection-bar button:disabled { opacity: 0.45; cursor: default; }

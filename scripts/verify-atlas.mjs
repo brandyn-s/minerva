@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { chromium } from "playwright";
 
 const browser = await chromium.launch({
@@ -260,17 +260,83 @@ try {
   await close();
   assert.equal(await transform(), selectedCamera);
   assert.equal(await page.locator(".thought.chosen").count(), 2);
-  await button("Weave · preview").click();
-  assert.equal(await page.locator(".source-preview").count(), 2);
-  await button("Preview a shared occasion →").click();
-  assert.match(
-    await page.locator(".prepared-result").innerText(),
-    /independent operators/i,
-  );
-  await page.screenshot({ path: `${artifacts}/comparison-move.png` });
-  await close();
-  assert.equal(await transform(), selectedCamera);
   await button("Clear selection").click();
+
+  // Wander and Weave: injected failure on the source card, retry, lineage and reload reset.
+  // MINERVA_LIVE=1 makes exactly one real successful route call per feature.
+  const live = process.env.MINERVA_LIVE === "1";
+  const evidence = { mode: live ? "live Gateway" : "mocked responses", url: base, model: "anthropic/claude-sonnet-5" };
+  const card = (title) => ({ title, summary: `${title} summary`, body: `${title} concrete draft.` });
+  const mocked = {
+    wander: { cards: [card("Repair apprenticeships"), card("Borrow a workshop")] },
+    weave: { card: card("Cook and mend evenings"), contributions: ["Food brings people together.", "Tools enable shared repairs."] },
+  };
+  async function selectFromIndex(title) {
+    await inspectFromIndex(title);
+    await button("Select for comparison").click();
+    await close();
+  }
+  let total = 6;
+  for (const feature of ["wander", "weave"]) {
+    if (feature === "wander") await selectFromIndex("A shared tool library");
+    else {
+      await button("Clear selection").click();
+      await selectFromIndex("A food hall");
+      await selectFromIndex("A shared tool library");
+    }
+    const label = feature === "wander" ? "Wander" : "Weave";
+    assert.equal(await button(feature === "wander" ? "Weave" : "Wander").isDisabled(), true);
+    let attempts = 0;
+    await page.route(`**/api/${feature}`, async (route) => {
+      attempts++;
+      evidence[`${feature}Input`] = route.request().postDataJSON();
+      if (attempts === 1) await route.fulfill({ status: 500, json: { error: `${label} test failure` } });
+      else if (live) await route.continue();
+      else await route.fulfill({ json: mocked[feature] });
+    });
+    await button(label).click();
+    const sourceId = feature === "wander" ? "tools" : "food";
+    const sourceCard = page.locator(`[data-id="${sourceId}"] .thought`);
+    await sourceCard.getByRole("alert").waitFor();
+    assert.equal(await sourceCard.getByRole("alert").innerText(), `${label} test failure`);
+    assert.equal(await page.locator(".thought").count(), total, "failure adds no cards");
+    const responsePromise = page.waitForResponse((response) => response.url().endsWith(`/api/${feature}`) && response.status() === 200, { timeout: 90000 });
+    await sourceCard.getByRole("button", { name: `Retry ${label}`, exact: true }).click();
+    const response = await responsePromise;
+    const output = await response.json();
+    evidence[feature] = output;
+    await writeFile(`${artifacts}/wander-weave.json`, JSON.stringify(evidence, null, 2));
+    const cards = feature === "wander" ? output.cards : [output.card];
+    assert.ok(feature === "wander" ? cards.length >= 2 && cards.length <= 3 : cards.length === 1);
+    total += cards.length;
+    await page.waitForFunction((count) => document.querySelectorAll(".thought").length === count, total);
+    await settle();
+    assert.equal(attempts, 2, "only the explicit retry makes the next request");
+    assert.equal(await page.locator(".react-flow__edge").count(), 7 + (feature === "wander" ? cards.length : evidence.wander.cards.length + 2));
+    for (const result of cards) {
+      assert.ok(result.title && result.summary && result.body);
+      await inspectFromIndex(result.title);
+      const inspection = page.getByRole("dialog");
+      assert.equal(await inspection.locator(".body-copy").innerText(), result.body);
+      const links = inspection.locator(".relationship-list li");
+      assert.equal(await links.count(), feature === "wander" ? 1 : 2);
+      assert.match(await links.first().innerText(), feature === "wander" ? /incoming \/ derivation/i : /incoming \/ recombination/i);
+      if (feature === "weave") {
+        assert.equal(output.contributions.length, 2);
+        for (const contribution of output.contributions) assert.ok((await links.allInnerTexts()).join(" ").includes(contribution));
+      }
+      await close();
+    }
+    await page.screenshot({ path: `${artifacts}/${feature}.png` });
+    await page.unroute(`**/api/${feature}`);
+  }
+  await writeFile(`${artifacts}/wander-weave.json`, JSON.stringify(evidence, null, 2));
+  await page.reload();
+  await page.locator(".thought").first().waitFor();
+  await settle();
+  await fit();
+  assert.equal(await page.locator(".thought").count(), 6, "reload resets generated cards");
+  assert.equal(await page.locator(".react-flow__edge").count(), 7, "reload resets generated edges");
   await button("Read as text").click();
   assert.equal(await page.locator(".reference-list section").count(), 6);
   await close();

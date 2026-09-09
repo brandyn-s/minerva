@@ -1,131 +1,54 @@
-# Minerva application handoff
+# Wander and Weave demo handoff
 
-## Outcome and candidate
+Root `/` runs the mall fixture plus in-memory Wander and Weave. Reload resets.
+This owner-directed demo supersedes the M2 packages and all earlier handoff plans.
+No workspace, database, Workflow, request-policy or migration code was changed.
+No new voice, drive, perspectives, outputs, assessments, decisions, ledgers, export, duplication, history or quality controls.
 
-M2's MVP path is integrated: create a workspace, edit ideas and layout, preview
-frozen input, generate two alternatives, inspect their assessments, keep a
-revision and reload. Managed Neon Postgres stores workspace/idea revisions,
-relationships, layouts, operation inputs, attempts and decisions. The root `/`
-remains the prepared M1 atlas; `/workspaces` opens the saved application.
+- Checkout: `/Users/brandyn.schult/code/minerva`; branch: `demo/wander-weave`.
+- Base: `origin/main` at `56db5551c59cef31918942ee94afa8b529cb0215`.
+- Release target: https://minerva-eight.vercel.app/; exact released SHA and hosted evidence go in the operator response.
+- Review boundary: one Fable 5.1 review after production deployment, then stop.
 
-- Writable worktree: `/Users/brandyn.schult/code/minerva`.
-- Branch: `feat/m2-working-spine`.
-- Base SHA: `4e28dfbd85f6cdf349bba6fd2d180371492a327b`.
-- M2 implementation commit: `4466d1c`; this base SHA does not identify the new implementation.
-  The owner authorized commit and merge. The PR merges the latest main changes;
-  its squash merge SHA, supplied in the operator response, identifies the review candidate.
-- M1: Fable approved the base candidate from an independent clone; the owner
-  accepted the experience with orientation friction, overlay occlusion and
-  phone markers documented as limitations. Hosted M1 verification is deferred.
-- M2 is authorized; next role is Fable on the exact
-  merged candidate for the planned interim review before voice
-  packages 11–12. Do not launch the reviewer automatically.
+## Behavior and authentication
 
-## Implemented path
+Select one card → Wander → two or three adjacent cards with derivation edges.
+Select two cards → Weave → one recombination draft with both parent edges.
+Inspect the draft to read its full body and one-line contribution from each parent.
+Errors appear on source cards; Retry repeats that feature with the same source snapshot.
+`POST /api/wander` and `POST /api/weave` each call AI SDK `generateObject` once.
+Both use plain `anthropic/claude-sonnet-5`, confirmed once with `gateway.getAvailableModels()` on 2026-09-09.
+Tags: `feature:wander`, `feature:weave`. SDK automatic retries are disabled.
+Authentication: Vercel OIDC, locally refreshed with `vercel env pull .env.local --yes`; automatic when hosted.
+No key was created or requested. No application admission, reservation, budget or receipt logic in this path.
+The existing Gateway project budget is the only spend control for these features; it was not changed.
 
-Workspace create/list/open/rename/duplicate, brief/constraint revisions,
-recoverable deletion and restore, and complete versioned JSON export are wired
-through Postgres. Active explorations must be stopped before deletion. Exports
-include all workspace and idea revisions, graph records, command receipts,
-frozen manifests, runs, attempts, assessments and decisions. Database
-backup/restore and old-system import are excluded by owner decision.
+## Verification and actual returned cards
 
-Saved cards support text revisions, movement, resizing, explicit camera save,
-arrange and session-local layout undo/redo (last 50 card changes). Layout writes
-are separate from content revisions. The persisted mall seed adds a grandchild,
-a revised tool source and a semantic cycle. Connection commands reject
-inheritance cycles while permitting semantic cycles; inspection exposes exact
-parent revisions. Existing M1 overview corrections are preserved.
+Local `npm run check` passes: lint, TypeScript, 14 inherited tests and production build.
+Extended only `scripts/verify-atlas.mjs`: selection, card error/retry, counts, lineage, contributions and reload reset.
+Mocked browser run passed. Live browser run passed with exactly one real Gateway call per feature on 2026-09-09.
+Live evidence: `/tmp/minerva-live-wander-weave/wander-weave.json` and feature screenshots.
+Wander input: A shared tool library. HTTP 200 returned these three cards:
 
-Develop alternatives freezes the current brief and up to four selected whole
-sources; no selection means brief-only. The preview and runtime share the saved
-manifest. A Workflow run makes two bounded generation calls and two assessment
-calls using AI Gateway OIDC and `openai/gpt-5.6-luna`. Proposals remain unkept
-until an explicit decision. Keeping stale-context or unreviewed work requires
-an explicit acknowledgement; decisions do not rewrite source history.
+**The Depreciation Bank** — A mall wing where former anchor-store inventory is checked out against a decaying local currency instead of returned.
+Instead of borrowing tools that must come back, shoppers 'withdraw' leftover retail stock (furniture, appliances, clothing) using a scrip that loses value the longer an item sits unused in someone's home, tracked via tags. The mechanism inverts library logic: return is discouraged, hoarding is penalized, and the old department store becomes a slow-motion auction where usage itself is the currency. Empty anchor stores become sorting and tagging floors; the mall's parking structure becomes a rotating outdoor market for reappraising scrip value weekly.
 
-Runs persist progress outside the browser, support pause/resume/stop and expose
-interruption reconciliation. Retries reuse command receipts. Provider retries
-are disabled; uncertain calls retain their reservation. These are prototype
-recovery controls, not a claim of fully exercised fault tolerance.
+**Skill Escrow Court** — Tool lending is replaced by a peer-arbitration system where you borrow expertise, not objects, and disputes are settled publicly in the mall's old food court.
+The food court's abandoned seating becomes a standing tribunal: anyone can 'check out' a skilled neighbor's time (rewiring a lamp, patching drywall) but must post a skill of equal value in escrow. If the exchange goes wrong, a rotating panel of mall regulars hears the case that afternoon, judgment enforced by reputation scores displayed on old directory screens. The mechanism shifts the tool-library idea from object circulation to obligation circulation, using the mall's central gathering architecture as an actual civic instrument rather than a metaphorical one.
 
-## Evidence and limits
+**The Un-Return Wing** — One anchor store never takes anything back — instead it becomes a permanent record of what the neighborhood needed and never gave back.
+A single former department store is converted into a growing archive: every tool, appliance, or item borrowed elsewhere in the mall that is never returned gets logged here with a note from the borrower explaining why. Shelves fill not with objects but with placards, photos, and stories of failure-to-return, curated as an evolving exhibition on community trust and breakdown. The mechanism replaces circulation with confession, turning the mall's dead retail architecture into a monument to unmet reciprocity rather than a functioning exchange.
 
-- Required local `npm run check`: lint, typecheck, 14 tests and production build
-  pass on pinned Node 24.20.0 / npm 12.0.2.
-- The earlier isolated persistence browser journey passed workspace lifecycle,
-  stale/replayed commands, graph revisions, duplicate references, reload and
-  JSON export against managed Postgres.
-- One live Chromium smoke run passed browser start, panel close/reload while
-  running, two generations and two assessments, inspect, keep, reload and export.
-  Workspace: `b070e7b2-173b-40e5-a600-a8822226802b`.
-  Run: `2e431e6e-fa6c-419e-b8cf-2c71521360a4`.
-  Four recorded calls total **$0.0035978 estimated token cost**; this is not a
-  platform invoice. The keep action was a builder smoke action, not owner
-  acceptance. Screenshots: `/tmp/minerva-live-running.png` and
-  `/tmp/minerva-live-kept.png`; input/output evidence is ignored under `.minerva/`.
-- Owner requested a streamlined MVP: no additional broad regression matrix or
-  expanded test suite. Whole-source generation, hosted workflow recovery,
-  budget-denial injection, physical touch and screen readers are not claimed
-  as demonstrated by this brief-only smoke run.
-- Owner judgment: both proposals are useful enough to show the working flow
-  becoming concrete, but converge too heavily on the same mechanism.
-  Alternative 2 varies scheduling rather than offering a meaningfully different
-  participation model. Carry this limitation into review; this judgment does
-  not constitute full M2 acceptance.
-- Dense saved-graph filtering/folding and transitive ancestry focus are not
-  complete. Workspace duplication copies graph/revision history but does not
-  clone execution/assessment/decision ledgers. Permanent purge has no UI.
-- The saved-view footer still describes prepared/user material after generation;
-  inspect the generation details for actual provenance. Model assessment labels
-  are not verified real-world evidence. These limitations remain reviewable.
-- Voice and later-milestone instruments remain unimplemented. M2 is not accepted
-  or declared complete, and this is not a production-quality release.
+Weave inputs, in order: A food hall; A shared tool library. HTTP 200 returned:
+**The Fabrication Food Hall** — A dead mall becomes a food hall where each kitchen stall is built and maintained using tools borrowed from an on-site lending library, fusing communal eating with communal making.
+The mall's anchor stores are gutted into a checkerboard of open kitchen stalls and a tool library counter at the center court. Vendors don't lease turnkey kitchens; they check out griddles, smokers, dough mixers, and repair equipment from the library, learning to maintain their own stations through short clinics run by library staff. Diners eat at shared tables surrounded by pegboards of hanging tools, and slow hours become open workshop time where anyone can borrow the same equipment to cook at home stations set up in former storefronts. The daily rhythm of meals is literally powered by the circulating inventory of borrowed tools, so the food hall's menu shifts with what equipment is currently available.
+Parent 1: Supplies the communal eating structure and daily rhythm that organizes the mall's public space.
+Parent 2: Supplies the borrow-learn-return mechanic that determines how each kitchen stall is equipped and staffed.
 
-## Operations and spend
+## Startup and limits
 
-Neon resource `minerva-development` (`store_IZfXYy9myJlVOZvu`) uses Free plan
-`free_v3`, region `iad1`, connected only to development and preview. Explicit
-migrations `drizzle/0000`–`0003` have been applied. Connection strings and OIDC
-credentials are in ignored `.env.local`; never put them in this handoff.
-
-The owner's **$5 total M2 cap** includes preview/database provisioning.
-AI Gateway has a project budget of $4 with no refresh; application text admission
-conservatively reserves $0.20 per run up to $3. Reservations are not automatically
-refunded. $1 remains within Gateway for later voice and $1 outside Gateway for
-other platform usage. Do not increase or reset these limits without authority.
-
-```sh
-cd /Users/brandyn.schult/code/minerva
-npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm ci
-# Only when applying explicit new migrations to the authorized database:
-npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run db:migrate
-npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run dev
-```
-
-Open `http://127.0.0.1:3000/workspaces`. Keep the dev server running for local
-Workflow execution; browser closure does not stop it. After a server interruption,
-inspect saved runs and reconcile only after the three-minute inactivity threshold.
-A separate review checkout needs its own port and matching `MINERVA_ORIGINS`.
-Use synthetic data and an explicit share of the remaining paid allowance.
-
-## Hosted checkpoint
-
-The stable production alias is https://minerva-eight.vercel.app. M1 is served
-there but its behavior remains unverified by owner decision. The previously
-verified shell SHA `0f8b1a1` is historical, not the current serving revision.
-Per-deployment URLs are protected by Vercel SSO; only the stable alias was
-previously confirmed public. Do not use protected links for the M6 judge panel.
-
-M2 preview build: https://minerva-lo2b9zezw-thalient.vercel.app from the uncommitted
-working-tree snapshot. Deployment status and smoke evidence are recorded below
-when the build completes. Production database configuration and promotion remain
-outside this checkpoint.
-
-Preview deployment `dpl_ECpu6bNfkvhWHHbL4eMx96n6nMmY` is **READY**. An authenticated
-`vercel curl` smoke request returned HTTP 200 from `/internal/graph`, including
-the saved generated proposal and its kept decision from managed Postgres. The
-CLI generated a project protection-bypass token for this request; its value is
-not recorded here. Protection remains enabled. This verifies preview storage
-reads, not hosted generation or fault recovery. The preview predates the final documentation and main-branch readability merge;
-it is earlier evidence, not a verified deployment of the final review candidate.
+`cd /Users/brandyn.schult/code/minerva` then `npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run dev`; open `/`.
+Browser check: `npm run test:browser`; `MINERVA_LIVE=1` opts into one paid call per feature.
+Generated content is speculative. Local mocked checks cover failures; they do not prove hosted fault recovery.
+No persistence or owner acceptance is claimed. Production deployment and the single Fable review are the stopping boundary.

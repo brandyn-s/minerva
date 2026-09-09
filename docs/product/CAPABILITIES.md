@@ -29,11 +29,11 @@ scores or imply that preparing demo data completes a capability.
 | C03 | Visible relationships | partial | [Mall fixture](../../features/atlas/fixture.ts) distinguishes shared brief, derivation, two-parent recombination and a semantic association. Both directions and exact prepared source revisions are inspectable. Moving edges and IB05 exercised locally; the saved graph now includes exact revisions, a grandchild, revised source, semantic cycle and direct connections. Dense saved-graph folding/focus remains incomplete. |
 | C04 | History, inheritance and genome | partial | Immutable idea/source revisions and frozen manifests are stored and inspectable; rich genome/history workflows remain open. |
 | C05 | Branch development and reusable intent | not started | No application implementation |
-| C06 | Comparison and Weave | partial | Prepared contribution comparison retains selection/camera. Source-aware Weave preview is local text only; no generated draft or saved recombination. IB06 exercised; production capability remains open. |
+| C06 | Comparison and Weave | partial | Root demo: two selected cards generate one live recombination draft with both parent edges and one-line contributions. Local real Sonnet 5 call and browser error/retry, lineage and reload-reset checks passed. In memory only; no saved recombination. |
 | C07 | Three perspectives | not started | No application implementation |
-| C08 | Contextual creative moves | partial | Card-specific prepared questions and previews for the brief and selected A/B/C proposals. No contextual model planner or execution. Mouse and simulated touch journeys exercised. |
+| C08 | Contextual creative moves | partial | Prepared contextual previews remain. Root selection now offers live Wander for one source and Weave for two; calls use AI Gateway OIDC and feature tags. Local real calls and card error/retry checks passed. No contextual planner or other live moves. |
 | C09 | Creative instruments | partial | A bounded two-alternative generation and assessment workflow is integrated. One brief-only live Gateway run produced two proposals, followed by inspect/keep/reload/export. Whole-source live execution remains unverified; broader instruments remain open. |
-| C10 | Wander | not started | No application implementation |
+| C10 | Wander | partial | Root demo: one selected card generates two or three adjacent cards with derivation edges. Local real Sonnet 5 call returned three cards; browser checks cover generation, error/retry and reload reset. In memory only; no durable run or history. |
 | C11 | Navigable interpretation and feedback | not started | No application implementation |
 | C12 | Agent Drive | not started | No application implementation |
 | C13 | Typed and spoken collaboration | not started | No application implementation |
