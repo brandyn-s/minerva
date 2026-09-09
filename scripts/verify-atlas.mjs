@@ -1,7 +1,19 @@
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
+import { createServer } from "node:http";
 import { chromium } from "playwright";
 
+const talkText = "A tool library could pair borrowing with a repair lesson.";
+const streamServer = createServer((request, response) => {
+  response.setHeader("Access-Control-Allow-Origin", "*");
+  response.setHeader("Access-Control-Allow-Headers", "content-type");
+  if (request.method === "OPTIONS") { response.end(); return; }
+  response.setHeader("Content-Type", "application/x-ndjson");
+  response.write(JSON.stringify({ text: talkText.slice(0, 20) }) + "\n");
+  setTimeout(() => response.end(JSON.stringify({ text: talkText.slice(20) }) + "\n" + JSON.stringify({ done: true }) + "\n"), 900);
+});
+await new Promise((resolve) => streamServer.listen(0, "127.0.0.1", resolve));
+const mockStreamUrl = `http://127.0.0.1:${streamServer.address().port}/api/talk`;
 const browser = await chromium.launch({
   executablePath: process.env.MINERVA_CHROMIUM || undefined,
 });
@@ -263,7 +275,7 @@ try {
   await button("Clear selection").click();
 
   // Wander and Weave: injected failure on the source card, retry, lineage and reload reset.
-  // MINERVA_LIVE=1 makes exactly one real successful route call per feature.
+  // MINERVA_LIVE=1 calls Talk and moves once each; MINERVA_LIVE_EXISTING=1 also opts into Wander/Weave.
   const live = process.env.MINERVA_LIVE === "1";
   const evidence = { mode: live ? "live Gateway" : "mocked responses", url: base, model: "anthropic/claude-sonnet-5" };
   const card = (title) => ({ title, summary: `${title} summary`, body: `${title} concrete draft.` });
@@ -271,6 +283,11 @@ try {
     wander: { cards: [card("Repair apprenticeships"), card("Borrow a workshop")] },
     weave: { card: card("Cook and mend evenings"), contributions: ["Food brings people together.", "Tools enable shared repairs.", "Independent shops provide flexible storefronts."] },
   };
+  async function assertGenerationVisible() {
+    await settle();
+    assert.ok(parseInt(await page.getByLabel("Zoom level").textContent(), 10) >= 73, "generation stays above overview zoom");
+    assert.ok(await page.locator(".thought.chosen .select-card").first().isVisible(), "new card Select control is visible");
+  }
   async function selectFromIndex(title) {
     await inspectFromIndex(title);
     await button("Select for comparison").click();
@@ -294,7 +311,7 @@ try {
       attempts++;
       evidence[`${feature}Input`] = route.request().postDataJSON();
       if (attempts === 1) await route.fulfill({ status: 500, json: { error: `${label} test failure` } });
-      else if (live) await route.continue();
+      else if (live && process.env.MINERVA_LIVE_EXISTING === "1") await route.continue();
       else await route.fulfill({ json: mocked[feature] });
     });
     await button(label).click();
@@ -314,6 +331,7 @@ try {
     total += cards.length;
     await page.waitForFunction((count) => document.querySelectorAll(".thought").length === count, total);
     await settle();
+    await assertGenerationVisible();
     assert.equal(attempts, 2, "only the explicit retry makes the next request");
     assert.equal(await page.locator(".react-flow__edge").count(), 7 + (feature === "wander" ? cards.length : evidence.wander.cards.length + 3));
     for (const result of cards) {
@@ -334,6 +352,115 @@ try {
     await page.screenshot({ path: `${artifacts}/${feature}.png` });
     await page.unroute(`**/api/${feature}`);
   }
+  // Typed conversation: failure, retry, streamed response, selected context and follow-up history.
+  await button("Clear selection").click();
+  await selectFromIndex("A shared tool library");
+  let talkAttempts = 0;
+  const talkInputs = [];
+  await page.route("**/api/talk", async (route) => {
+    talkAttempts++;
+    talkInputs.push(route.request().postDataJSON());
+    if (talkAttempts === 1) await route.fulfill({ status: 500, json: { error: "Talk test failure" } });
+    else if (talkAttempts === 4) await route.fulfill({ contentType: "application/x-ndjson", body:
+      JSON.stringify({ text: "Interrupted draft" }) + "\n" + JSON.stringify({ error: "Stream test failure" }) + "\n" });
+    else if (live && talkAttempts === 2) await route.continue();
+    else await route.continue({ url: mockStreamUrl });
+  });
+  await button("Talk to Minerva").click();
+  await page.getByLabel("Message Minerva").fill("Suggest one concrete improvement to this selected idea in two sentences.");
+  await button("Send").click();
+  await page.getByRole("dialog").getByRole("alert").waitFor();
+  assert.match(await page.getByRole("dialog").getByRole("alert").innerText(), /Talk test failure/);
+  const talkResponse = page.waitForResponse((r) => r.url().endsWith("/api/talk") && r.status() === 200, { timeout: 90000 });
+  await button("Retry").click();
+  const replyResponse = await talkResponse;
+  if (!live) {
+    await page.getByText(talkText.slice(0, 20), { exact: true }).waitFor();
+    assert.ok(await button("Replying…").isVisible(), "partial reply renders while the stream is still open");
+  }
+  assert.equal(replyResponse.status(), 200);
+  await button("Replying…").waitFor({ state: "hidden", timeout: 90000 });
+  evidence.talk = await page.locator(".talk-transcript section").nth(1).locator(".body-copy").innerText();
+  await writeFile(`${artifacts}/talk-moves.json`, JSON.stringify(evidence, null, 2));
+  assert.ok(evidence.talk.length > 20);
+  assert.equal(await page.getByRole("dialog").getByRole("alert").count(), 0);
+  assert.ok((await page.locator(".talk-transcript").innerText()).includes(evidence.talk));
+  assert.deepEqual(talkInputs[0], talkInputs[1], "retry retains the failed turn and context");
+  assert.equal(talkInputs[1].cards[0].title, "A shared tool library");
+  for (const key of ["summary", "body", "relationships"]) assert.ok(talkInputs[1].cards[0][key].length);
+  await close();
+  await button("Clear selection").click();
+  await selectFromIndex("A food hall");
+  await button("Talk to Minerva").click();
+  assert.ok((await page.locator(".talk-transcript").innerText()).includes(evidence.talk), "dismiss keeps conversation in memory");
+  await page.getByLabel("Message Minerva").fill("How does that connect with this card?");
+  await button("Send").click();
+  await button("Replying…").waitFor({ state: "hidden" });
+  assert.equal(talkInputs[2].messages.length, 3);
+  assert.equal(talkInputs[2].messages[1].content, evidence.talk);
+  assert.equal(talkInputs[2].cards[0].title, "A food hall");
+  assert.equal(await page.locator(".thought").count(), total, "talk never creates cards");
+  await page.getByLabel("Message Minerva").fill("Name one risk.");
+  await button("Send").click();
+  await page.getByRole("dialog").getByRole("alert").waitFor();
+  assert.match(await page.getByRole("dialog").getByRole("alert").innerText(), /Stream test failure/);
+  await button("Retry").click();
+  await button("Replying…").waitFor({ state: "hidden" });
+  assert.deepEqual(talkInputs[3], talkInputs[4], "stream failure retry excludes partial assistant output");
+  assert.equal(talkInputs[4].messages.length, 5);
+  await page.screenshot({ path: `${artifacts}/talk.png` });
+  await close();
+  await page.unroute("**/api/talk");
+
+  // Contextual planner failure preserves prepared moves; Retry returns three live choices.
+  let moveAttempts = 0;
+  const mockMoves = { moves: [
+    { title: "Share the quiet hours", question: "Who needs this space before lunch?", preview: "Open the hall to morning repair lessons." },
+    { title: "Reverse the counter", question: "Could guests teach the cooks?", preview: "Residents host a rotating cooking class." },
+    { title: "Borrow the kitchen", question: "Could equipment circulate?", preview: "Lend small kitchen tools from the food hall." },
+  ] };
+  await page.route("**/api/moves", async (route) => {
+    moveAttempts++;
+    evidence.movesInput = route.request().postDataJSON();
+    if (moveAttempts === 1) await route.fulfill({ status: 500, json: { error: "Moves test failure" } });
+    else if (live) await route.continue();
+    else await route.fulfill({ json: mockMoves });
+  });
+  await inspectFromIndex("A food hall");
+  await button("Consider a move").click();
+  await page.getByRole("dialog").getByRole("alert").waitFor();
+  assert.match(await page.getByRole("dialog").getByRole("alert").innerText(), /Moves test failure/);
+  assert.ok(await button("Try Explore the quiet hours →").isVisible(), "prepared move remains usable");
+  const movesResponse = page.waitForResponse((r) => r.url().endsWith("/api/moves") && r.status() === 200, { timeout: 90000 });
+  await button("Retry").click();
+  evidence.moves = await (await movesResponse).json();
+  await page.locator(".move-choice").nth(2).waitFor();
+  assert.equal(evidence.moves.moves.length, 3);
+  assert.equal(moveAttempts, 2);
+  const chosenMove = evidence.moves.moves[0];
+  await page.screenshot({ path: `${artifacts}/moves.png` });
+  let moveCardAttempts = 0;
+  await page.route("**/api/wander", async (route) => {
+    moveCardAttempts++;
+    assert.deepEqual(route.request().postDataJSON().move, chosenMove);
+    if (moveCardAttempts === 1) await route.fulfill({ status: 500, json: { error: "Move card test failure" } });
+    else await route.fulfill({ json: { cards: [card("Morning repair table")] } });
+  });
+  await button(`Try ${chosenMove.title} →`).click();
+  await page.getByRole("dialog").getByRole("alert").waitFor();
+  await button("Retry card").click();
+  total++;
+  await page.waitForFunction((count) => document.querySelectorAll(".thought").length === count, total);
+  await assertGenerationVisible();
+  await inspectFromIndex("Morning repair table");
+  assert.match(await page.locator(".relationship-list").innerText(), /incoming \/ derivation/i);
+  assert.ok((await page.locator(".relationship-list").innerText()).includes(chosenMove.title));
+  assert.equal(moveCardAttempts, 2);
+  await close();
+  await page.unroute("**/api/moves");
+  await page.unroute("**/api/wander");
+  await writeFile(`${artifacts}/talk-moves.json`, JSON.stringify(evidence, null, 2));
+
   await writeFile(`${artifacts}/wander-weave.json`, JSON.stringify(evidence, null, 2));
   await page.reload();
   await page.locator(".thought").first().waitFor();
@@ -341,6 +468,9 @@ try {
   await fit();
   assert.equal(await page.locator(".thought").count(), 6, "reload resets generated cards");
   assert.equal(await page.locator(".react-flow__edge").count(), 7, "reload resets generated edges");
+  await button("Talk to Minerva").click();
+  assert.equal(await page.locator(".talk-transcript section").count(), 0, "reload clears conversation");
+  await close();
   await button("Read as text").click();
   assert.equal(await page.locator(".reference-list section").count(), 6);
   await close();
@@ -705,6 +835,8 @@ try {
     .getByRole("button", { name: "Focus ↗", exact: true })
     .click();
   await mobile.waitForTimeout(350);
+  await mobile.route("**/api/moves", (route) => route.fulfill({ status: 500, json: { error: "Offline test" } }));
+  await mobile.route("**/api/wander", (route) => route.fulfill({ json: { cards: [card("Quiet morning table")] } }));
   await mobile.getByRole("button", { name: "A food hall", exact: true }).tap();
   await mobile.getByRole("dialog").waitFor();
   assert.equal(await mobile.getByRole("dialog").count(), 1);
@@ -712,9 +844,12 @@ try {
     .getByRole("button", { name: "Consider a move", exact: true })
     .tap();
   await mobile
-    .getByRole("button", { name: "Explore the quiet hours →", exact: true })
+    .getByRole("button", { name: "Try Explore the quiet hours →", exact: true })
     .tap();
-  assert.ok(await mobile.locator(".prepared-result").isVisible());
+  await mobile.waitForFunction(() => document.querySelectorAll(".thought").length === 7);
+  await mobile.waitForTimeout(350);
+  assert.ok(parseInt(await mobile.getByLabel("Zoom level").textContent(), 10) >= 73);
+  assert.ok(await mobile.locator(".thought.chosen .select-card").isVisible());
   await mobile.screenshot({ path: `${artifacts}/narrow-move.png` });
   assert.deepEqual(errors, []);
   console.log(
@@ -734,4 +869,5 @@ try {
   );
 } finally {
   await browser.close();
+  streamServer.close();
 }

@@ -20,3 +20,24 @@ export const weaveSchema = (parentCount: number) => z.object({
 });
 export type GeneratedCard = z.infer<typeof cardSchema>;
 export type LiveFeature = "wander" | "weave";
+
+export const moveSchema = z.object({
+  title: z.string(),
+  question: z.string(),
+  preview: z.string().describe("One line previewing the direction"),
+});
+export const movesSchema = z.object({ moves: z.array(moveSchema).length(3) });
+export const moveCardSchema = z.object({ cards: z.array(cardSchema).length(1) });
+export const wanderRequestSchema = sourceSchema.extend({ move: moveSchema.optional() });
+export type ContextualMove = z.infer<typeof moveSchema>;
+export const contextCardSchema = sourceSchema.extend({
+  relationships: z.array(z.object({
+    from: z.string(), to: z.string(), kind: z.string(), label: z.string(),
+    contribution: z.string().optional(),
+  })),
+});
+export const talkRequestSchema = z.object({
+  messages: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string() })).min(1),
+  cards: z.array(contextCardSchema),
+});
+export type TalkRequest = z.infer<typeof talkRequestSchema>;
