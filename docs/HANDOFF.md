@@ -4,7 +4,7 @@ Root `/` runs the mall atlas with live Wander, Weave, typed Talk and contextual 
 All new state stays in memory; reload clears conversation, generated cards and edges.
 This owner-directed batch supersedes earlier handoff outcomes. Stop after stable deployment.
 
-- Checkout: `/Users/brandyn.schult/code/minerva-remove-denser`; branch: `fix/wander-card-count`.
+- Checkout: `/Users/brandyn.schult/code/minerva-remove-denser`; branch: `fix/generation-loading-spinner`.
 - Base: `origin/main` at `fc4b57e7b7b073fa85c05a42d01b8effa13a4840`.
 - Stable target: https://minerva-eight.vercel.app/; released SHA and hosted evidence are in the operator response.
 - Next role: one operator-started Fable 5.1 review, read-only; no further build is authorized.
@@ -20,7 +20,7 @@ Consider a move selects its source; exactly one selection requests three title/q
 `POST /api/moves` uses one `generateObject` call, the same model and tag `feature:moves`.
 A failed planner keeps the prepared move available and offers Retry. Choosing a move creates one card via `/api/wander` and the shared placement path.
 The derivation edge carries the move title; card-generation failures offer Retry in the panel.
-The atlas-level generation spinner from `90ce710` remains visible through overview, pan and cleared selection.
+Wander/Weave show rotating circles on the active action and source cards, rings on overview nodes, and a larger persistent canvas spinner. Browser checks verify actual rotation, overview rings, and clearing on completion/error.
 Wander, Weave and contextual generation fit with `minZoom: 0.73`; overview thresholds are unchanged.
 Vercel OIDC authenticates Gateway calls; SDK automatic retries are disabled. No new dependencies.
 No voice, chat tools, chat-created cards, persistence, admission, budgets or workspace changes.
