@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+import { ArrowRight } from "lucide-react";
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import TooltipButton from "./tooltip-button";
 import type { Thought } from "./domain";
@@ -99,16 +101,28 @@ export default function ExpeditionPanel({ open, close, source, cards, add, focus
   return <aside ref={panelRef} tabIndex={-1} hidden={!open} className="detail-panel expedition-panel" role="dialog" aria-label="Expedition" onKeyDown={e => {
     if (e.key === "Escape") { e.stopPropagation(); close(); }
   }}>
-    <div className="panel-heading"><span className="instrument-label">Expedition</span><button aria-label="Close panel" onClick={close}>×</button></div>
+    <div className="panel-heading expedition-heading"><div className="expedition-brand"><Image src="/images/expedition-compass.png" alt="" width={56} height={56} /><span className="instrument-label">Expedition</span></div><button aria-label="Close panel" onClick={close}>×</button></div>
     {entries.length > 0 && <label>Expedition history<select aria-label="Expedition history" disabled={running || readingBusy} value={activeEntry ?? ""} onChange={e => { const index = e.target.value === "" ? null : Number(e.target.value); setActiveEntry(index); runIndex.current = index; }}>
       <option value="">New expedition</option>{entries.map((e, i) => <option key={i} value={i}>{i + 1}. {e.run.goal}</option>)}
     </select></label>}
     {!run ? <>
-      <h2>Follow a goal</h2>
-      <p>From {source?.title ?? "one selected card"}</p>
-      <label>Goal in one sentence<input value={goal} onChange={e => setGoal(e.target.value)} /></label>
-      <label>Step budget<select aria-label="Step budget" value={budget} onChange={e => setBudget(Number(e.target.value))}>{[2, 3, 4, 5].map(n => <option key={n}>{n}</option>)}</select></label>
-      <button disabled={!source || !goal.trim()} onClick={() => void start()}>Start expedition</button>
+      <form className="expedition-setup" onSubmit={event => { event.preventDefault(); void start(); }}>
+        <div className="expedition-source-label">Starting from</div>
+        <div className="expedition-source">
+          {source ? <><h2>{source.title}</h2><p>{source.summary}</p></> : <p>Select one card on the atlas to begin.</p>}
+        </div>
+        <label className="expedition-destination">Where would you like to take this idea?
+          <textarea rows={3} value={goal} onChange={e => setGoal(e.target.value)} placeholder="Describe the direction you want to explore…" />
+        </label>
+        <fieldset className="expedition-budget"><legend>Maximum steps</legend>
+          <div className="expedition-segments">{[2, 3, 4, 5].map(n => <label key={n}>
+            <input type="radio" name="expedition-steps" value={n} checked={budget === n} onChange={() => setBudget(n)} />
+            <span>{n}</span>
+          </label>)}</div>
+          <p>Each step adds one connected card. It may finish sooner.</p>
+        </fieldset>
+        <button className="expedition-start" type="submit" disabled={!source || !goal.trim()}>Start expedition <ArrowRight size={22} aria-hidden="true" /></button>
+      </form>
     </> : <>
       <h2>Following your goal</h2>
       <p className="expedition-goal">{run.goal}</p>

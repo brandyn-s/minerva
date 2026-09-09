@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { movesSchema, type ContextualMove, type TalkRequest } from "./generation";
 
-export default function MovesPanel({ source, prepared, busy, error, choose, retryGeneration }: {
+export default function MovesPanel({ source, prepared, busy, error, choose, explore, retryGeneration }: {
   source: TalkRequest["cards"][number]; prepared: ContextualMove; busy: boolean;
-  error?: string; choose: (move: ContextualMove) => void; retryGeneration: () => void;
+  explore: () => void; error?: string; choose: (move: ContextualMove) => void; retryGeneration: () => void;
 }) {
   const [moves, setMoves] = useState<ContextualMove[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +32,10 @@ export default function MovesPanel({ source, prepared, busy, error, choose, retr
   }, [serialized, attempt]);
   return <>
     <h2>Where could {source.title} lead?</h2>
-    {loading && <p role="status">Considering three moves…</p>}
+    <p>Choose a suggested next step, or explore freely to generate several new directions.</p>
+    <button disabled={busy} onClick={explore}>Explore freely</button>
+    <h3>Suggested next steps</h3>
+    {loading && <p role="status">Finding next steps…</p>}
     {failure && <><p role="alert">{failure}</p>
       <button disabled={busy} onClick={() => { setFailure(""); setLoading(true); setAttempt((n) => n + 1); }}>Retry</button>
       <p className="small-note">Prepared move available while live suggestions are unavailable.</p></>}
