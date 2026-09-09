@@ -9,19 +9,22 @@ and consider prepared contextual moves. The root route includes the same data as
 a text reference and a denser 30-card scene with explicit overview groups.
 
 Package 2 is implemented and locally exercised. Package 3's implementation and
-local journey evidence are prepared; the complete owner-led comparison,
-Fable M1 review and owner experience acceptance remain pending.
+local journey evidence are prepared; the owner-led comparison is recorded in
+CAPABILITIES. The owner accepts the M1 experience with documented orientation/
+interaction friction. Fable M1 review remains pending.
 The next M2 milestone has not been authorized. No live services are simulated.
 
 - Repository: https://github.com/brandyn-s/minerva
-- Absolute writable worktree: `/Users/brandyn.schult/code/minerva`.
-- Branch: `feat/m1-atlas`.
-- Base HEAD: `1e2ae9c92b597040578949c9ad0af8f2343e74b0`.
-- Publication: owner authorized commit and squash merge after the interaction
-  corrections. This handoff accompanies [PR #5](https://github.com/brandyn-s/minerva/pull/5);
-  its merged commit is the exact
-  M1 review candidate. The operator response supplies the full SHA. Resume `main`
-  after merge, rather than the prior shell at the base HEAD above.
+- Isolated publication worktree: `/Users/brandyn.schult/code/minerva-m1-overview-fix`.
+- The original `/Users/brandyn.schult/code/minerva` checkout contains separate M2
+  work and is not reset or switched by this publication.
+- Branch: `fix/m1-overview-ghosting` (M1 overview corrections and owner observations).
+- Last committed application/review candidate: `4e28dfbd85f6cdf349bba6fd2d180371492a327b`.
+  This publication additionally removes overview subtext and fixes drag-shadow
+  ghosting; the existing review checkout does not include those corrections.
+- Publication: [PR #5](https://github.com/brandyn-s/minerva/pull/5) is merged to
+  `main`; the owner-observation documentation is preserved alongside the additional
+  UI corrections published by this branch.
 - Seed provenance: `brandyn-s/minerva-template` at
   `248665c116fb0655e2b70f732ca1b9bffb5b5dcb`; generated initial commit
   `33f81109ea47ad83732f316e72f6adeb8ed7a352`.
@@ -72,8 +75,15 @@ mouse/keyboard overlap access, compact simulated-touch drag/pinch, unchanged cam
 on single-click inspection, double-click focus and circular selection styling.
 A browser accessibility scan reported no confirmed violations; contrast over
 layered canvas content required manual inspection, not an automated pass claim.
-The owner reported specific interaction friction, recorded in CAPABILITIES;
-overall source comprehension, orientation and usefulness remain unjudged. No model calls or paid provisioning occurred.
+The owner comparison demonstrates comprehension of both contributions and their
+transformations, and finds provenance/comparison useful. Separate focus navigation
+and lineage presentation introduce orientation friction; explicit unknown evidence
+does not establish trustworthiness. The next concept direction is a feasibility
+pilot, not authorization to conduct one. Full observations are in CAPABILITIES;
+the owner explicitly accepts the M1 experience because the friction does not
+prevent identifying parents, contributions or the recombination. Lineage
+exploration is less seamless, but the core experience remains usable and
+interpretable. No model calls or paid provisioning occurred.
 
 ## Startup and next role
 
@@ -90,19 +100,19 @@ Open http://127.0.0.1:3000. Browser replay is `npm run test:browser` with the pi
 runtime; browser installation and optional executable/output overrides are in
 [setup](./setup.md#m1-fixture-verification).
 
-Next role: owner. Inspect **Repair, then stay for supper** and its food/tool parents
-in **Read as text**, then in the atlas. Identify the contributions and choose a
-next direction; report whether the atlas helps, and any orientation or interaction
-friction. Record that observation in CAPABILITIES after the owner supplies it.
+Next role: operator supplies or starts the Fable M1 review.
+The owner-led comparison and explicit M1 experience acceptance with the known
+orientation/interaction limitation are recorded in CAPABILITIES.
 
 The operator starts Fable 5.1 at medium effort on a separate checkout of the
 merged candidate, source read-only, isolated fixtures, port 3001, no paid calls,
 using the M1 review in build-prompts.md. Do not launch the critic automatically.
-Use setup's full review permissions and prompt. A bounded launch after merge is:
+Use setup's full review permissions and prompt. The separate review checkout
+already exists at the application candidate; verify it before starting services
+and reuse the existing port 3001 server if it is still running:
 
 ```sh
-git -C /Users/brandyn.schult/code/minerva rev-parse HEAD
-git -C /Users/brandyn.schult/code/minerva worktree add --detach /Users/brandyn.schult/code/minerva-review-m1 <merged-candidate-sha>
+git -C /Users/brandyn.schult/code/minerva-review-m1 rev-parse HEAD
 cd /Users/brandyn.schult/code/minerva-review-m1
 npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm ci
 npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run dev -- --port 3001
@@ -113,8 +123,9 @@ Start with the four owner-reported interaction failures and their neighboring
 transitions. Distinguish real card movement from grouped collection navigation,
 prepared previews from live execution, and technical findings from experience
 judgment. Return findings to the owner; do not edit application source or claim
-acceptance. M2 work remains **Not authorized yet** and depends on M1 review and
-owner experience acceptance.
+acceptance on the owner's behalf. Owner experience acceptance is recorded;
+M2 work remains **Not authorized yet** and depends on completed M1 review and
+resolution of confirmed review blockers.
 
 ## Hosted checkpoint
 
@@ -132,3 +143,14 @@ install `npx --yes npm@12.0.2 ci`, build `npx --yes npm@12.0.2 run build`.
 Default deployment protection remains configured. Ignored `.vercel/` and
 `.env.local` hold local link/OIDC state; no credentials are committed.
 The M6 demonstration window is not open.
+
+## Additional overview correction
+
+Overview cards show their titles only; the interaction hint remains in the field
+controls and accessible tooltip. The detailed-card drag shadow no longer paints
+the invisible overview container. Browser regressions first reproduced the
+rectangular shadow while holding a drag, then verified transparent backgrounds
+and absent parent shadows/outlines during overview mouse and compact simulated-
+touch dragging. Existing IB01–IB06 checks still pass. The merged commit of this correction PR is the next review candidate;
+the operator response supplies its exact SHA. Owner comparison and acceptance
+remain attributed to the earlier candidate above.

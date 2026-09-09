@@ -38,15 +38,15 @@ scores or imply that preparing demo data completes a capability.
 | C12 | Agent Drive | not started | No application implementation |
 | C13 | Typed and spoken collaboration | not started | No application implementation |
 | C14 | Outputs and reusable results | not started | No application implementation |
-| C15 | Living-atlas experience | partial | Original paper/ink atlas, serif cards, screen-space overview targets, explicit dense aggregation, dismissible inspection/comparison. IB01-IB06 exercised locally; Fable review and owner judgment remain pending. |
+| C15 | Living-atlas experience | partial | Original paper/ink atlas, serif cards, screen-space overview targets, explicit dense aggregation, dismissible inspection/comparison. IB01-IB06 exercised locally. Owner accepts the M1 fixture experience with documented orientation/interaction friction; Fable review and production capability remain pending. |
 
 ## Current milestone
 
 M1 package 2 is implemented and locally exercised. Package 3's experience proof
-is implemented and locally exercised; owner comparison and
-Fable review and experience acceptance remain pending. The implementation branch is `feat/m1-atlas`, based on
-`1e2ae9c92b597040578949c9ad0af8f2343e74b0`. The operator handoff supplies the
-exact merged candidate for review; this document does not assert human acceptance.
+is implemented and locally exercised; owner comparison is recorded below.
+The owner accepts the M1 fixture experience with the limitation recorded below;
+Fable review remains pending. The merged M1 application candidate is
+`4e28dfbd85f6cdf349bba6fd2d180371492a327b`.
 
 The application-owned [domain](../../features/atlas/domain.ts) and
 [fixture](../../features/atlas/fixture.ts) have no renderer/service imports;
@@ -93,12 +93,40 @@ subjective orientation and creative usefulness remain human review questions.
 
 ## Review and acceptance
 
-No milestone is reviewed or accepted. The owner agreed to the reference setup,
-not overall visual-direction acceptance or creative usefulness. Required M1 comparison task:
-read the prepared repair/supper child and both parents as text, then in the atlas;
-identify what each contributes and choose a next direction. Record the owner's
-source comprehension, orientation, interaction friction and judgment here after
-they perform the task. The owner reported four interaction problems in the prepared atlas: cards could
+M1 has owner experience acceptance with a documented limitation; no milestone
+has completed Fable review.
+On 2026-09-09 the owner supplied the M1 text-versus-atlas comparison for the
+prepared repair/supper child and both parents at candidate
+`4e28dfbd85f6cdf349bba6fd2d180371492a327b`:
+
+- Food hall contributes shared tables and independent kitchens, transformed from
+  ordinary dining to eating alongside an ongoing repair.
+- Tool library contributes tools and peer learning, transformed from borrowing
+  tools to a staffed, hosted repair session. The recombination makes borrowing
+  participatory and the meal a social setting around the work.
+- The chosen next concept direction is operational feasibility: safe venue
+  sharing, competent repair staffing/supervision and appropriate objects. The
+  owner proposes a small pilot with low-risk household items to test those
+  questions and attendance. This is a concept direction, not verified feasibility
+  or authorization to operate a pilot.
+- The atlas helped provenance and comparison by making the contributions and
+  transformations explicit and distinguishing shared brief context from parentage.
+- Separate “Focus on atlas ↗” navigation and relationship/incoming-recombination
+  presentation require mentally moving between the draft and its lineage.
+  Unknown evidence remains unknown: clearer claimed relationships do not make
+  them more trustworthy.
+
+Owner judgment: “useful for tracing and recombination, but not frictionless for
+staying oriented in the concept itself.” This records source comprehension and
+qualified usefulness. On 2026-09-09 the owner explicitly accepted M1 with the
+orientation/interaction friction documented as a limitation. It does not block
+acceptance because it does not prevent identifying the parents, their
+contributions or the proposed recombination. Lineage exploration is less
+seamless, but the core M1 experience remains usable and interpretable.
+This acceptance covers the prepared M1 experience at the candidate above;
+it does not establish general creative efficacy or complete Fable review.
+
+The owner previously reported four interaction problems in the prepared atlas: cards could
 not move at overview zoom, fixed stacking buried cards, a single overview click
 zoomed instead of inspecting, and circular markers showed rectangular highlights.
 The corrections keep overview dragging, raise deliberately accessed cards, open
@@ -106,8 +134,7 @@ inspection on a single click at every zoom, focus on double-click and place
 highlights on the visible shape. Browser regressions exercise overlapping-card
 hit detection, overview mouse/keyboard movement, compact simulated-touch dragging
 and pinching, click versus double-click, and circular selection/focus styling.
-The owner has authorized commit and merge of the corrected candidate, but has
-not supplied a complete text-versus-atlas comparison or M1 acceptance.
+The corrected application candidate is merged and has owner M1 experience acceptance.
 
 The hosted shell was previously verified at
 `0f8b1a16e1cd831774bcc09fcb61582a9c31a5de` on
@@ -117,7 +144,19 @@ accepted or behaviorally verified on that URL. The M6 demonstration window is cl
 
 ## Next outcome
 
-Owner performs the M1 comparison; operator starts Fable 5.1 on a separate
+Operator supplies the Fable M1 findings or starts Fable 5.1 on a separate
 checkout of the exact committed candidate for the
-M1 review. Resolve confirmed blockers and obtain owner experience acceptance
-before dependent M2 work. M2 implementation is not authorized by this task.
+M1 review. Resolve confirmed review blockers before dependent M2 work.
+Owner experience acceptance is recorded above. M2 implementation is not
+authorized by this task.
+
+### Overview follow-up
+
+The owner requested title-only overview cards and reported rectangular ghosting
+while zoomed out. A held-drag regression reproduced the detailed-card shadow on
+the hidden overview container. The overview correction removes the subtext
+and restricts the drag shadow to full-detail cards. Mouse and simulated-touch
+held-drag checks verify transparent overview containers with no shadow/outline;
+IB01–IB06 still pass. These changes are published separately from candidate
+`4e28dfbd85f6cdf349bba6fd2d180371492a327b`; use the correction PR merge commit
+for the next review. The existing review checkout remains at the earlier candidate.

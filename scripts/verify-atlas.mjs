@@ -225,6 +225,11 @@ try {
   }
   await page.screenshot({ path: `${artifacts}/short-desktop.png` });
   const overviewCard = page.locator('[data-id="food"] .overview-target');
+  assert.equal(
+    await overviewCard.innerText(),
+    "A food hall",
+    "overview shows only the title",
+  );
   const overviewRect = await overviewCard.boundingBox();
   const overviewCamera = await transform();
   const overviewPosition = await node.evaluate((e) => e.style.transform);
@@ -232,6 +237,31 @@ try {
   await page.mouse.move(overviewRect.x + 30, overviewRect.y + 20);
   await page.mouse.down();
   await page.mouse.move(overviewRect.x + 90, overviewRect.y + 45, { steps: 8 });
+  await page.waitForTimeout(100);
+  const dragSurface = await page
+    .locator('[data-id="food"] .thought')
+    .evaluate((e) => ({
+      background: getComputedStyle(e).backgroundColor,
+      shadow: getComputedStyle(e).boxShadow,
+      outline: getComputedStyle(e).outlineStyle,
+    }));
+  assert.equal(
+    dragSurface.background,
+    "rgba(0, 0, 0, 0)",
+    "overview layout container stays transparent while dragging",
+  );
+  assert.equal(
+    dragSurface.shadow,
+    "none",
+    "overview drag has no ghost rectangular shadow",
+  );
+  assert.equal(
+    dragSurface.outline,
+    "none",
+    "overview drag has no hidden rectangular outline",
+  );
+  await page.screenshot({ path: `${artifacts}/overview-drag.png` });
+
   await page.mouse.up();
   await settle();
   assert.notEqual(
@@ -392,6 +422,21 @@ try {
       type: "touchMove",
       touchPoints: [{ x: tx + i * 5, y: ty + i * 4, id: 1 }],
     });
+  const compactDragSurface = await mobile
+    .locator('[data-id="food"] .thought')
+    .evaluate((e) => ({
+      background: getComputedStyle(e).backgroundColor,
+      shadow: getComputedStyle(e).boxShadow,
+      outline: getComputedStyle(e).outlineStyle,
+    }));
+  assert.equal(compactDragSurface.background, "rgba(0, 0, 0, 0)");
+  assert.equal(
+    compactDragSurface.shadow,
+    "none",
+    "compact drag has no rectangular ghost shadow",
+  );
+  assert.equal(compactDragSurface.outline, "none");
+  await mobile.screenshot({ path: `${artifacts}/compact-drag.png` });
   await cdp.send("Input.dispatchTouchEvent", {
     type: "touchEnd",
     touchPoints: [],

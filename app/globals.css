@@ -158,7 +158,7 @@ h1 {
   outline: 3px solid var(--bronze);
   outline-offset: 4px;
 }
-.react-flow__node.dragging .thought {
+.react-flow__node.dragging .thought:not(.thought-overview) {
   box-shadow: 0 16px 25px #273a3520;
 }
 .card-top {
@@ -319,15 +319,7 @@ h1 {
   background: var(--card);
   border-left: 3px solid var(--teal);
 }
-.overview-target span {
-  display: block;
-  font:
-    10px/1.5 ui-monospace,
-    monospace;
-  margin-top: 4px;
-  color: var(--muted);
-}
-.thought:has(.overview-target) {
+.thought.thought-overview {
   background: transparent;
   border: 0;
   box-shadow: none;
@@ -690,7 +682,7 @@ summary {
 }
 
 /* Overview targets alone receive input, so invisible card bounds cannot cover neighbors. */
-.thought:has(.overview-target) {
+.thought.thought-overview {
   pointer-events: none;
 }
 .overview-target.card-grip {
@@ -701,7 +693,7 @@ summary {
   cursor: grabbing;
 }
 
-.thought.chosen:has(.overview-target) {
+.thought.chosen.thought-overview {
   outline: none;
 }
 .thought.chosen .overview-target {
