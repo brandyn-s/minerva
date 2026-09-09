@@ -30,6 +30,7 @@
     "db:migrate": "node --env-file-if-exists=.env.local node_modules/drizzle-kit/bin.cjs migrate"
   },
   "dependencies": {
+    "@phosphor-icons/react": "2.1.10",
     "@xyflow/react": "12.11.6",
     "ai": "7.0.94",
     "drizzle-orm": "0.45.2",

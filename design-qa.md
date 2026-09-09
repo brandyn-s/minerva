@@ -1,20 +1,16 @@
-# Olive and scroll toolbar verification
+# Selected idea preview QA
+
+Source: /var/folders/qy/mxhht8_d30dd1bf61h8k525m0000gn/T/codex-clipboard-77dde509-a18f-44b7-9966-801bd296dda6.png
+Implementation screenshots: /tmp/minerva-idea-preview-desktop.png and /tmp/minerva-idea-preview-mobile.png
+
+Reference: 1456 × 1081 raster concept; panel normalized to 360 CSS pixels wide within the actual atlas. Desktop viewport 1280 × 720; mobile viewport 390 × 844, screenshots at 1 pixel per CSS pixel. Compare panel proportions and hierarchy rather than surrounding concept whitespace. Actual node summary is preserved rather than replacing it with mock copy.
+
+State: food hall selected, Connections collapsed. Full atlas and focused panel inspected against supplied reference. Serif title and summary, dark primary action, secondary centering action, compact close icon, divider and disclosure match the target hierarchy. Phosphor icons replace the mock symbols.
+
+Iteration: initial mobile panel overlapped the Talk launcher. Raised its bottom offset to 230px; final mobile screenshot shows separation from Talk and selection actions. No remaining P0/P1/P2 findings.
+
+Interactions verified in the in-app browser: select food hall, Open card opens its detail, close detail, Center on canvas focuses the node, expand/collapse Connections, empty Parents state, select Children, follow Repair connection updates preview and collapses disclosure. Console error log empty.
 
 final result: passed
 
-Selected source: user-approved olive-branch and scroll medallion mockup.
-Compared source and local rendering together in browser output, with the
-Read as text tooltip visible. The source is an enlarged presentation board;
-implementation retains the existing toolbar with 44px images and 48px targets.
-
-Olive branch, scroll, green engraving, ivory centers and gold rims match the
-selected direction. Thoughts retains a separate live numeric badge. Shared
-tooltip treatment and existing compass are preserved. No P0/P1/P2 findings.
-
-In-app browser verified Thoughts opens the index, closing restores focus,
-Tab reveals Read as text tooltip, Escape dismisses it, Enter opens the text
-panel, and closing restores focus. Count 6 matches the fixture's six thoughts.
-Dynamic count remains bound to nodes.length; no paid generation was invoked.
-Mobile and live count changes were not exercised in this focused pass.
-
-npm run check passed: lint, TypeScript, all 12 tests and production build.
+Compact refinement: reduced title to 23px, summary to 16px, panel padding to 16px and action height to 36px. Expanded Repair preview visually checked after refinement; lint passed.
