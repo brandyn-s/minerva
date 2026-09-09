@@ -912,3 +912,5 @@ summary {
 .talk-heading { margin-bottom: 0; }
 .talk-cameo { border-radius: 50%; display: block; }
 .voice-control .small-note:empty { display: none; }
+
+.brand-owl { mix-blend-mode: multiply; object-fit: contain; }

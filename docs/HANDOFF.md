@@ -28,3 +28,5 @@ no critic was launched.
 
 The merged remote updates face Minerva toward the canvas and use the cameo
 in the Talk header; the idle voice instruction is removed.
+
+Header/favicon: approved green engraved owl, ivory field and thin bronze rim. Branch feat/engraved-owl; checkout /Users/brandyn.schult/code/minerva-owl-final.

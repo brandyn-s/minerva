@@ -843,7 +843,7 @@ function Studio({ session }: { session?: AtlasSession }) {
       </a>
       <header className="masthead">
         <div className="brand">
-          <Image src="/icon.svg" alt="" width={35} height={35} unoptimized />
+          <Image className="brand-owl" src="/images/owl-engraved.png" alt="" width={35} height={35} sizes="35px" />
           <span>Minerva</span>
           <Link href="/workspaces">Workspaces</Link>
         </div>
