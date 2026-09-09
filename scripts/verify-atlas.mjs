@@ -974,6 +974,7 @@ try {
     });
   }, corrupt);
   await page.goto(base); await page.locator(".thought").first().waitFor();
+  await openAtlasMenu();
   await page.getByText(/The save could not be read.*recovery copy/).waitFor();
   assert.equal(await page.locator(".thought").count(), 6);
   const recoveries = await page.evaluate(() => new Promise(resolve => {
