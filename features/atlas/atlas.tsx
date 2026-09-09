@@ -44,6 +44,7 @@ import TalkPanel from "./talk-panel";
 import RegroupPanel from "./regroup-panel";
 import { applyRegroup } from "./regroup-layout";
 import DownloadButton from "./download-button";
+import ThoughtCatalogue from "./thought-catalogue";
 import MovesPanel from "./moves-panel";
 import ExpeditionPanel from "./expedition-panel";
 import TooltipButton from "./tooltip-button";
@@ -156,17 +157,6 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
   }, [id, ui.zoom, ui.overview, ui.compact, updateNodeInternals]);
   const diameter = ui.scalable ? overviewDiameter(ui.zoom) : ui.compact ? 48 : 170;
   const anchorY = ui.overview ? (ui.scalable ? diameter / 2 : ui.compact ? 24 : 35) / ui.zoom : undefined;
-  const marker =
-    (
-      {
-        brief: "Seed",
-        retail: "A",
-        food: "B",
-        tools: "C",
-        repair: "B+C",
-        rotation: "A.1",
-      } as Record<string, string>
-    )[thought.id] || thought.title.split(/\s+/).slice(0, 2).map((s) => s[0]).join("");
   const loading = !!ui.busy && !!ui.live?.sources.some((source) => source.id === id);
   return (
     <article
@@ -195,7 +185,7 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
           className={`overview-target card-grip nopan ${ui.scalable ? "scale-target" : ui.compact ? "compact-target" : ""}`}
           style={{ transform: `scale(${1 / ui.zoom})`, ...(ui.scalable ? { width: diameter, height: diameter, minHeight: diameter } : {}) }}
         >
-          {ui.scalable ? <><span className="overview-code">{diameter >= 30 ? marker : ""}</span>{ui.labels?.has(id) && <span className="overview-name">{overviewName(thought)}</span>}</> : ui.compact ? marker : thought.title}
+          {ui.scalable ? ui.labels?.has(id) && <span className="overview-name">{overviewName(thought)}</span> : ui.compact ? null : thought.title}
         </TooltipButton>
       ) : (
         <>
@@ -370,9 +360,9 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
   const [panel, setPanel] = useState<Panel>(null);
   const [moveSources, setMoveSources] = useState<string[]>([]);
   const [preview, setPreview] = useState(false);
+  const [showRelationshipLabels, setShowRelationshipLabels] = useState(false);
   const [overview, setOverview] = useState((initial?.cameras[initial.perspective]?.zoom ?? 1) < .62);
   const [viewport, setViewport] = useState<Viewport>(initial?.cameras[initial.perspective] ?? { x: 0, y: 0, zoom: 1 });
-  const [query, setQuery] = useState("");
   const [compact, setCompact] = useState((initial?.cameras[initial.perspective]?.zoom ?? 1) < .45);
   const [pinching, setPinching] = useState(false);
   const field = useRef<HTMLDivElement>(null);
@@ -568,7 +558,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
     source: perspective === "Constellation" ? `theme-${groupFor.get(edge.from)}` : edge.from,
     target: perspective === "Constellation" ? `theme-${groupFor.get(edge.to)}` : edge.to,
     type: perspective === "Constellation" ? "default" : "floating",
-    label: overview || (!session && highlighting && !highlighted.has(edge.id)) ? undefined : edge.label,
+    label: !showRelationshipLabels || overview || (!session && highlighting && !highlighted.has(edge.id)) ? undefined : edge.label,
     markerEnd:
       edge.kind === "association" || edge.kind === "context"
         ? undefined
@@ -581,7 +571,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           },
     className: `thread ${edge.kind} ${panel === "inspect" && (edge.from === active || edge.to === active) ? "emphasized" : ""}`,
     style: {
-      opacity: perspective === "Constellation" ? 1 : session ? 1 : edge.kind === "association" && !highlighted.has(edge.id) ? .08 : highlighting ? (highlighted.has(edge.id) ? 1 : .12) : overview ? .7 : 1,
+      opacity: perspective === "Constellation" ? 1 : session ? 1 : highlighting ? (highlighted.has(edge.id) ? 1 : .12) : overview ? .7 : 1,
       stroke:
         edge.kind === "association"
           ? "#755584"
@@ -591,7 +581,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
       strokeWidth:
         (!session && overview ? (highlighted.has(edge.id) ? 2 : 1) : panel === "inspect" && (edge.from === active || edge.to === active)
           ? 3
-          : edge.kind === "recombination"
+          : edge.kind === "recombination" || edge.kind === "association"
             ? 2.5
             : 2) / viewport.zoom,
       strokeDasharray:
@@ -939,7 +929,8 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); }
         }}>
         <summary>Menu <ChevronDown size={14} aria-hidden="true" /></summary>
-        <div className="atlas-menu-options" aria-label="Atlas storage">
+        <div className="atlas-menu-options" aria-label="Atlas options">
+        <label className="relationship-label-toggle"><input type="checkbox" checked={showRelationshipLabels} onChange={event => setShowRelationshipLabels(event.target.checked)} /> Relationship labels</label>
         <button onClick={() => { exportAtlas(); if (storageMenu.current) storageMenu.current.open = false; }}>Export atlas</button>
         <button onClick={() => importInput.current?.click()}>Import atlas</button>
         <input ref={importInput} hidden aria-label="Import atlas file" type="file" accept=".json,application/json" onChange={async e => {
@@ -1123,6 +1114,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           {!session && <TooltipButton className="expedition-control" aria-label="Expedition panel" title="Open expedition panel" aria-haspopup="dialog" aria-expanded={panel === "expedition"} onClick={() => open("expedition")}><Image src="/images/expedition-compass.png" width={44} height={44} alt="" /></TooltipButton>}
 
           {session && <>
+            <label className="relationship-label-toggle"><input type="checkbox" checked={showRelationshipLabels} onChange={event => setShowRelationshipLabels(event.target.checked)} /> Relationship labels</label>
             <button onClick={() => { void session.command({ operation: "seed-mall" }).catch(() => {}); }} disabled={nodes.length > 0}>Load prepared mall</button>
             <button onClick={() => { void session.command({ operation: "create-idea", ideaId: crypto.randomUUID(), title: "New idea", body: "Write your idea here." }).catch(() => {}); }}>New idea</button>
             <button onClick={() => { void session.command({ operation: "set-viewpoint", expectedRevision: savedGraph!.viewpoint.revision, ...viewport }).catch(() => {}); }}>Save view</button>
@@ -1256,7 +1248,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
         <aside
           ref={panelRef}
           tabIndex={-1}
-          className={`detail-panel ${panel === "text" ? "text-reader" : ""} ${panel === "compare" || panel === "text" ? "wide-panel" : ""}`}
+          className={`detail-panel ${panel === "index" ? "catalogue-panel" : ""} ${panel === "text" ? "text-reader" : ""} ${panel === "compare" || panel === "text" ? "wide-panel" : ""}`}
           role="dialog"
           aria-modal="false"
           aria-label={
@@ -1277,7 +1269,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
             }
           }}
         >
-          <div className="panel-heading">
+          {panel !== "index" && <div className="panel-heading">
             <span className="instrument-label">
               {panel === "inspect"
                 ? "Thought / source material"
@@ -1285,14 +1277,12 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
                   ? (session ? "Prepared move / no model call" : "Wander")
                   : panel === "text"
                     ? `Read as text · ${nodes.length} ideas`
-                    : panel === "index"
-                      ? "Find your place"
-                      : "Selected contributions"}
+                    : "Selected contributions"}
             </span>
             <button aria-label="Close panel" onClick={close}>
               ×
             </button>
-          </div>
+          </div>}
           {panel === "explore" && session && <ExplorationPanel workspaceId={savedGraph!.workspaceId}
             sources={selected.map((id) => byId.get(id)!).filter(Boolean)} inspect={inspect} />}
           {panel === "inspect" && (
@@ -1454,55 +1444,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
               </nav>
             </div>
           </div>}
-          {panel === "index" && (
-            <>
-              <h2>
-                {panel === "index"
-                  ? "Every thought has a place."
-                  : "What to do with a dead shopping mall"}
-              </h2>
-              {panel === "index" && (
-                <>
-                {!session && <DownloadButton cards={nodes.map((node) => node.data.thought)} relationships={relationships} />}
-                <label>
-                  Find a thought
-                  <input
-                    autoComplete="off"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search titles"
-                  />
-                </label>
-                </>
-              )}
-              <div className="reference-list">
-                {nodes
-                  .filter(
-                    (n) =>
-
-                      n.data.thought.title.toLowerCase().includes(query.toLowerCase()),
-                  )
-                  .map((n) => (
-                    <section key={n.id}>
-                      <span className="instrument-label">
-                        {n.data.thought.kind} · {n.data.thought.decision}
-                      </span>
-                      <h3>{n.data.thought.title}</h3>
-                      <div className="panel-actions">
-                        <button onClick={() => focus(n.id)}>Focus ↗</button>
-                        <button onClick={() => inspect(n.id)}>Inspect</button>
-                        <button
-                          aria-pressed={selected.includes(n.id)}
-                          onClick={() => select(n.id)}
-                        >
-                          {selected.includes(n.id) ? "Selected ✓" : "Select"}
-                        </button>
-                      </div>
-                    </section>
-                  ))}
-              </div>
-            </>
-          )}
+          {panel === "index" && <ThoughtCatalogue cards={nodes.map(n => n.data.thought)} relationships={relationships} selected={selected} select={select} focus={focus} close={close} downloadable={!session} />}
           {panel === "compare" && (
             <>
               <h2>Hold the differences in view.</h2>
