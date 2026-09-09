@@ -974,7 +974,7 @@ function Studio({ session }: { session?: AtlasSession }) {
           </div>
         </div>
       </div>
-      {!session && <TalkPanel open={panel === "talk"} close={close} cards={selected.map((id) => ({ ...byId.get(id)!, relationships: relationshipsFor(id, relationships) }))} />}
+      {!session && <TalkPanel open={panel === "talk"} close={close} selectedIds={selected} cards={nodes.map(({ id, data }) => ({ ...data.thought, relationships: relationshipsFor(id, relationships) }))} />}
       {panel && panel !== "talk" && (
         <aside
           ref={panelRef}

@@ -4,7 +4,7 @@ Root `/` runs the mall atlas with live Wander, Weave, typed Talk and contextual 
 All new state stays in memory; reload clears conversation, generated cards and edges.
 This owner-directed batch supersedes earlier handoff outcomes. Stop after stable deployment.
 
-- Checkout: `/Users/brandyn.schult/code/minerva-remove-denser`; branch: `fix/generation-loading-spinner`.
+- Checkout: `/Users/brandyn.schult/code/minerva-remove-denser`; branch: `fix/talk-canvas-context`.
 - Base: `origin/main` at `fc4b57e7b7b073fa85c05a42d01b8effa13a4840`.
 - Stable target: https://minerva-eight.vercel.app/; released SHA and hosted evidence are in the operator response.
 - Next role: one operator-started Fable 5.1 review, read-only; no further build is authorized.
@@ -13,9 +13,9 @@ This owner-directed batch supersedes earlier handoff outcomes. Stop after stable
 
 Denser Study is removed: no scene switch, prepared variation groups or extra 24-card fixture. The six-card mall remains.
 
-Talk to Minerva opens a dismissible panel; each turn includes prior conversation and selected cards' title, summary, body and relationships.
+Talk to Minerva opens a dismissible panel; each turn includes prior conversation and every canvas card's title, summary, body and relationships; selected IDs identify focus.
 `POST /api/talk` uses AI SDK `streamText`, plain `anthropic/claude-sonnet-5`, tag `feature:talk`.
-The composer stays visible while the transcript scrolls. HTTP, interrupted-stream and provider errors show Retry in the panel.
+Enter sends; Shift+Enter adds a newline; IME composition does not send. The composer stays visible while the transcript scrolls. HTTP, interrupted-stream and provider errors show Retry in the panel.
 Consider a move selects its source; exactly one selection requests three title/question/preview suggestions.
 `POST /api/moves` uses one `generateObject` call, the same model and tag `feature:moves`.
 A failed planner keeps the prepared move available and offers Retry. Choosing a move creates one card via `/api/wander` and the shared placement path.
@@ -55,4 +55,4 @@ Wander now requires explicit `intent: "move"` for single-card generation; legacy
 
 `cd /Users/brandyn.schult/code/minerva-remove-denser`; `npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run dev -- --port 3016`; open `/`.
 Mocked browser check: `MINERVA_URL=http://127.0.0.1:3016 npm run test:browser`.
-Live suggestions are speculative. No persistence or owner experience acceptance is claimed.
+No-selection live Talk evidence: `/tmp/minerva-talk-context-live.json`; browser keyboard/context checks: `/tmp/minerva-talk-context`. Live suggestions are speculative. No persistence or owner experience acceptance is claimed.
