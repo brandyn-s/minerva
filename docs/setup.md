@@ -240,7 +240,9 @@ Record the window's dates, audience, budget and teardown owner in `docs/HANDOFF.
   scope that meters OIDC requests and rejects with HTTP 402 when exceeded.
   Realtime voice is a beta Gateway capability: the token route mints single-use
   short-lived client tokens after microphone permission is granted, and sessions
-  are capped at 25 minutes.
+  are capped at 25 minutes. Voice models bill by connected session time rather
+  than tokens, so budget voice as session duration and check the current
+  per-model hourly rate before opening the window.
 - **Platform spend.** Set the Spend Management amount the owner chooses. It
   covers functions, bandwidth and workflow events, checks every few minutes and
   does not cover Marketplace databases. Pausing production at that amount is
