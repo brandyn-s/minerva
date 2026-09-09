@@ -605,7 +605,7 @@ try {
   for (const view of ["Evolution", "Lineage", "Constellation", "Evolution", "Constellation", "Lineage"]) {
     const start = requests.length;
     await button(view).click(); await settle();
-    if (view === "Constellation") await page.getByText(/Grouped into themes by Minerva · grouped at/).waitFor({ timeout: 90000 });
+    if (view === "Constellation") await page.getByText(/ideas · .* themes by Minerva/).waitFor({ timeout: 90000 });
     await settle();
     assert.equal(await page.locator(".comparison-grid").innerText(), comparison);
     if (cameras.has(view)) assert.equal(await transform(), cameras.get(view), `${view} remembers its camera`);
@@ -628,13 +628,17 @@ try {
   await button("Constellation").click(); await settle();
   const previousGrouping = await page.locator(".theme-heading").allTextContents();
   failThemes = true;
-  await button("Regroup").click();
-  await page.getByRole("region", { name: "Theme grouping" }).getByRole("alert").waitFor();
+  await page.getByRole("region", { name: "Theme grouping" }).getByRole("button", {name: "Clear selection", exact: true}).click();
+  await button("Regroup all").click();
+  await button("Preview themes").click();
+  await page.getByRole("region", { name: "Regroup all ideas" }).getByRole("alert").waitFor();
   assert.deepEqual(await page.locator(".theme-heading").allTextContents(), previousGrouping);
-  assert.ok(await page.getByRole("region", { name: "Theme grouping" }).getByRole("button", { name: "Retry", exact: true }).isVisible());
+  assert.ok(await page.getByRole("region", { name: "Regroup all ideas" }).getByRole("button", { name: "Retry", exact: true }).isVisible());
   failThemes = false;
-  await page.getByRole("region", { name: "Theme grouping" }).getByRole("button", { name: "Retry", exact: true }).click(); await settle();
+  await page.getByRole("region", { name: "Regroup all ideas" }).getByRole("button", { name: "Retry", exact: true }).click(); await settle();
   assert.equal(themeRequests, 3);
+  assert.deepEqual(await page.locator(".theme-heading").allTextContents(), previousGrouping);
+  await page.getByRole("button", { name: /^Apply to .* ideas$/ }).click();
   assert.equal(await page.locator(".react-flow__edge").count(), 1, "only the cross-group association remains");
   assert.equal(await page.locator(".react-flow__edge.derivation,.react-flow__edge.recombination").count(), 0);
   await button("Lineage").click();

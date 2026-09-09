@@ -38,6 +38,8 @@ import { mallFixture } from "./fixture";
 import { wanderSchema, weaveSchema, moveCardSchema, type ContextualMove, type GeneratedCard, type LiveFeature } from "./generation";
 import { cardHash, validateThemes, type ThemeGroup } from "./themes";
 import TalkPanel from "./talk-panel";
+import RegroupPanel from "./regroup-panel";
+import { applyRegroup } from "./regroup-layout";
 import DownloadButton from "./download-button";
 import MovesPanel from "./moves-panel";
 import ExpeditionPanel from "./expedition-panel";
@@ -398,6 +400,9 @@ function Studio({ session }: { session?: AtlasSession }) {
   const cameras = useRef<Partial<Record<Perspective, Viewport>>>({});
   const [positions, setPositions] = useState<Record<string, Record<string, { x: number; y: number }>>>({});
   const [themeCache, setThemeCache] = useState<{ groups: ThemeGroup[]; hashes: Record<string, string>; time: string }>();
+  const [regroupIds, setRegroupIds] = useState<string[] | null>(null);
+  const [regroupedIds, setRegroupedIds] = useState<string[]>([]);
+  const [themeUndo, setThemeUndo] = useState<{ cache: typeof themeCache; positions: typeof positions; viewport: Viewport }>();
   const [themeError, setThemeError] = useState("");
   const [themeBusy, setThemeBusy] = useState(false);
   const themePending = useRef(false);
@@ -405,7 +410,7 @@ function Studio({ session }: { session?: AtlasSession }) {
   async function groupThemes(full = false) {
     if (themePending.current) return;
     themePending.current = true;
-    setThemeBusy(true); setThemeError(""); themeRetryFull.current = full;
+    setThemeBusy(true); setThemeError(""); setThemeUndo(undefined); setRegroupedIds([]); themeRetryFull.current = full;
     try {
       const cards = nodes.map(n => n.data.thought);
       const hashes = Object.fromEntries(await Promise.all(cards.map(async c => [c.id, await cardHash(c)])));
@@ -431,6 +436,7 @@ function Studio({ session }: { session?: AtlasSession }) {
   }
   function switchPerspective(next: Perspective) {
     if (next === perspective) return;
+    setRegroupIds(null);
     cameras.current[perspective] = flow.getViewport();
     perspectiveRef.current = next;
     setPerspective(next);
@@ -463,7 +469,7 @@ function Studio({ session }: { session?: AtlasSession }) {
     }
     return { ...n, position: perspective === "Lineage" ? position : positions[perspective]?.[n.id] ?? position, style: { ...n.style, pointerEvents: overview ? "none" : "all" } };
   });
-  const themeNodes: CardNode[] = perspective === "Constellation" ? groups.map((g, i) => ({ id: `theme-${i}`, type: "theme", position: { x: i * 760, y: -70 }, width: 440, height: 140, measured: { width: 440, height: 140 }, style: { width: 440, height: 140 }, draggable: false, data: { thought: { ...thought, title: g.name, summary: g.reason } } })) : [];
+  const themeNodes: CardNode[] = perspective === "Constellation" ? groups.map((g, i) => ({ hidden: !g.memberIds.length, id: `theme-${i}`, type: "theme", position: { x: i * 760, y: -70 }, width: 440, height: 140, measured: { width: 440, height: 140 }, style: { width: 440, height: 140 }, draggable: false, data: { thought: { ...thought, title: g.name, summary: g.reason } } })) : [];
   useLayoutEffect(() => {
     if (!fitPerspective.current || (perspective === "Constellation" && !themeCache)) return;
     fitPerspective.current = false;
@@ -605,6 +611,7 @@ function Studio({ session }: { session?: AtlasSession }) {
   }
   function open(next: Panel) {
     if (!panel) returnFocus.current = document.activeElement as HTMLElement;
+    setRegroupIds(null);
     setPanel(next);
     setPreview(false);
   }
@@ -1047,12 +1054,26 @@ function Studio({ session }: { session?: AtlasSession }) {
           <ul>{relationPage.map(edge => <li key={edge.id}><button className="relative-link" onClick={() => focus(edge.otherId)}>{byId.get(edge.otherId)?.title} ↗</button><button aria-label={`Highlight only ${byId.get(edge.otherId)?.title}`} aria-pressed={branchId === edge.id} onClick={() => setBranchId(branchId === edge.id ? null : edge.id)}>Trace</button></li>)}</ul>
           {focusedRelations.length > 6 && <div><button disabled={!connectionPage} onClick={() => { setConnectionPage(p => p - 1); setBranchId(null); }}>Previous connections</button><button disabled={(connectionPage + 1) * 6 >= focusedRelations.length} onClick={() => { setConnectionPage(p => p + 1); setBranchId(null); }}>Next connections</button></div>}
         </section>}
-        {perspective === "Constellation" && <section className="themes-status" aria-label="Theme grouping">
-          <p>{themeCache ? `Grouped into themes by Minerva · grouped at ${themeCache.time}` : "Group cards into themes by Minerva"}</p>
-          {themeBusy && <p role="status">Grouping themes…</p>}
-          {themeError && <><p role="alert">{themeError}</p><button disabled={themeBusy} onClick={() => void groupThemes(themeRetryFull.current)}>Retry</button></>}
-          <button disabled={themeBusy} onClick={() => void groupThemes(true)}>Regroup</button>
+        {perspective === "Constellation" && !regroupIds && <section className="themes-status" aria-label="Theme grouping">
+          <span>{themeCache ? `${nodes.length} ideas · ${themeCache.groups.filter(g => g.memberIds.length).length} themes by Minerva` : "Group ideas into themes"}</span>
+          {themeBusy && <span role="status">Grouping themes…</span>}
+          {themeError && <><span role="alert">{themeError}</span><button disabled={themeBusy} onClick={() => void groupThemes(themeRetryFull.current)}>Retry</button></>}
+          <button data-regroup-trigger disabled={themeBusy || !themeCache} onClick={() => { setPanel(null); setFocusedId(null); setRegroupIds(selected.length ? selected : nodes.map(n => n.id)); }}>Regroup{selected.length ? ` ${selected.length} selected` : " all"}</button>
+          {selected.length > 0 && <button onClick={() => setSelected([])}>Clear selection</button>}
+          {regroupedIds.length > 0 && <><span role="status">Regrouped {regroupedIds.length} ideas</span><button onClick={() => void flow.fitView({ nodes: [...regroupedIds, ...themeCache!.groups.flatMap((g, i) => g.memberIds.some(id => regroupedIds.includes(id)) ? [`theme-${i}`] : [])].map(id => ({ id })), padding: .3, maxZoom: 1 })}>View regrouped ideas</button></>}
+          {themeUndo && <button onClick={() => { setThemeCache(themeUndo.cache); setPositions(themeUndo.positions); void flow.setViewport(themeUndo.viewport); setThemeUndo(undefined); setRegroupedIds([]); }}>Undo regroup</button>}
         </section>}
+        {perspective === "Constellation" && regroupIds && themeCache && <RegroupPanel
+          key={regroupIds.join(",")} cards={nodes.map(n => n.data.thought)} ids={regroupIds}
+          close={() => setRegroupIds(null)}
+          apply={(incoming) => {
+            setThemeUndo({ cache: themeCache, positions, viewport: flow.getViewport() });
+            setRegroupedIds(regroupIds);
+            const { groups: next, layout } = applyRegroup(themeCache.groups, incoming, regroupIds, renderedNodes);
+            setPositions(current => ({ ...current, Constellation: layout }));
+            setThemeCache({ ...themeCache, groups: next, time: new Date().toLocaleString() });
+            setRegroupIds(null);
+          }} />}
         <div className="legend" hidden={perspective === "Constellation"}>
           <span>
             <i className="legend-line inheritance" aria-hidden="true" />
@@ -1076,7 +1097,7 @@ function Studio({ session }: { session?: AtlasSession }) {
             </div>
           </div>}
         </div>
-        {selected.length > 0 && (
+        {selected.length > 0 && !regroupIds && (
           <div className="selection-bar">
             <span>{selected.length} selected</span>
             <button onClick={() => open("compare")}>Compare</button>
