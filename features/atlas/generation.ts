@@ -28,7 +28,7 @@ export const moveSchema = z.object({
 });
 export const movesSchema = z.object({ moves: z.array(moveSchema).length(3) });
 export const moveCardSchema = z.object({ cards: z.array(cardSchema).length(1) });
-export const wanderRequestSchema = sourceSchema.extend({ move: moveSchema.optional() });
+export const wanderRequestSchema = sourceSchema.extend({ intent: z.enum(["wander", "move"]).default("wander"), move: moveSchema.optional() });
 export type ContextualMove = z.infer<typeof moveSchema>;
 export const contextCardSchema = sourceSchema.extend({
   relationships: z.array(z.object({

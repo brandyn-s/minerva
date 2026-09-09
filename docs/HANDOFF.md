@@ -4,8 +4,8 @@ Root `/` runs the mall atlas with live Wander, Weave, typed Talk and contextual 
 All new state stays in memory; reload clears conversation, generated cards and edges.
 This owner-directed batch supersedes earlier handoff outcomes. Stop after stable deployment.
 
-- Checkout: `/Users/brandyn.schult/code/minerva-remove-denser`; branch: `fix/remove-denser-study`.
-- Base: `origin/main` at `30467c1c5c87d1cd2f3d79ff085326f772816e14`.
+- Checkout: `/Users/brandyn.schult/code/minerva-remove-denser`; branch: `fix/wander-card-count`.
+- Base: `origin/main` at `fc4b57e7b7b073fa85c05a42d01b8effa13a4840`.
 - Stable target: https://minerva-eight.vercel.app/; released SHA and hosted evidence are in the operator response.
 - Next role: one operator-started Fable 5.1 review, read-only; no further build is authorized.
 
@@ -44,6 +44,12 @@ Moves input: A food hall and its relationships. Actual returned response:
 **Communal Weave Table** — Could one long table rotate ownership hourly between kitchens and craftspeople, becoming a living timetable of the mall's rhythms? A single table that narrates the mall's day through who's sitting at it.
 
 **Ingredient Barter Board** — What if kitchens traded surplus ingredients with repair stalls for scrap materials, displayed on a public barter board? Makes the food hall a visible economy of exchange, not just consumption.
+
+Wander now requires explicit `intent: "move"` for single-card generation; legacy source move metadata stays ordinary Wander.
+`MINERVA_WANDER_REGRESSION=1` verifies this with one real Gateway call; evidence: `/tmp/minerva-wander-regression/wander-regression.json`.
+**The Rent-a-Guild Concourse** — Empty anchor stores become six-week guild halls where a trade collectively occupies and reshapes the space before vanishing.
+**Supper Court Currency** — Meals cooked at the mender's table are paid for with broken objects instead of money, creating a barter economy that accumulates raw material.
+**The Failing Apprentice Wing** — A second, parallel stall run by whoever failed to master the previous six-week trade, turned into a public workshop of visible mistakes.
 
 ## Startup
 
