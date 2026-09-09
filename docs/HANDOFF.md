@@ -2,7 +2,7 @@
 
 Branch: `feat/integrated-composer`.
 Worktree: `/Users/brandyn.schult/code/minerva-integrated-composer`.
-Base: `09d0396` on origin/main.
+Integrated with origin/main `2314038`; owl, toolbar medallions and header cleanup preserved.
 
 ## Outcome
 Talk uses one integrated writing surface: hold-to-talk microphone and hands-free

@@ -858,6 +858,8 @@ summary {
 .expedition-reading { border-top: 1px solid #aaa084; margin-top: 18px; }
 .expedition-stop { font-weight: 600; }
 .field-tools .expedition-control {
+  position: relative;
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -870,6 +872,27 @@ summary {
   background: transparent;
 }
 .expedition-control img { display: block; }
+.thoughts-medallion { clip-path: circle(47.5% at 50% 49%); }
+.scroll-medallion { clip-path: circle(46% at 50% 49%); }
+.field-tools .thought-count {
+  position: absolute;
+  top: -3px;
+  right: -7px;
+  margin: 0;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #b18a58;
+  border-radius: 12px;
+  background: #f1e9d6;
+  color: #273a35;
+  font: 11px/1 ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  box-shadow: inset 0 0 0 1px #b18a5833;
+}
 .field-tools .expedition-control:hover,
 .field-tools .expedition-control[aria-expanded="true"] {
   background: var(--paper);
@@ -935,3 +958,4 @@ summary {
 @keyframes composer-spin { to { transform: rotate(360deg); } }
 @keyframes voice-breathe { 50% { opacity: .4; transform: scaleY(.65); } }
 @media (prefers-reduced-motion: reduce) { .voice-wave, .composer-spinner { animation: none; } }
+.brand-owl { mix-blend-mode: multiply; object-fit: contain; }
