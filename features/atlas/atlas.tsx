@@ -430,7 +430,7 @@ function Studio({ session }: { session?: AtlasSession }) {
       const response = await fetch(`/api/${feature}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(feature === "wander" ? { ...sources[0], move: contextualMove } : sources),
+        body: JSON.stringify(feature === "wander" ? { id: sources[0].id, title: sources[0].title, summary: sources[0].summary, body: sources[0].body, intent: contextualMove ? "move" : "wander", move: contextualMove } : sources),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || response.statusText);

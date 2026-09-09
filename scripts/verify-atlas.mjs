@@ -23,6 +23,15 @@ const errors = [];
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 page.on("pageerror", (e) => errors.push(e.message));
 const base = process.env.MINERVA_URL || "http://127.0.0.1:3000";
+// Exercise legacy card metadata against the real route, never a mocked response.
+if (process.env.MINERVA_WANDER_REGRESSION === "1") {
+  const source = { id: "menders-table", title: "The Six-Week Mender's Table", summary: "A rotating repair-and-supper stall in the mall food hall.", body: "A different fixer tests their trade every six weeks.", move: { title: "Explore this direction", question: "Where could this idea lead?", preview: "Explore a repair stall." } };
+  const response = await page.request.post(`${base}/api/wander`, { data: source, timeout: 90000 });
+  const output = await response.json();
+  assert.equal(response.status(), 200, JSON.stringify(output));
+  assert.ok(output.cards.length >= 2 && output.cards.length <= 3, "legacy source move metadata must still produce a full Wander");
+  await writeFile(`${artifacts}/wander-regression.json`, JSON.stringify({ source, output }, null, 2));
+}
 const button = (name) => page.getByRole("button", { name, exact: true });
 const transform = () =>
   page.locator(".react-flow__viewport").getAttribute("style");
@@ -313,6 +322,10 @@ try {
       attempts++;
       await pending;
       evidence[`${feature}Input`] = route.request().postDataJSON();
+      if (feature === "wander") {
+        assert.equal(evidence.wanderInput.intent, "wander");
+        assert.equal(evidence.wanderInput.move, undefined);
+      }
       if (attempts === 1) await route.fulfill({ status: 500, json: { error: `${label} test failure` } });
       else if (live && process.env.MINERVA_LIVE_EXISTING === "1") await route.continue();
       else await route.fulfill({ json: mocked[feature] });
@@ -476,6 +489,7 @@ try {
   let moveCardAttempts = 0;
   await page.route("**/api/wander", async (route) => {
     moveCardAttempts++;
+    assert.equal(route.request().postDataJSON().intent, "move");
     assert.deepEqual(route.request().postDataJSON().move, chosenMove);
     if (moveCardAttempts === 1) await route.fulfill({ status: 500, json: { error: "Move card test failure" } });
     else await route.fulfill({ json: { cards: [card("Morning repair table")] } });
