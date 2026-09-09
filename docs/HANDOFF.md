@@ -1,6 +1,6 @@
 # Wander toolbar consolidation
 
-Release branch: `feat/wander-toolbar`, based on main `83844e4`.
+Release branch: `feat/wander-toolbar`, based on main `7002d7a`.
 Worktree: `/Users/brandyn.schult/code/minerva-wander-toolbar`.
 Scope: requested Wander consolidation and compact selection-toolbar dismissal.
 Existing main features are preserved; unrelated edits in the original checkout are excluded.
@@ -15,6 +15,8 @@ No backend, persistence, or model changes.
 
 ## Validation
 `npm run check` passed (lint, typecheck, tests, production build).
+Full mocked browser replay passed on the initial release candidate, including mobile gestures and Constellation fit.
+Latest main Expedition styling is preserved in this release.
 `node scripts/verify-wander.mjs` passed at 1399px and 390px with mocked responses and no page errors.
 Focused artifacts: `/tmp/wander-release-focused`; design QA: `design-qa.md`.
 Model responses were mocked; no live provider validation is claimed.
