@@ -1197,6 +1197,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
         {selected.length > 0 && !regroupIds && (
           <div className={`selection-bar${session ? "" : " light-selection-dock"}`}>
             <span className="selection-count">{selected.length} selected</span>
+            {selected.length === 1 && <button onClick={() => focus(selected[0])}><Crosshair size={22} aria-hidden="true" />Focus on atlas</button>}
             {session ? <><button onClick={() => open("compare")}>Compare</button><button onClick={() => move(selected)}>Weave · preview</button></> : <>
               <button className="wander-action" disabled={busy || selected.length !== 1} onClick={() => move(selected)} aria-busy={busy && live?.feature === "wander"}>{busy && live?.feature === "wander" ? <span className="generation-spinner" aria-hidden="true" /> : <GitFork size={22} aria-hidden="true" />}{busy && live?.feature === "wander" ? "Wandering…" : "Wander"}</button>
               <button onClick={() => open("compare")}><Copy size={22} aria-hidden="true" />Compare</button>
@@ -1315,18 +1316,6 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
               <h3>Contribution</h3>
               <p>{thought.contribution}</p>
               {session && thought.kind !== "brief" && <ProposalDecisions key={`${thought.id}-${thought.revision}`} workspaceId={savedGraph!.workspaceId} thought={thought} />}
-              <div className="panel-actions">
-                <button
-                  onClick={() => select(active)}
-                  aria-pressed={selected.includes(active)}
-                >
-                  {selected.includes(active)
-                    ? "Remove from selection"
-                    : "Select for comparison"}
-                </button>
-                <button disabled={!session && busy} onClick={() => move([active])}>{session ? "Consider a move" : "Wander"}</button>
-                <button onClick={() => focus(active)}>Focus on atlas ↗</button>
-              </div>
               <h3>Relationships</h3>
               <p className="small-note">
                 Shared brief is context, not parentage. Associations do not
