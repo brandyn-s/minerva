@@ -488,7 +488,7 @@ function Studio({ session }: { session?: AtlasSession }) {
     })),
   ];
   async function generate(feature: LiveFeature, sources: Thought[]) {
-    if (session || generating.current || sources.length !== (feature === "wander" ? 1 : 2)) return;
+    if (session || generating.current || (feature === "wander" ? sources.length !== 1 : sources.length < 2)) return;
     generating.current = true;
     setBusy(true);
     setLive({ feature, sources });
@@ -506,7 +506,7 @@ function Studio({ session }: { session?: AtlasSession }) {
       let contributions: string[] = [];
       if (feature === "wander") cards = wanderSchema.parse(result).cards;
       else {
-        const parsed = weaveSchema.parse(result);
+        const parsed = weaveSchema(sources.length).parse(result);
         cards = [parsed.card];
         contributions = parsed.contributions;
       }
@@ -982,7 +982,7 @@ function Studio({ session }: { session?: AtlasSession }) {
             Thoughts <span>{nodes.length}</span>
           </button>
           <button onClick={() => open("text")}>Read as text</button>
-          {!session && <span className="demo-note">Select 1 to Wander · 2 to Weave · Reload resets</span>}
+          {!session && <span className="demo-note">Select 1 to Wander · 2+ to Weave · Reload resets</span>}
           {!session && <button disabled={busy} onClick={changeScene}>
             {dense ? "Mall demo" : "Denser study"}
           </button>}
@@ -1025,7 +1025,7 @@ function Studio({ session }: { session?: AtlasSession }) {
             <button onClick={() => open("compare")}>Compare</button>
             {session ? <button onClick={() => move(selected)}>Weave · preview</button> : <>
               <button disabled={busy || selected.length !== 1} onClick={() => void generate("wander", selected.map((id) => byId.get(id)!))}>Wander</button>
-              <button disabled={busy || selected.length !== 2} onClick={() => void generate("weave", selected.map((id) => byId.get(id)!))}>Weave</button>
+              <button disabled={busy || selected.length < 2} onClick={() => void generate("weave", selected.map((id) => byId.get(id)!))}>Weave</button>
             </>}
             {session && selected.length === 2 && <details className="layout-menu"><summary>Connect selected</summary>
               <p>From {byId.get(selected[0])?.title} to {byId.get(selected[1])?.title}</p>

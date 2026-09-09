@@ -269,7 +269,7 @@ try {
   const card = (title) => ({ title, summary: `${title} summary`, body: `${title} concrete draft.` });
   const mocked = {
     wander: { cards: [card("Repair apprenticeships"), card("Borrow a workshop")] },
-    weave: { card: card("Cook and mend evenings"), contributions: ["Food brings people together.", "Tools enable shared repairs."] },
+    weave: { card: card("Cook and mend evenings"), contributions: ["Food brings people together.", "Tools enable shared repairs.", "Independent shops provide flexible storefronts."] },
   };
   async function selectFromIndex(title) {
     await inspectFromIndex(title);
@@ -283,6 +283,9 @@ try {
       await button("Clear selection").click();
       await selectFromIndex("A food hall");
       await selectFromIndex("A shared tool library");
+      assert.equal(await button("Weave").isEnabled(), true, "two parents remain supported");
+      await selectFromIndex("Independent retail shops");
+      assert.equal(await button("Weave").isEnabled(), true, "three parents can be woven");
     }
     const label = feature === "wander" ? "Wander" : "Weave";
     assert.equal(await button(feature === "wander" ? "Weave" : "Wander").isDisabled(), true);
@@ -312,17 +315,18 @@ try {
     await page.waitForFunction((count) => document.querySelectorAll(".thought").length === count, total);
     await settle();
     assert.equal(attempts, 2, "only the explicit retry makes the next request");
-    assert.equal(await page.locator(".react-flow__edge").count(), 7 + (feature === "wander" ? cards.length : evidence.wander.cards.length + 2));
+    assert.equal(await page.locator(".react-flow__edge").count(), 7 + (feature === "wander" ? cards.length : evidence.wander.cards.length + 3));
     for (const result of cards) {
       assert.ok(result.title && result.summary && result.body);
       await inspectFromIndex(result.title);
       const inspection = page.getByRole("dialog");
       assert.equal(await inspection.locator(".body-copy").innerText(), result.body);
       const links = inspection.locator(".relationship-list li");
-      assert.equal(await links.count(), feature === "wander" ? 1 : 2);
+      assert.equal(await links.count(), feature === "wander" ? 1 : 3);
       assert.match(await links.first().innerText(), feature === "wander" ? /incoming \/ derivation/i : /incoming \/ recombination/i);
       if (feature === "weave") {
-        assert.equal(output.contributions.length, 2);
+        assert.equal(evidence.weaveInput.length, 3);
+        assert.equal(output.contributions.length, 3);
         for (const contribution of output.contributions) assert.ok((await links.allInnerTexts()).join(" ").includes(contribution));
       }
       await close();

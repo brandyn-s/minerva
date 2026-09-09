@@ -12,12 +12,11 @@ export const cardSchema = z.object({
   body: z.string().describe("One short paragraph making the idea concrete"),
 });
 export const wanderSchema = z.object({ cards: z.array(cardSchema).min(2).max(3) });
-export const weaveSchema = z.object({
+export const weaveSchema = (parentCount: number) => z.object({
   card: cardSchema,
-  contributions: z.tuple([
-    z.string().describe("One line explaining the first parent's contribution"),
-    z.string().describe("One line explaining the second parent's contribution"),
-  ]),
+  contributions: z.array(
+    z.string().describe("One line explaining this parent's contribution, in input order"),
+  ).length(parentCount),
 });
 export type GeneratedCard = z.infer<typeof cardSchema>;
 export type LiveFeature = "wander" | "weave";
