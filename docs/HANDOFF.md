@@ -1,30 +1,34 @@
-# Compass control and shared tooltips
+# Integrated composer
 
-Branch: `main`.
-Worktree: `/Users/brandyn.schult/code/minerva`.
-Compass commit: `8da7545`; integrated with remote updates through `50fd2a0`.
+Branch: `feat/integrated-composer`.
+Worktree: `/Users/brandyn.schult/code/minerva-integrated-composer`.
+Base: `09d0396` on origin/main.
 
 ## Outcome
-The root atlas Expedition button is a 44px engraved compass in a 48px control.
-Its tooltip reads Open expedition panel. Existing card overview, card movement
-and expedition step-link tooltips share the dark-green, ivory and gold style.
-Tooltips support focus, hover, Escape dismissal and portal rendering outside
-canvas transforms. The existing Expedition dialog and generation behavior remain.
+Talk uses one integrated writing surface: hold-to-talk microphone and hands-free
+Voice mode on the left, Send arrow on the right. Icons have accessible names,
+shared hover/focus tooltips and 44px targets. Enter sends; Shift+Enter adds a line.
+Voice mode uses the existing Gateway realtime route and `openai/gpt-realtime-2`.
+Automatic speech detection continues across turns, with spoken interruption,
+shared transcripts, mute/unmute, End and Back to typing. Closing releases audio.
+The active composer shows Minerva, animated waveform and listening/speaking status.
+Typed Markdown, smooth streaming and canvas context remain. State resets on reload.
+No database, workspace, model credentials or server route changes.
 
 ## Evidence
-`npm run check` passed: lint, TypeScript, 12 tests and production build.
-In-app browser: compass focus tooltip, Escape dismissal, Enter activation,
-expanded state, close/focus return and matching card movement tooltip passed.
-Visual comparison is recorded in `design-qa.md`.
-Hover/collision behavior was code-reviewed; mobile and generated step-link
-interactions were not exercised in this focused pass. No provider calls.
+`npm run check`: lint, TypeScript, 12 tests and production build passed.
+Browser fixture replay covers microphone denial, token failure, hold/release,
+late connection, queued-audio cancellation, transcript sharing and close cleanup.
+New fixture coverage exercises two automatic voice turns, interruption, microphone
+track mute/unmute, ending, return to typing and narrow layout. Full atlas replay passed.
+Real Gateway hold-to-talk and automatic Voice mode replies were received using
+synthetic spoken input and the existing production token endpoint. The automatic
+reply began “Use a section as a rotating six-” before the test ended the session.
+This verifies live connectivity/turn detection, not physical microphone quality.
+Desktop integrated composer was visually inspected in the in-app browser.
 
 ## Startup and next role
-Local dev preview is running at http://127.0.0.1:3000/.
-From this checkout: `npm run dev -- --port 3000`.
-Use the Node/npm launcher in AGENTS.md if the installed runtime differs.
-Next role: owner visual inspection. Commit, merge and push are authorized;
-no critic was launched.
-
-The merged remote updates face Minerva toward the canvas and use the cameo
-in the Talk header; the idle voice instruction is removed.
+`npm run dev -- --port 3051` (Node/npm launcher in AGENTS.md).
+Local preview: http://127.0.0.1:3051/.
+Stable target: https://minerva-eight.vercel.app/.
+Next role: owner acceptance; no further feature work or critic review is queued.
