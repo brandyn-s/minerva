@@ -975,7 +975,6 @@ summary {
 .scalable-atlas .card-content { height: 100%; overflow: auto; border-radius: 3px; }
 .scalable-atlas .react-flow__resize-control.handle { width: 10px; height: 10px; border-color: var(--card); background: var(--teal); }
 .chain-dimmed { opacity: .18; }
-.chain-highlighted .thought { outline: 3px solid var(--teal); outline-offset: 3px; }
 .fold-marker { pointer-events: all; position: absolute; top: -28px; right: 0; white-space: nowrap; z-index: 3; background: var(--card); }
 .chain-controls { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0; }
 .chain-controls ol { flex-basis: 100%; }
@@ -1279,3 +1278,31 @@ summary {
 .wander-move .move-choice { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; }
 @media(prefers-reduced-motion:reduce) { .wander-loading svg { animation: none; } }
 @media(max-width:600px) { .detail-panel.wander-panel { padding: 18px 20px; } .wander-source { margin-top: 20px; } }
+
+/* Compact lineage actions */
+.chain-controls { gap: 8px; margin: 12px 0 16px; align-items: center; }
+.chain-directions { display: inline-flex; border: 1px solid var(--line); border-radius: 5px; overflow: hidden; }
+.chain-directions button { display: inline-flex; align-items: center; gap: 6px; margin: 0; padding: 8px 10px; min-height: 36px; border: 0; border-radius: 0; background: transparent; font-size: 12px; }
+.chain-directions button + button { border-left: 1px solid var(--line); }
+.chain-directions button[aria-pressed="true"] { background: var(--ink); color: var(--card); }
+.chain-controls .chain-fold { display: inline-flex; align-items: center; gap: 6px; border: 0; background: transparent; margin: 0; padding: 6px 2px; min-height: 32px; font-size: 12px; }
+.chain-controls .chain-fold[aria-pressed="true"] { color: var(--teal); text-decoration: underline; }
+.chain-controls > p { flex-basis: 100%; font-size: 13px; margin: 4px 0; color: var(--muted); }
+.chain-directions button:focus-visible { outline: 2px solid var(--teal); outline-offset: -3px; }
+
+/* Underlined lineage navigation */
+.lineage-navigation { margin: 12px 0 18px; }
+.lineage-tabs { display: flex; align-items: stretch; gap: 14px; border-bottom: 1px solid var(--line); }
+.lineage-tabs button { padding: 8px 0; margin: 0; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; font: 13px ui-monospace, monospace; }
+.lineage-tabs button[aria-pressed="true"] { border-bottom-color: var(--ink); color: var(--ink); }
+.lineage-tabs .lineage-clear { margin-left: auto; color: var(--muted); font-size: 12px; }
+.lineage-count { color: var(--muted); font-size: 14px; margin: 18px 0 8px; }
+.lineage-navigation .lineage-results { list-style: none; margin: 0; padding: 0; }
+.lineage-navigation .lineage-results li { display: block; margin: 0; border-bottom: 1px solid var(--line); }
+.lineage-results li button { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; margin: 0; padding: 14px 0; border: 0; background: transparent; text-align: left; font: 18px/1.35 Georgia, serif; }
+.lineage-results svg { flex-shrink: 0; color: var(--muted); }
+.lineage-fold { margin-top: 20px; }
+.lineage-fold button { display: flex; gap: 8px; align-items: center; margin: 0; padding: 4px 0; border: 0; background: transparent; font: 13px ui-monospace, monospace; }
+.lineage-fold button:disabled { opacity: 1; color: var(--muted); cursor: default; }
+.lineage-fold p { margin: 4px 0 0 26px; color: var(--muted); font-size: 13px; }
+.lineage-navigation button:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
