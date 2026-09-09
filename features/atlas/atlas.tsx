@@ -37,6 +37,7 @@ import { relationshipsFor } from "./domain";
 import { mallFixture } from "./fixture";
 import { wanderSchema, weaveSchema, moveCardSchema, type ContextualMove, type GeneratedCard, type LiveFeature } from "./generation";
 import TalkPanel from "./talk-panel";
+import DownloadButton from "./download-button";
 import MovesPanel from "./moves-panel";
 import ExplorationPanel, { ProposalDecisions } from "../exploration/panel";
 
@@ -1019,6 +1020,7 @@ function Studio({ session }: { session?: AtlasSession }) {
           {panel === "inspect" && (
             <>
               <h2>{thought.title}</h2>
+              {!session && <DownloadButton key={thought.id} card={thought} cards={nodes.map((node) => node.data.thought)} relationships={relationships} />}
               <div className="status-line">
                 <span>{thought.decision}</span>
                 <span>Evidence: {thought.evidence}</span>
@@ -1154,6 +1156,8 @@ function Studio({ session }: { session?: AtlasSession }) {
                   : "What to do with a dead shopping mall"}
               </h2>
               {panel === "index" && (
+                <>
+                {!session && <DownloadButton cards={nodes.map((node) => node.data.thought)} relationships={relationships} />}
                 <label>
                   Find a thought
                   <input
@@ -1163,6 +1167,7 @@ function Studio({ session }: { session?: AtlasSession }) {
                     placeholder="Search titles"
                   />
                 </label>
+                </>
               )}
               <div className="reference-list">
                 {nodes

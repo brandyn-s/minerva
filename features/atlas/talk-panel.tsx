@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { TalkRequest } from "./generation";
+import VoiceButton from "./voice-button";
 
 export default function TalkPanel({ open, close, cards }: {
   open: boolean; close: () => void; cards: TalkRequest["cards"];
@@ -11,6 +12,7 @@ export default function TalkPanel({ open, close, cards }: {
   const [reply, setReply] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [voiceBusy, setVoiceBusy] = useState(false);
   const pending = useRef<TalkRequest | null>(null);
   const running = useRef(false);
   const transcript = useRef<HTMLDivElement>(null);
@@ -19,7 +21,7 @@ export default function TalkPanel({ open, close, cards }: {
   useEffect(() => { if (open) input.current?.focus(); }, [open]);
 
   async function send(retry = false) {
-    if (running.current || (!retry && !draft.trim())) return;
+    if (running.current || voiceBusy || (!retry && !draft.trim())) return;
     const request = retry ? pending.current! : {
       messages: [...messages, { role: "user" as const, content: draft.trim() }], cards,
     };
@@ -72,9 +74,11 @@ export default function TalkPanel({ open, close, cards }: {
       {(reply || busy) && <section><h3>Minerva</h3><p className="body-copy">{reply || "Thinking…"}</p></section>}
     </div>
     {error && <div><p role="alert">{error}</p><button disabled={busy} onClick={() => void send(true)}>Retry</button></div>}
+    {open && <VoiceButton cards={cards} messages={messages} onMessages={setMessages}
+      onBusy={setVoiceBusy} disabled={busy || !!error} />}
     <form onSubmit={(event) => { event.preventDefault(); void send(); }}>
       <label>Message Minerva<textarea ref={input} rows={4} value={draft} onChange={(event) => setDraft(event.target.value)} /></label>
-      <button disabled={busy || !!error || !draft.trim()} type="submit">{busy ? "Replying…" : "Send"}</button>
+      <button disabled={busy || voiceBusy || !!error || !draft.trim()} type="submit">{busy ? "Replying…" : "Send"}</button>
     </form>
   </aside>;
 }

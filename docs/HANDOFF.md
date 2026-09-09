@@ -1,58 +1,55 @@
 # Atlas demo handoff
 
-Root `/` runs the mall atlas with live Wander, Weave, typed Talk and contextual moves.
-All new state stays in memory; reload clears conversation, generated cards and edges.
-This owner-directed batch supersedes earlier handoff outcomes. Stop after stable deployment.
+Root `/` is the in-memory mall atlas with Wander, Weave, typed/spoken Talk and moves.
+This owner-directed batch ends after merge and stable deployment; one operator-started Fable review follows.
 
-- Checkout: `/Users/brandyn.schult/code/minerva-remove-denser`; branch: `fix/wander-card-count`.
-- Base: `origin/main` at `fc4b57e7b7b073fa85c05a42d01b8effa13a4840`.
-- Stable target: https://minerva-eight.vercel.app/; released SHA and hosted evidence are in the operator response.
-- Next role: one operator-started Fable 5.1 review, read-only; no further build is authorized.
+- Worktree: `/Users/brandyn.schult/code/minerva-voice-outputs`; branch: `feat/atlas-voice-outputs`.
+- Started from refreshed `origin/main` at `f989afa`; exact released SHA is in the operator response.
+- Stable target: https://minerva-eight.vercel.app/; hosted verification is in the operator response.
+- No persistence, admission/budget logic, new dependencies or workspace features were added.
 
 ## Behavior
 
-Denser Study is removed: no scene switch, prepared variation groups or extra 24-card fixture. The six-card mall remains.
+Talk's Hold to talk button accepts mouse/touch and held Space/Enter. Only a deliberate press requests
+microphone permission. Speech buffers in memory while connecting; release stops capture and sends it.
+Pressing again stops playback and replaces the prior session. Dismissal/cancellation cleans up capture.
+Heard user turns and streamed spoken-reply transcripts join typed Talk's existing conversation/context.
+Errors stay in the panel; hold Retry to record again. Typed Talk retains its existing route and OIDC.
+`POST /api/voice` mints a short-lived Gateway token with the server-only `MINERVA_PRIME_VOICE_API` key.
+The key came from the owner's Keychain and is a Vercel Secret for production/preview; never public/client-side.
+This owner-authorized voice key supersedes the OIDC-only setup rule for voice; other calls still use OIDC.
+`gateway.getAvailableModels()` confirmed `openai/gpt-realtime-2` (realtime); Sonnet 5 is language-only.
+AI SDK realtime uses that documented model, disabled automatic turn detection, and `feature:voice`.
+One session serves one press/reply; no wake word, always-on listening, tools or card creation via Talk.
+Inspection Download saves one card; Thoughts Download saves all cards, regardless of search filtering.
+Markdown includes title, summary, body, decision, evidence, contribution and relationships/contributions.
+Both downloads use client-side Blobs and include generated/edited cards; failure offers Retry.
 
-Talk to Minerva opens a dismissible panel; each turn includes prior conversation and selected cards' title, summary, body and relationships.
-`POST /api/talk` uses AI SDK `streamText`, plain `anthropic/claude-sonnet-5`, tag `feature:talk`.
-The composer stays visible while the transcript scrolls. HTTP, interrupted-stream and provider errors show Retry in the panel.
-Consider a move selects its source; exactly one selection requests three title/question/preview suggestions.
-`POST /api/moves` uses one `generateObject` call, the same model and tag `feature:moves`.
-A failed planner keeps the prepared move available and offers Retry. Choosing a move creates one card via `/api/wander` and the shared placement path.
-The derivation edge carries the move title; card-generation failures offer Retry in the panel.
-The atlas-level generation spinner from `90ce710` remains visible through overview, pan and cleared selection.
-Wander, Weave and contextual generation fit with `minZoom: 0.73`; overview thresholds are unchanged.
-Vercel OIDC authenticates Gateway calls; SDK automatic retries are disabled. No new dependencies.
-No voice, chat tools, chat-created cards, persistence, admission, budgets or workspace changes.
+## Verification
 
-## Verification and real responses
+The replay's moves mock fails until the visible error is followed by Retry, surviving Strict Mode aborts.
+Removed toolbar buttons are asserted absent. Dropped the legacy zoom-controls visibility assertion;
+camera/overview behavior, attached edges and generated-card readability assertions remain.
+`npm run check`: lint, TypeScript, 12 tests and production build passed; final rerun recorded in operator response.
+Existing `scripts/verify-atlas.mjs` now checks actual download Blob contents, Retry and generated cards;
+voice covers permission denial, setup failure/Retry, delayed setup, transcript streaming, playback interruption,
+mouse/keyboard hold, dismissal, typed follow-up context and reload reset. No new scripts.
+`MINERVA_LIVE=1 MINERVA_VOICE_ONLY=1` passed with a real Gateway exchange using Chromium's synthetic microphone.
+Evidence: `/tmp/minerva-voice-focused/voice-live.json`; earlier full dev replay: `/tmp/minerva-voice-outputs-dev`.
+Final full dev/start and hosted replay results are in the operator response; fixtures are not live-provider evidence.
 
-`npm run check`: lint, TypeScript, all 12 tests and production build passed.
-Only `scripts/verify-atlas.mjs` extended: mocked failures/retries, partial streaming, conversation context, three moves, lineage and reload reset.
-Each generation asserts zoom output >=73% and a generated card's Select control is visible, including mobile fallback generation.
-`MINERVA_LIVE=1` opts into one Talk and one moves-planner call; older generation calls stay mocked unless `MINERVA_LIVE_EXISTING=1` is also set.
-Live Gateway evidence: `/tmp/minerva-talk-moves-live/talk-moves.json`; mocked screenshots/checks: `/tmp/minerva-talk-moves-mock`.
-An initial live run lost the response in Chromium's network-body reader; the corrected run captures rendered text and passed.
-Talk input: selected A shared tool library; “Suggest one concrete improvement to this selected idea in two sentences.”
+## Real voice exchange (synthetic microphone, actual Gateway response)
 
-One concrete improvement: pair each tool checkout with a mandatory short skills-check or video demo logged in a simple membership system, so borrowers show basic competence before taking higher-risk equipment (saws, drills) home. This reduces damage/injury risk and creates a natural on-ramp to the peer-taught repair sessions already linked to this idea.
-
-Moves input: A food hall and its relationships. Actual returned response:
-
-**Repair-and-Refuel Counters** — What if each kitchen stall shared a wall with a repair bench, so diners watch shoes, phones, or bikes get fixed while they eat? Turns waiting time for repairs into a dining ritual, blending trades and tables.
-
-**Communal Weave Table** — Could one long table rotate ownership hourly between kitchens and craftspeople, becoming a living timetable of the mall's rhythms? A single table that narrates the mall's day through who's sitting at it.
-
-**Ingredient Barter Board** — What if kitchens traded surplus ingredients with repair stalls for scrap materials, displayed on a public barter board? Makes the food hall a visible economy of exchange, not just consumption.
-
-Wander now requires explicit `intent: "move"` for single-card generation; legacy source move metadata stays ordinary Wander.
-`MINERVA_WANDER_REGRESSION=1` verifies this with one real Gateway call; evidence: `/tmp/minerva-wander-regression/wander-regression.json`.
-**The Rent-a-Guild Concourse** — Empty anchor stores become six-week guild halls where a trade collectively occupies and reshapes the space before vanishing.
-**Supper Court Currency** — Meals cooked at the mender's table are paid for with broken objects instead of money, creating a barter economy that accumulates raw material.
-**The Failing Apprentice Wing** — A second, parallel stall run by whoever failed to master the previous six-week trade, turned into a public workshop of visible mistakes.
+You: “Suggest one practical use for an empty shopping mall. Reply in one short sentence. Suggest one practical”
+Minerva: “Convert it into a mixed-use community hub with medical clinics, coworking space, and a food hall to keep steady foot traffic.”
+The fixture loops, explaining the repeated fragment. Actual audio playback was observed in Chromium (22 audio chunks).
+Owner physical check: use localhost/HTTPS with microphone and speakers, allow permission on first press,
+hold/speak/release, confirm the heard transcript and audible reply, then press again to verify interruption.
 
 ## Startup
 
-`cd /Users/brandyn.schult/code/minerva-remove-denser`; `npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run dev -- --port 3016`; open `/`.
-Mocked browser check: `MINERVA_URL=http://127.0.0.1:3016 npm run test:browser`.
-Live suggestions are speculative. No persistence or owner experience acceptance is claimed.
+Use Node 24.20.0/npm 12.0.2 via `npx --yes --package=node@24.20.0 --package=npm@12.0.2`.
+From the worktree, `npm run dev -- --port 3026`; `MINERVA_URL=http://127.0.0.1:3026 npm run test:browser`.
+Production: `npm run build`, `npm run start -- --port 3027`; set `MINERVA_URL=http://127.0.0.1:3027`.
+Inject the voice key from Keychain into the server environment for live voice; no key needed for mocked replay.
+`MINERVA_LIVE=1` opts into one real voice exchange; other provider paths stay mocked unless separately opted in.
