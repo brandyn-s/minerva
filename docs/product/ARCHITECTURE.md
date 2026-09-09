@@ -1,6 +1,11 @@
 # Minerva: architecture
 
-The saved MVP integrates Postgres, AI Gateway and Vercel Workflow; voice and later capabilities remain open. CAPABILITIES records demonstrated scope.
+This file describes the complete product. The `/workspaces` route integrates
+Postgres, AI Gateway and Vercel Workflow and is frozen; the demonstration target
+in [AGENTS](../../AGENTS.md#current-direction) uses only the root atlas, named
+application operations and the AI Gateway adapter. Durable execution, receipts,
+admission and reconciliation are opened by a task message, not by this document.
+CAPABILITIES records demonstrated scope.
 
 ## System shape
 

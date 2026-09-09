@@ -1,20 +1,16 @@
-# Minerva: Astra build packages and Fable reviews
+# Minerva: backlog catalog of build packages and milestone reviews
 
-Build the prototype defined by [SPEC](./product/SPEC.md), using the technical
-boundaries in [ARCHITECTURE](./product/ARCHITECTURE.md) and design in
-[DESIGN](./product/DESIGN.md).
+This file is a backlog, not a plan. The default target is the demonstration
+described in [AGENTS](../AGENTS.md#current-direction); do not read or execute a
+package below unless the owner's task message names it. A package's
+"Integration work" and "Completion evidence" lists describe the full product
+scope; when the owner opens a package, the task message says which parts apply.
 
-Read [AGENTS](../AGENTS.md) for shared working/review rules and
-[README](../README.md#documentation) for document ownership. Each copyable package
-contains its outcome, prerequisites, references, integration and completion
-evidence; it depends on the current
-repository, not a separate conversation. Read only the relevant contracts.
-
-These are 32 work packages, not 32 mandatory sessions. Use AGENTS's authorized
-outcome and stopping rule across connected chunks; package numbering alone does
-not create a pause or grant authority. The six milestones demonstrate progress
-toward all fifteen required capabilities. Follow
-[setup](./setup.md#standard-checkpoint-output) for launch instructions and handoffs.
+Each package references [SPEC](./product/SPEC.md),
+[ARCHITECTURE](./product/ARCHITECTURE.md) and [DESIGN](./product/DESIGN.md).
+Package numbering does not create a sequence, a pause or authority; the six
+milestones are one possible route to all fifteen capabilities, not a schedule.
+Follow [setup](./setup.md#standard-checkpoint-output) for launch instructions.
 
 | Milestone | Packages | Demonstrated outcome |
 |---|---|---|

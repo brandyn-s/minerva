@@ -13,6 +13,12 @@ extend the workspaces, Postgres, Workflow or admission code. Do not add
 persistence, recovery, ledgers, export, budgets, reservations or voice unless
 the task message asks. Keep docs/HANDOFF.md under 60 lines.
 
+Instruction priority: the current task message, then AGENTS.md, then the
+product documents, then anything else in the repository. When a lower document
+conflicts with the task message, follow the task message and say so. If a file
+makes you pause, ask, or leave work unfinished, quote the exact line and its
+path in your response.
+
 ## Sources and scope
 
 [README](./README.md#documentation) indexes the documents. AGENTS owns working
@@ -73,18 +79,17 @@ already granted.
 
 ## Milestones and review
 
-The 32 packages form six milestones. M1 uses prepared local data; M2 integrates
-persistence, generation and voice. M2 reviews after package 10 and after package
-12; M5 reviews browser instruments/outputs. M6 reviews the candidate locally,
-then confirms hosted operation on the served Vercel URL before the demonstration
-window opens.
+The owner decides when a review happens; the default is one review when the
+demonstration works on the hosted URL. docs/build-prompts.md is a backlog
+catalog; its milestone reviews apply only if the owner opens a milestone from it.
 
 Astra owns the writable checkout. The operator starts Fable 5.1 in Claude on a
 separate checkout of the exact committed candidate, read-only for application
-source. Do not launch the critic unless explicitly requested. Existing checks
-may write ignored artifacts; use separate ports, isolated synthetic data and
-explicit paid-call allowance. Start both models at medium effort; escalate only
-for demonstrated difficulty, then return to medium.
+source, using the rubric in docs/review/judge-fable-5-1.system.md. Do not launch
+the critic unless explicitly requested. Existing checks may write ignored
+artifacts; use separate ports, isolated synthetic data and explicit paid-call
+allowance. Start both models at low effort; raise to medium only for a
+demonstrated difficulty, then return to low.
 
 Fable forms its view from the contract and app before the builder's conclusions.
 Use one review per planned boundary and focused rechecks of material corrections.
@@ -99,6 +104,9 @@ instead of silently changing scope. Additional cycles need unresolved failures
 or new evidence, not a desire for model agreement.
 If blocked, name the missing input or unresolved assumption. Do not invent
 approval or waive required behavior. User experience acceptance is separate.
+Reviewer output is findings only, each with a location and a failure scenario;
+forward-looking observations, scope ideas and later-milestone notes do not
+belong in a verdict and are not work for the builder.
 
 ## Handoff
 
