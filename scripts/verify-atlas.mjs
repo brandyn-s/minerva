@@ -378,7 +378,7 @@ try {
     .getByRole("button", { name: "A shopfront for six weeks ←", exact: true })
     .click();
   assert.doesNotMatch(await dialog.innerText(), /Evidence: unknown/);
-  assert.match(await dialog.innerText(), /kept/);
+  assert.doesNotMatch(await dialog.innerText(), /\bkept\b/, "inspection omits the redundant kept label");
   await dialog
     .getByRole("button", { name: "A shared tool library →", exact: true })
     .click();
