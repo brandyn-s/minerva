@@ -129,6 +129,16 @@ git -C "<absolute-build-worktree-path>" worktree add --detach "<absolute-review-
 cd "<absolute-review-checkout-path>"
 ```
 
+The review checkout inherits no credentials, because `.vercel/` and `.env.local`
+are ignored. Where the packet allows live provider evidence, mint a short-lived
+project-scoped OIDC token for that checkout rather than copying the builder's
+environment or issuing a Gateway API key. OIDC tokens last 12 hours, so a review
+running past that window needs a fresh one.
+
+```sh
+vercel project token minerva
+```
+
 Open Fable 5.1 at medium effort in Claude and paste. Fable 5.1 defaults to high
 effort in Claude Code and to medium in Cowork and claude.ai, so set medium
 explicitly. Back the read-only rule with tool permissions in the review checkout:
@@ -241,8 +251,11 @@ Record the window's dates, audience, budget and teardown owner in `docs/HANDOFF.
   and a separate production database with its own credentials. Seed the
   demonstration workspace before the window opens; judges start by duplicating
   it, and re-running the seed restores it.
-- **Durable runs.** Vercel Workflows execute Wander, Agent Drive and other runs;
-  use the stable SDK line unless a demonstrated requirement needs the beta.
+- **Durable runs.** Vercel Workflows execute Wander, Agent Drive and other runs.
+  The demonstration is single-region, so the stable SDK line is sufficient;
+  multi-region run placement is what requires the beta line, and no demonstrated
+  requirement calls for it. Runs stay on the deployment and in the region that
+  created them, so deploying during the window does not disturb work in flight.
 - **Teardown.** When the window closes, pause or delete the deployment, which
   ends its OIDC access to the Gateway, revoke the database credentials, export
   or delete judge data, and record in the handoff what was preserved.

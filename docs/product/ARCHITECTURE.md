@@ -64,6 +64,15 @@ database. Do not replace migrations with schema push or mutate schema during
 requests or ordinary server startup. Add these dependencies with M2 persistence,
 not to the content-free seed or an unused M1 persistence skeleton.
 
+Committing a mutation and its command receipt in one transaction requires a
+driver that supports transactions, which excludes HTTP-only serverless drivers.
+Select the driver and its pooling configuration with M2 / 4 rather than at the
+durable-execution package, and record the choice here. A pooler in transaction
+mode reassigns backend connections between statements, so prepared statements
+must be disabled against those endpoints; the failure is intermittent and
+silently drops work rather than failing the request, so assert the pairing at
+startup instead of relying on the connection string being right.
+
 Postgres owns workspaces, brief/constraint revisions, ideas and immutable
 revisions, derivation edges, semantic links, proposals, reviews, decisions,
 command receipts, operation manifests, runs/steps and exploration observations.
@@ -144,6 +153,18 @@ proposal-saved and terminal events for presentation. Event delivery is not a
 second state store. Reconnect from durable state rather than replaying UI actions.
 Stopping ends future admission; already-admitted work may finish or incur cost.
 
+Workflow keeps a run on the deployment that created it, so releasing new code
+does not disturb runs already in flight and recovery need not defend against
+that case. A run is also pinned at creation to the region of the function that
+started it and stays there for its lifetime; upgrading the SDK does not migrate
+existing runs. Neither property removes the dispatch reconciliation above.
+
+Stop is an application capability, not a platform call. The SDK cancels in-flight
+work by threading an abort signal into steps, and run cancellation outside the
+application is an operator CLI, so a user-facing stop persists a stop intent that
+the run observes and then aborts its own in-flight steps. Keep that path distinct
+from a suspended run needing operator recovery.
+
 Bound SDK retries, workflow retries, repair and replanning under one explicit
 attempt/time/spend policy. Transient failures, invalid output, revision conflict,
 repetition and quota denial have different responses. Preserve partial results
@@ -167,10 +188,21 @@ analysis off the synchronous pointer path; add workers for observed need.
 
 Voice uses the Vercel AI Gateway realtime path: a server route mints a single-use
 short-lived session token after microphone permission is granted, the browser
-connects with that token, and the Gateway bounds each session (25 minutes
-maximum, 5 minutes idle, and closed if no client message arrives within 30
-seconds of connecting). Realtime support is in beta; confirm the installed AI
-SDK channel against current documentation.
+connects with that token, and the Gateway bounds each session. The published
+limits are 25 minutes maximum duration, 5 minutes idle, closure if no client
+message arrives within 30 seconds of connecting, and a 256 KB maximum message
+size; teams also have an unpublished concurrent-session limit that rejects
+further connections until a session ends. Realtime sessions do not accept image
+input. The route mints the token with the deployment's OIDC credential, not a
+Gateway API key, and sets an explicit token lifetime rather than relying on a
+default. Realtime support is in beta and its entry points are still
+`experimental_`-prefixed; pin exact versions and confirm the installed AI SDK
+channel against current documentation before implementing.
+
+Reconnecting does not resume a Gateway session. A reconnect starts a new session
+with no provider-side memory, so resynchronization is the application's work:
+recompile and replay the context the conversation needs while suppressing
+re-execution of intents already applied and discarding stale navigation.
 Provide interruption and context resync. Barge-in stops speech, not unrelated
 work or acknowledged commands. Typed fallback remains.
 Typed and voice collaboration share context compilation and named application
