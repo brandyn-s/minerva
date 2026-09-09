@@ -775,3 +775,43 @@ summary {
 @media(max-width:600px) { .focus-navigation { top: auto; bottom: 145px; right: 10px; width: 230px; max-height: 30vh; } }
 
 .scalable-atlas .field { background: radial-gradient(ellipse at 40% 60%, #fffaf080, transparent 65%), repeating-radial-gradient(ellipse at 10% 120%, transparent 0 110px, #82796205 111px 112px, transparent 113px 142px), var(--paper); }
+
+.talk-panel:not([hidden]) { gap: 10px; }
+.talk-panel > h2 { font-size: 28px; line-height: 1.2; }
+.talk-panel .talk-transcript { min-height: 120px; padding-right: 10px; overscroll-behavior: contain; scrollbar-gutter: stable; }
+.talk-message { padding: 16px 0; border-bottom: 1px solid #c9bea380; }
+.talk-message:first-child { padding-top: 4px; }
+.talk-message:last-child { border-bottom: 0; }
+.talk-message > h3 { margin: 0 0 8px; font: 600 12px/1.4 ui-sans-serif, system-ui, sans-serif; letter-spacing: .04em; color: var(--muted); }
+.talk-message-user { background: #e2d6b840; padding: 12px; border-radius: 6px; }
+.talk-markdown.body-copy { font: 17px/1.6 Georgia, serif; white-space: normal; overflow-wrap: anywhere; }
+.talk-markdown > :first-child { margin-top: 0; }
+.talk-markdown > :last-child { margin-bottom: 0; }
+.talk-markdown p { margin: 0 0 .85em; }
+.talk-markdown h1, .talk-markdown h2, .talk-markdown h3, .talk-markdown h4, .talk-markdown h5, .talk-markdown h6 { margin: 1em 0 .4em; font-size: 1.15em; line-height: 1.35; }
+.talk-markdown ul, .talk-markdown ol { padding-left: 1.4em; margin: .5em 0 1em; }
+.talk-markdown li { margin: .3em 0; }
+.talk-markdown li > p { margin: .3em 0; }
+.talk-markdown a { color: var(--teal); text-decoration: underline; text-underline-offset: 3px; }
+.talk-markdown blockquote { margin: 1em 0; padding: 0 0 0 14px; border-left: 3px solid var(--teal); color: var(--muted); }
+.talk-markdown code { font: 13px/1.5 ui-monospace, monospace; background: #273a3509; padding: 2px 4px; border-radius: 3px; }
+.talk-markdown pre { overflow-x: auto; padding: 12px; background: #273a3509; border-radius: 5px; }
+.talk-markdown pre code { background: none; padding: 0; white-space: pre; }
+.talk-markdown img { max-width: 100%; height: auto; }
+.talk-table { overflow-x: auto; margin: 12px 0; }
+.talk-table table { border-collapse: collapse; font-size: 14px; }
+.talk-table th, .talk-table td { border: 1px solid #c9bea3; padding: 6px 10px; text-align: left; }
+.talk-table th { background: #e2d6b840; }
+.talk-panel form { border-top: 1px solid #c9bea3; padding-top: 10px; }
+.talk-panel form textarea { min-height: 64px; max-height: 140px; font-size: 16px; line-height: 1.5; margin-top: 6px; }
+.talk-latest { align-self: center; font-size: 12px; }
+@media(max-width:600px) { .talk-panel > h2 { font-size: 24px; } .talk-markdown.body-copy { font-size: 16px; } }
+
+.talk-message-user .talk-markdown p { white-space: pre-wrap; }
+
+.talk-panel { width: min(600px, calc(100vw - 40px)); bottom: 16px; padding-bottom: 16px; }
+.talk-actions { display: flex; align-items: flex-start; gap: 12px; }
+.talk-actions .voice-control { flex: 1; min-width: 0; }
+.talk-actions .voice-control .small-note { margin: 4px 0 0; font-size: 11px; line-height: 1.4; }
+.talk-latest { padding: 5px 10px; }
+@media(max-width:600px) { .talk-panel { width: calc(100vw - 20px); bottom: 10px; } }
