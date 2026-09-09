@@ -996,8 +996,8 @@ try {
   const overviewCard = page.locator('[data-id="food"] .overview-target');
   assert.equal(
     await overviewCard.innerText(),
-    "B\nFood hall",
-    "overview shows an identifier and short label",
+    "Food hall",
+    "overview keeps the title without lineage notation",
   );
   const overviewRect = await overviewCard.boundingBox();
   const overviewCamera = await transform();
