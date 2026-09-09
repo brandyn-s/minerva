@@ -476,14 +476,17 @@ function Studio({ session }: { session?: AtlasSession }) {
   const generating = useRef(false);
   const focusedRelations = focusedId ? relationshipsFor(focusedId, relationships).filter(e => connectionKind === "associations" ? e.kind === "association" : connectionKind === "context" ? e.kind === "context" : e.kind !== "association" && e.kind !== "context" && e.direction === (connectionKind === "parents" ? "incoming" : "outgoing")) : [];
   const relationPage = focusedRelations.slice(connectionPage * 6, connectionPage * 6 + 6);
-  const highlighted = new Set((branchId ? relationPage.filter(e => e.id === branchId) : relationPage).map(e => e.id));
+  const highlighted = new Set(selected.length
+    ? relationships.filter(edge => selected.includes(edge.from) || selected.includes(edge.to)).map(edge => edge.id)
+    : (branchId ? relationPage.filter(e => e.id === branchId) : relationPage).map(e => e.id));
+  const highlighting = selected.length > 0 || focusedId !== null;
   const labels = overviewLabels(renderedNodes, viewport, [...(focusedId ? [focusedId] : []), ...selected]);
   const edges = relationships.filter(edge => perspective !== "Constellation" || (edge.kind === "association" && groupFor.has(edge.from) && groupFor.has(edge.to) && groupFor.get(edge.from) !== groupFor.get(edge.to))).map((edge) => ({
     id: edge.id,
     source: perspective === "Constellation" ? `theme-${groupFor.get(edge.from)}` : edge.from,
     target: perspective === "Constellation" ? `theme-${groupFor.get(edge.to)}` : edge.to,
     type: perspective === "Constellation" ? "default" : "floating",
-    label: overview || (!session && focusedId && !highlighted.has(edge.id)) ? undefined : edge.label,
+    label: overview || (!session && highlighting && !highlighted.has(edge.id)) ? undefined : edge.label,
     markerEnd:
       edge.kind === "association" || edge.kind === "context"
         ? undefined
@@ -496,7 +499,7 @@ function Studio({ session }: { session?: AtlasSession }) {
           },
     className: `thread ${edge.kind} ${panel === "inspect" && (edge.from === active || edge.to === active) ? "emphasized" : ""}`,
     style: {
-      opacity: perspective === "Constellation" ? 1 : session ? 1 : edge.kind === "association" && !highlighted.has(edge.id) ? .08 : focusedId ? (highlighted.has(edge.id) ? 1 : .12) : overview ? .7 : 1,
+      opacity: perspective === "Constellation" ? 1 : session ? 1 : edge.kind === "association" && !highlighted.has(edge.id) ? .08 : highlighting ? (highlighted.has(edge.id) ? 1 : .12) : overview ? .7 : 1,
       stroke:
         edge.kind === "association"
           ? "#755584"
@@ -627,11 +630,10 @@ function Studio({ session }: { session?: AtlasSession }) {
     open("inspect");
   }
   function select(id: string) {
-    if (!session) { setFocusedId(id); setConnectionPage(0); setBranchId(null); }
+    const next = selected.includes(id) ? selected.filter(item => item !== id) : [...selected, id];
+    if (!session) { setFocusedId(next.at(-1) ?? null); setConnectionPage(0); setBranchId(null); }
     bringForward(id);
-    setSelected((ids) =>
-      ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id],
-    );
+    setSelected(next);
   }
   function focus(id: string) {
     if (!session) { setFocusedId(id); setConnectionPage(0); setBranchId(null); }
