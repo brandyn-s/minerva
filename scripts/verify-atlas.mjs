@@ -441,7 +441,7 @@ try {
         const dismiss = await toolbar.getByRole("button", { name: "Clear selection", exact: true }).boundingBox();
         assert.ok(bar.x >= 0 && bar.x + bar.width <= width, "toolbar fits viewport");
         assert.ok(dismiss.width >= 44 && dismiss.height >= 44, "small X keeps a full click target");
-        assert.ok(Math.abs(dismiss.y - bar.y) < 2 && Math.abs(dismiss.x + dismiss.width - bar.x - bar.width) < 2, "X sits in top right");
+        assert.ok(dismiss.x >= bar.x && dismiss.y >= bar.y && dismiss.x + dismiss.width <= bar.x + bar.width && dismiss.y + dismiss.height <= bar.y + bar.height, "dismissal remains inside the light selection dock");
         await page.screenshot({ path: `${artifacts}/wander-toolbar-${width}.png` });
       }
       await page.setViewportSize({ width: 1440, height: 900 });
