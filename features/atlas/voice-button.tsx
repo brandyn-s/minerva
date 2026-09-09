@@ -116,7 +116,7 @@ export default function VoiceButton({ cards, selectedIds, messages, onMessages, 
       await session.connect();
       // The token fetch can finish after release, dismissal or a newer press.
       if (current.current !== turn) session.dispose();
-    } catch (cause) { fail(cause instanceof Error ? cause.message : "Microphone access failed. Please retry."); }
+    } catch (cause) { fail(cause instanceof Error && cause.name === "NotAllowedError" ? "Allow microphone access in your browser’s site settings, then hold Retry to speak." : cause instanceof Error ? cause.message : "Microphone access failed. Please retry."); }
   }
 
   function release(cancel = false) {

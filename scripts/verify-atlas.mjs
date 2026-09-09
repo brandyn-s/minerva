@@ -15,7 +15,7 @@ const streamServer = createServer((request, response) => {
 });
 await new Promise((resolve) => streamServer.listen(0, "127.0.0.1", resolve));
 const mockStreamUrl = `http://127.0.0.1:${streamServer.address().port}/api/talk`;
-const liveVoice = process.env.MINERVA_LIVE === "1";
+const liveVoice = process.env.MINERVA_LIVE === "1" && process.env.MINERVA_VOICE_ONLY === "1";
 const voiceInput = "Suggest one practical use for an empty shopping mall. Reply in one short sentence.";
 let voiceFile = process.env.MINERVA_VOICE_WAV;
 if (liveVoice && !voiceFile) {
@@ -299,7 +299,7 @@ try {
   await button("Clear selection").click();
 
   // Wander and Weave: injected failure on the source card, retry, lineage and reload reset.
-  // MINERVA_LIVE=1 opts into one voice exchange. Older live paths are separate.
+  // MINERVA_LIVE=1 opts into one themes call; voice requires VOICE_ONLY too.
   const live = process.env.MINERVA_LIVE_TALK_MOVES === "1";
   const evidence = { mode: live ? "live Gateway" : "mocked responses", url: base, model: "anthropic/claude-sonnet-5" };
   const card = (title) => ({ title, summary: `${title} summary`, body: `${title} concrete draft.` });
@@ -551,6 +551,8 @@ try {
     };
   });
   await inspectFromIndex("Morning repair table");
+  assert.ok((await page.getByRole("region", { name: "Inheritance", exact: true }).innerText()).includes(chosenMove.title));
+  assert.ok((await page.getByRole("region", { name: "Provenance", exact: true }).innerText()).includes("feature:wander"));
   await page.evaluate(() => { window.failDownload = true; });
   await button("Download").click();
   await page.getByRole("dialog").getByRole("alert").waitFor();
@@ -560,12 +562,12 @@ try {
   const cardMarkdown = await page.evaluate(() => window.downloads[0]);
   for (const value of ["# Morning repair table", "## Summary", "Morning repair table summary", "## Body",
     "Morning repair table concrete draft.", "## Decision", "unkept draft", "## Evidence", "unknown",
-    "## Relationships", "incoming / derivation", chosenMove.title, "Contribution:"]) assert.ok(cardMarkdown.includes(value), value);
+    "## Inheritance", "## Provenance", "feature:wander", "## Relationships", "incoming / derivation", chosenMove.title, "Contribution:"]) assert.ok(cardMarkdown.includes(value), value);
   await close();
   await page.getByRole("button", { name: /^Thoughts / }).click();
   await page.getByPlaceholder("Search titles").fill("Morning repair table");
   const downloadedAtlas = page.waitForEvent("download");
-  await button("Download").click();
+  await button("Download all cards").click();
   assert.equal((await downloadedAtlas).suggestedFilename(), "minerva-atlas.md");
   const atlasMarkdown = await page.evaluate(() => window.downloads[1]);
   assert.equal((atlasMarkdown.match(/^## /gm) || []).length, total, "export ignores index filter and includes every generated card");
@@ -576,6 +578,78 @@ try {
   await writeFile(`${artifacts}/outputs.json`, JSON.stringify({ card: cardMarkdown, atlas: atlasMarkdown }, null, 2));
   await close();
 
+  // All perspectives share cards and selection; only themes may call the network.
+  let themeRequests = 0, failThemes = false;
+  const themeInputs = [];
+  await page.route("**/api/themes", async route => {
+    themeRequests++;
+    const input = route.request().postDataJSON(); themeInputs.push(input);
+    if (failThemes) return route.fulfill({ status: 500, json: { error: "Themes fixture failure" } });
+    if (process.env.MINERVA_LIVE === "1" && themeRequests === 1) {
+      const response = await route.fetch({ timeout: 90000 });
+      const output = await response.json();
+      assert.equal(response.status(), 200, JSON.stringify(output));
+      await writeFile(`${artifacts}/themes-live.json`, JSON.stringify({ input, output }, null, 2));
+      return route.fulfill({ response, json: output });
+    }
+    const groups = input.existingGroups.length ? [{ name: input.existingGroups[0], reason: "Cards explore shared uses of the mall.", memberIds: input.cards.map(c => c.id) }] : [
+      { name: "Shared activity", reason: "Cards explore shared uses of the mall.", memberIds: input.cards.filter(c => c.id !== "tools").map(c => c.id) },
+      { name: "Tools and learning", reason: "Practical skills and equipment.", memberIds: input.cards.filter(c => c.id === "tools").map(c => c.id) },
+    ];
+    return route.fulfill({ json: { groups } });
+  });
+  const cardIds = () => page.locator(".react-flow__node:has(.thought)").evaluateAll(elements => elements.map(e => e.dataset.id).sort());
+  const chosenIds = () => page.locator(".react-flow__node:has(.thought.chosen)").evaluateAll(elements => elements.map(e => e.dataset.id).sort());
+  const beforeIds = await cardIds(), beforeChosen = await chosenIds();
+  assert.ok(beforeChosen.length);
+  const requests = [];
+  const track = request => requests.push(request.url());
+  page.on("request", track);
+  await button("Compare").click();
+  const comparison = await page.locator(".comparison-grid").innerText();
+  const cameras = new Map();
+  const lineagePositions = await page.locator(".react-flow__node:has(.thought)").evaluateAll(elements => elements.map(e => e.style.transform));
+  for (const view of ["Evolution", "Lineage", "Constellation", "Evolution", "Constellation", "Lineage"]) {
+    const start = requests.length;
+    await button(view).click(); await settle();
+    if (view === "Constellation") await page.getByText(/Grouped into themes by Minerva · grouped at/).waitFor({ timeout: 90000 });
+    await settle();
+    assert.equal(await page.locator(".comparison-grid").innerText(), comparison);
+    if (cameras.has(view)) assert.equal(await transform(), cameras.get(view), `${view} remembers its camera`);
+    cameras.set(view, await transform());
+    if (view === "Lineage") assert.deepEqual(await page.locator(".react-flow__node:has(.thought)").evaluateAll(elements => elements.map(e => e.style.transform)), lineagePositions);
+    if (view === "Constellation") assert.ok(await page.locator(".theme-heading").first().isVisible());
+    assert.deepEqual(await cardIds(), beforeIds);
+    assert.deepEqual(await chosenIds(), beforeChosen);
+    if (view !== "Constellation") assert.deepEqual(requests.slice(start), [], `${view} must not request the network`);
+  }
+  assert.equal(themeRequests, 1);
+  await close();
+  await button("Constellation").click(); await settle();
+  const previousGrouping = await page.locator(".theme-heading").allTextContents();
+  failThemes = true;
+  await button("Regroup").click();
+  await page.getByRole("region", { name: "Theme grouping" }).getByRole("alert").waitFor();
+  assert.deepEqual(await page.locator(".theme-heading").allTextContents(), previousGrouping);
+  assert.ok(await page.getByRole("region", { name: "Theme grouping" }).getByRole("button", { name: "Retry", exact: true }).isVisible());
+  failThemes = false;
+  await page.getByRole("region", { name: "Theme grouping" }).getByRole("button", { name: "Retry", exact: true }).click(); await settle();
+  assert.equal(themeRequests, 3);
+  assert.equal(await page.locator(".react-flow__edge").count(), 1, "only the cross-group association remains");
+  assert.equal(await page.locator(".react-flow__edge.derivation,.react-flow__edge.recombination").count(), 0);
+  await button("Lineage").click();
+  await inspectFromIndex("Morning repair table");
+  await page.getByText("Edit prepared text", { exact: true }).click();
+  await page.getByRole("dialog").locator("details textarea").fill("Edited theme content");
+  await close();
+  await button("Constellation").click(); await settle();
+  assert.equal(themeRequests, 4);
+  assert.equal(themeInputs[3].cards.length, 1, "only edited cards are submitted");
+  assert.ok(themeInputs[3].existingGroups.length);
+  page.off("request", track);
+  await page.screenshot({ path: `${artifacts}/constellation.png` });
+  await writeFile(`${artifacts}/perspectives.json`, JSON.stringify({ themeRequests, themeInputs, beforeIds, beforeChosen }, null, 2));
+  await page.unroute("**/api/themes");
   await writeFile(`${artifacts}/wander-weave.json`, JSON.stringify(evidence, null, 2));
   await page.reload();
   await page.locator(".thought").first().waitFor();
@@ -1029,6 +1103,7 @@ try {
       await voicePage.keyboard.down("Space");
       await voicePage.getByRole("dialog").getByRole("alert").waitFor();
       await voicePage.keyboard.up("Space");
+      assert.equal(await voicePage.getByRole("dialog").getByRole("alert").innerText(), "Allow microphone access in your browser’s site settings, then hold Retry to speak.");
       assert.equal(tokenCalls, 0, "denied permission never mints a token");
       await vb("Retry").focus();
       await voicePage.keyboard.down("Space");
