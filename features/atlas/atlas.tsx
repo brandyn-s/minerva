@@ -119,16 +119,16 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
     if (pendingOpen.current) clearTimeout(pendingOpen.current);
     if (event.detail === 0) ui.inspect(thought.id);
     else if (event.detail === 1) {
-      // Wait briefly so a double-click can focus without an inspection overlay
+      // Wait briefly so a double-click can select without an inspection overlay
       // covering the card before its second click arrives.
       pendingOpen.current = setTimeout(() => ui.inspect(thought.id), 250);
     }
   }
-  function focusCard(event: ReactMouseEvent) {
+  function selectCard(event: ReactMouseEvent) {
     if (!isCardSurface(event)) return;
     if (pendingOpen.current) clearTimeout(pendingOpen.current);
     event.preventDefault();
-    ui.focus(thought.id);
+    ui.select(thought.id);
   }
   const updateNodeInternals = useUpdateNodeInternals();
   const lastGeometry = useRef({
@@ -170,7 +170,7 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
       aria-busy={loading}
       className={`thought ${loading ? "thought-generating" : ""} ${ui.overview ? "thought-overview" : ""} ${thought.kind} ${ui.selected.includes(thought.id) ? "chosen" : ""}`}
       onClick={openCard}
-      onDoubleClick={focusCard}
+      onDoubleClick={selectCard}
       style={ui.resize && !ui.overview ? { width: "100%", minHeight: "100%" } : undefined}
     >
       {ui.resize && !ui.overview && <NodeResizer minWidth={200} minHeight={120} maxWidth={1000} maxHeight={1600}
@@ -187,7 +187,7 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
       {ui.overview ? (
         <TooltipButton
           aria-label={`Open ${thought.title}`}
-          title="Click to open; double-click to focus; drag or use arrow keys to move"
+          title="Click to open; double-click to select; drag or use arrow keys to move"
           className={`overview-target card-grip nopan ${ui.scalable ? "scale-target" : ui.compact ? "compact-target" : ""}`}
           style={{ transform: `scale(${1 / ui.zoom})`, ...(ui.scalable ? { width: diameter, height: diameter, minHeight: diameter } : {}) }}
         >
