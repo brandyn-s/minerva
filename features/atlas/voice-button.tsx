@@ -32,7 +32,7 @@ export default function VoiceButton({ cards, selectedIds, messages, onMessages, 
   onMessages: (messages: TalkRequest["messages"]) => void;
   onBusy: (busy: boolean) => void; disabled: boolean;
 }) {
-  const [status, setStatus] = useState("Hold to speak, release to send.");
+  const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [held, setHeld] = useState(false);
   const current = useRef<{ session?: VoiceSession; stream?: MediaStream; held: boolean;
@@ -71,7 +71,7 @@ export default function VoiceButton({ cards, selectedIds, messages, onMessages, 
       let responseDone = false, heard = false, spoken = false, playing = false, connected = false;
       const finish = () => {
         if (!responseDone || !heard || !spoken || playing || current.current !== turn) return;
-        stop(); onBusy(false); setStatus("Hold to speak, release to send.");
+        stop(); onBusy(false); setStatus("");
       };
       const session = new VoiceSession({
         model, api: { token: "/api/voice" }, maxEvents: 1,

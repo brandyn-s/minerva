@@ -1,8 +1,8 @@
 # Compass control and shared tooltips
 
-Branch: `codex/compass-tooltips`.
+Branch: `main`.
 Worktree: `/Users/brandyn.schult/code/minerva`.
-Base SHA: `131aa369ef2a1a4218a616eea7ccfb34e4605e1f`; changes are uncommitted.
+Compass commit: `8da7545`; integrated with remote updates through `50fd2a0`.
 
 ## Outcome
 The root atlas Expedition button is a 44px engraved compass in a 48px control.
@@ -23,5 +23,8 @@ interactions were not exercised in this focused pass. No provider calls.
 Local dev preview is running at http://127.0.0.1:3000/.
 From this checkout: `npm run dev -- --port 3000`.
 Use the Node/npm launcher in AGENTS.md if the installed runtime differs.
-Next role: owner visual inspection. Commit, publication and deployment are not
-part of this task; no critic was launched.
+Next role: owner visual inspection. Commit, merge and push are authorized;
+no critic was launched.
+
+The merged remote updates face Minerva toward the canvas and use the cameo
+in the Talk header; the idle voice instruction is removed.

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import type { TalkRequest } from "./generation";
 import VoiceButton from "./voice-button";
@@ -87,9 +88,8 @@ export default function TalkPanel({ open, close, cards, selectedIds }: {
 
   return <aside id="minerva-talk" hidden={!open} className="detail-panel talk-panel" role="dialog" aria-label="Talk to Minerva"
     onKeyDown={(event) => { if (event.key === "Escape") { event.stopPropagation(); close(); } }}>
-    <div className="panel-heading"><span className="instrument-label">Think together</span>
+    <div className="panel-heading talk-heading"><Image className="talk-cameo" src="/images/minerva-engraved-cameo.png" alt="Minerva" width={56} height={56} sizes="56px" />
       <button aria-label="Close panel" onClick={close}>×</button></div>
-    <h2>Talk to Minerva</h2>
     <div ref={transcript} className="talk-transcript" role="log" aria-live="polite" onScroll={(event) => { const el = event.currentTarget; followReply.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40; setShowLatest(!followReply.current); }}>
       {messages.map((message, index) => <section key={index} className={`talk-message talk-message-${message.role}`}>
         <h3>{message.role === "user" ? "You" : "Minerva"}</h3><MessageContent text={message.content} />
