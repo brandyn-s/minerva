@@ -826,6 +826,7 @@ try {
     assert.equal(calls.length, condition === "stop" ? 2 : count, "one request per step, no retries or extra steps");
     assert.equal(await page.locator(".expedition-steps > li").count(), count);
     assert.equal(await page.locator(".thought").count(), 6 + count, "all completed work remains on atlas");
+    await page.waitForFunction(expected => document.querySelectorAll(".react-flow__edge").length === expected, 7 + count, { timeout: 5000 });
     assert.equal(await page.locator(".react-flow__edge").count(), 7 + count, "each step has one derivation edge");
     assert.equal(await page.locator(".expedition-goal").textContent(), goal, "frozen goal is unchanged at the end");
     const stopReason = await page.locator(".expedition-stop").innerText();

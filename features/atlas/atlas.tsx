@@ -101,7 +101,7 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
         circular: ui.overview && (ui.scalable || ui.compact),
       };
       const signature = JSON.stringify(geometry);
-      if (measuredGeometry.current !== signature) {
+      if (measuredGeometry.current !== signature || !data.geometry) {
         measuredGeometry.current = signature;
         updateNodeData(id, { geometry });
       }
@@ -110,7 +110,7 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
     const observer = new ResizeObserver(measure);
     observer.observe(visible);
     return () => observer.disconnect();
-  }, [id, ui.overview, ui.compact, ui.zoom, ui.scalable, updateNodeData]);
+  }, [id, ui.overview, ui.compact, ui.zoom, ui.scalable, updateNodeData, data.geometry]);
   const pendingOpen = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(
     () => () => {
@@ -1092,8 +1092,9 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
               }
               if (perspective !== "Lineage") setPositions(current => ({ ...current, [perspective]: { ...current[perspective], ...Object.fromEntries(changes.filter(c => c.type === "position" && c.position).map(c => ["id" in c ? c.id : "", c.type === "position" ? c.position! : { x: 0, y: 0 }])) } }));
               // React Flow's geometry updates replace the rendered node, whose position
-              // belongs to this view. Keep those updates from overwriting Lineage.
-              setNodes((current) => applyNodeChanges(changes.filter(c => (!("id" in c) || !c.id.startsWith("theme-")) && (perspective === "Lineage" || c.type !== "position")).map(c => c.type === "replace" ? { ...c, item: { ...c.item, position: current.find(n => n.id === c.id)?.position ?? c.item.position } } : c), current));
+              // belongs to this view. Keep those updates from overwriting Lineage,
+              // or discarding measurements that arrived while geometry was publishing.
+              setNodes((current) => applyNodeChanges(changes.filter(c => (!("id" in c) || !c.id.startsWith("theme-")) && (perspective === "Lineage" || c.type !== "position")).map(c => c.type === "replace" ? { ...c, item: { ...c.item, measured: current.find(n => n.id === c.id)?.measured ?? c.item.measured, position: current.find(n => n.id === c.id)?.position ?? c.item.position } } : c), current));
             }}
             onNodeDragStart={() => { if (!session) gesture.current = captureLayout(); }}
             onNodeDragStop={(_, node) => { if (session) void saveLayout(node.id, node.position).catch(() => {});
