@@ -40,7 +40,7 @@ export default function ThoughtCatalogue({ cards, relationships, selected, selec
             <input type="checkbox" aria-label={`Select ${card.title}`} checked={selected.includes(card.id)} onChange={() => select(card.id)} />
             <Icon className="catalogue-kind" size={25} aria-hidden="true" />
             <button className="catalogue-disclosure" aria-expanded={isOpen} aria-controls={`thought-preview-${card.id}`} onClick={() => setExpanded(isOpen ? null : card.id)}>
-              <span><strong>{card.title}</strong><span className="instrument-label">{card.kind} · {card.decision}</span></span>
+              <span><strong>{card.title}</strong><span className="instrument-label">{card.kind}{card.decision !== "kept" && ` · ${card.decision}`}</span></span>
               {isOpen ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
             </button>
           </div>

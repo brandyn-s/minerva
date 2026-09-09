@@ -2,7 +2,7 @@
 
 Worktree: /Users/brandyn.schult/code/minerva-regroup-selection
 Branch: feat/wander-exploration-first
-State: uncommitted implementation for owner review.
+Implementation: f1db13c, integrated with current main for authorized release.
 
 ## Outcome
 Wander separates source context from a concise exploration heading and makes
@@ -21,4 +21,4 @@ Visual comparison: design-qa.md. Successful live generation was not retested.
 npm run dev -- --port 4320
 Built app: http://127.0.0.1:4340/
 Temporary fixture-response preview: http://127.0.0.1:4341/
-Next role: owner review. No commit, push, merge or deployment in this change.
+Next role: owner review of the authorized production release.

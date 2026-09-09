@@ -1230,6 +1230,12 @@ summary {
 @media(max-width:600px) { .themes-status { font-size: 14px; gap: 8px; } .themes-status > span:first-child { padding-right: 8px; } }
 .themes-status { top: 72px; }
 
+.card-download { margin: 8px 0 16px; }
+.card-download button { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; margin: 0; padding: 7px 11px; border: 1px solid var(--line); border-radius: 5px; background: transparent; font: 13px ui-monospace, monospace; }
+.card-download button:hover { background: #273a350c; border-color: var(--ink); }
+.card-download .download-format { border-left: 1px solid var(--line); padding-left: 8px; color: var(--muted); font-size: 11px; }
+.card-download button:focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
+
 /* Wander: immediate free exploration, with optional suggested moves. */
 .detail-panel.wander-panel { width: min(600px, calc(100vw - 32px)); padding: 24px 32px; background: #f5eddb; }
 .wander-source { margin: 24px 0 28px; }
