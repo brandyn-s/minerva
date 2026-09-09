@@ -760,7 +760,7 @@ try {
   const previousGrouping = await page.locator(".theme-heading").allTextContents();
   failThemes = true;
   await page.getByRole("region", { name: "Theme grouping" }).getByRole("button", {name: "Clear selection", exact: true}).click();
-  await button("Regroup all").click();
+  await button("Regroup").click();
   await button("Preview themes").click();
   await page.getByRole("region", { name: "Regroup all ideas" }).getByRole("alert").waitFor();
   assert.deepEqual(await page.locator(".theme-heading").allTextContents(), previousGrouping);
