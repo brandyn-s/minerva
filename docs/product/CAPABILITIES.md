@@ -42,11 +42,14 @@ scores or imply that preparing demo data completes a capability.
 
 ## Current milestone
 
-M1 has not started. The seed contains a runnable landing page, documentation
-and CI. There are no live providers, configured spending, workspaces or deployment.
-The generated application begins with packages 1-3 and records its seed revision.
-Its shared demo starts from **What to do with a dead shopping mall** and grows
-with the tools through M6; the template does not yet contain that dataset.
+M1 package 1 establishes the application repository, identity and inherited-test
+conversion. The runnable landing page, documentation and CI are present; product
+capabilities remain not started. See [the handoff](../HANDOFF.md) for seed provenance,
+verification and the next connected outcome. There are no live providers,
+configured spending, workspaces or deployment.
+The shared demo starts from **What to do with a dead shopping mall**, with editable
+starting proposals A: independent retail shops, B: a food hall and C: a shared
+tool library. Its data grows with the tools through M6; it is not implemented yet.
 
 ## Review and acceptance
 
@@ -60,5 +63,6 @@ teardown outcome here when they exist.
 
 ## Next outcome
 
-Generate the public `minerva` repository from this seed, set identity
-using [setup](../setup.md), and build M1's original populated interactive proof.
+Package 2: implement the runnable fixture/domain/presentation foundation, then
+package 3's populated interactive proof. The M1 review and owner experience
+acceptance follow the complete proof; repository initialization adds no review gate.

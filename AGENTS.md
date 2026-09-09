@@ -9,12 +9,13 @@ rules; SPEC owns product behavior; ARCHITECTURE owns technical boundaries;
 DESIGN owns visual and interaction design; CAPABILITIES owns evidence. Read the
 selected package and relevant contracts, not the whole catalog. Packages state
 outcomes, prerequisites, relevant references, integration work and completion
-evidence; link to the owning contract instead of restating it. Keep template
+evidence; link to the owning contract instead of restating it. Keep application
 docs current-only: no commented-out alternatives, decision history or duplicate
 specifications.
 
-Keep this seed content-free. Generate the application from it, then implement
-in that repository. Author custom application code and assets for this build;
+This is the generated Minerva application repository. Implement the application
+here; seed provenance and current scope are in docs/HANDOFF.md.
+Author custom application code and assets for this build;
 reuse its existing work and appropriately licensed frameworks, libraries and
 assets. Do not port another application's implementation.
 
@@ -110,11 +111,11 @@ npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run dev
 npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run check
 ```
 
-The seed has documentation-consistency tests, not product coverage. Add relevant
+The inherited checks cover documentation and configuration, not product behavior. Add relevant
 behavior coverage in application slices. Text checks do not prove that prose is
 consistent; review package prerequisites and completion criteria together against
 their owning contracts. Use a branch and PR; merge only after
-required CI. Generated repositories need their own settings. Report meaningful
+required CI. Keep repository settings aligned with docs/setup.md. Report meaningful
 results, failures and unverified boundaries.
 
 <!-- BEGIN:nextjs-agent-rules -->

@@ -6,12 +6,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/brandyn-s/minerva-template.git"
+    "url": "git+https://github.com/brandyn-s/minerva.git"
   },
   "bugs": {
-    "url": "https://github.com/brandyn-s/minerva-template/issues"
+    "url": "https://github.com/brandyn-s/minerva/issues"
   },
-  "homepage": "https://github.com/brandyn-s/minerva-template#readme",
+  "homepage": "https://github.com/brandyn-s/minerva#readme",
   "engines": {
     "node": "24.20.0",
     "npm": "12.0.2"

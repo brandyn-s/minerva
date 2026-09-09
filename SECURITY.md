@@ -16,7 +16,7 @@ Do not disclose a vulnerability in a public issue, discussion, pull request, or
 commit.
 
 Use
-[GitHub's private security-advisory form](https://github.com/brandyn-s/minerva-template/security/advisories/new).
+[GitHub's private security-advisory form](https://github.com/brandyn-s/minerva/security/advisories/new).
 If it is unavailable, do not send vulnerability details through a public
 channel; wait for the maintainer to restore private reporting or publish a
 verified private contact method.
