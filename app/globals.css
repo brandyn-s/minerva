@@ -1169,3 +1169,11 @@ summary {
 
 .relationship-label-toggle { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 8px 12px; font: 13px/1.5 ui-monospace, monospace; cursor: pointer; }
 .relationship-label-toggle input { width: 18px; height: 18px; margin: 0; accent-color: var(--teal); }
+
+/* Compact theme toolbar */
+.themes-status { border: 0; background: var(--paper); padding: 4px 0; gap: 12px; box-shadow: none; font-size: 16px; }
+.themes-status > span:first-child { padding-right: 12px; border-right: 1px solid var(--line); }
+.themes-status [data-regroup-trigger] { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; margin: 0; padding: 7px 12px; border: 1px solid var(--line); border-radius: 5px; background: transparent; font-size: 13px; }
+.themes-status [role="alert"] { flex-basis: 100%; font-size: 13px; }
+@media(max-width:600px) { .themes-status { font-size: 14px; gap: 8px; } .themes-status > span:first-child { padding-right: 8px; } }
+.themes-status { top: 72px; }

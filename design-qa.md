@@ -10,3 +10,6 @@ Compared the catalogue hierarchy, checkbox/icon/title columns, disclosures, expa
 Corrected the sticky header background to match the drawer after the first capture. The final browser capture confirms the matching parchment surface and visible preview actions. No blocking visual issues found. Search and empty state, selection independently of expansion, and retained selection after clearing search were verified in the browser. Repository lint, typecheck, 12 tests and build passed.
 
 Compact refinement: reduced title text to 18px, heading to 23px, preview to 15px, row padding to 10px, and header controls to matching 34px squares. Fixed inherited button min-height causing close/menu misalignment. Browser refresh confirms six collapsed thoughts and selection footer fit in the drawer, with both header buttons aligned. Repository checks passed again.
+
+# Compact regroup toolbar
+Source: user-selected compact toolbar image. Implemented live count, thin divider, refresh icon, compact Regroup button, no surrounding border. Screenshot: /tmp/minerva-compact-toolbar.png (1280x720, 1x). Tested with imported synthetic six-idea/four-theme data; Regroup opens the existing preview with all six ideas. No paid generation. Moved toolbar below atlas icons after detecting overlap. Repository checks passed.
