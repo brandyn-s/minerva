@@ -1,9 +1,9 @@
 # Remove Evidence labels
 
-Branch: `fix/remove-evidence-labels`, integrated with main `16f39b7`.
+Branch: `fix/remove-evidence-labels`, integrated with main `4117cd3`.
 Worktree: `/Users/brandyn.schult/code/minerva-wander-toolbar`.
 Change: remove visible Evidence labels from the card inspector, reader Details, and comparison view.
-Evidence data and Markdown downloads remain intact; decision labels are unchanged.
+Evidence data and Markdown downloads remain intact; the latest kept-label cleanup is preserved.
 
 Validation: `npm run check` passed (lint, typecheck, tests, production build).
 Browser inspection verified all three affected views without Evidence labels.
