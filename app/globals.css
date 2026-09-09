@@ -89,7 +89,6 @@ h1 {
   margin: 3px 0 0;
 }
 .instrument-label,
-.fixture-label,
 .card-top,
 .card-state,
 .legend,
@@ -103,14 +102,6 @@ h1 {
   text-transform: uppercase;
   letter-spacing: 1px;
   color: var(--muted);
-}
-.fixture-label {
-  margin-left: auto;
-  text-align: right;
-  color: var(--muted);
-}
-.fixture-label span {
-  display: block;
 }
 .field {
   position: relative;
@@ -158,7 +149,7 @@ h1 {
   outline: 3px solid var(--bronze);
   outline-offset: 4px;
 }
-.react-flow__node.dragging .thought {
+.react-flow__node.dragging .thought:not(.thought-overview) {
   box-shadow: 0 16px 25px #273a3520;
 }
 .card-top {
@@ -230,6 +221,7 @@ h1 {
   background: var(--ink);
 }
 .react-flow__handle {
+  visibility: hidden;
   width: 6px;
   height: 6px;
   border: 0;
@@ -244,15 +236,14 @@ h1 {
 .react-flow__edge-textbg {
   fill: var(--paper);
 }
-.thread.emphasized path {
-  stroke-width: 3;
-}
 .field-tools {
   position: absolute;
   top: 16px;
   left: 20px;
   display: flex;
   gap: 6px;
+  flex-wrap: wrap;
+  max-width: calc(100% - 40px);
 }
 .field-tools span {
   color: var(--muted);
@@ -265,7 +256,25 @@ h1 {
   display: flex;
   gap: 18px;
   pointer-events: none;
-  color: var(--muted);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+}
+.legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.legend-line {
+  width: 24px;
+  border-top: 2px solid #28686a;
+}
+.legend-line.context {
+  border-top: 2px dotted #645f51;
+}
+.legend-line.association {
+  border-top: 2px dashed #755584;
 }
 .violet {
   color: #755584;
@@ -288,7 +297,7 @@ h1 {
   max-width: 400px;
 }
 .zoom-controls {
-  display: flex;
+  display: none;
   align-items: center;
   background: var(--card);
   border: 1px solid var(--line);
@@ -319,15 +328,7 @@ h1 {
   background: var(--card);
   border-left: 3px solid var(--teal);
 }
-.overview-target span {
-  display: block;
-  font:
-    10px/1.5 ui-monospace,
-    monospace;
-  margin-top: 4px;
-  color: var(--muted);
-}
-.thought:has(.overview-target) {
+.thought.thought-overview {
   background: transparent;
   border: 0;
   box-shadow: none;
@@ -537,10 +538,6 @@ summary {
   .workspace-heading {
     padding-left: 14px;
   }
-  .fixture-label {
-    font-size: 9px;
-    max-width: 110px;
-  }
   h1 {
     font-size: 16px;
   }
@@ -657,40 +654,8 @@ summary {
 .thought-group span {
   font-size: 11px;
 }
-.overview-note {
-  position: absolute;
-  z-index: 5;
-  left: 20px;
-  top: 68px;
-  max-width: 400px;
-  font:
-    11px/1.5 ui-monospace,
-    monospace;
-  background: var(--paper);
-  padding: 5px 8px;
-}
-.overview-note button {
-  background: transparent;
-  border: 0;
-  padding-left: 0;
-}
-@media (max-width: 760px) {
-  .overview-note {
-    top: 64px;
-    left: 10px;
-    right: 10px;
-  }
-}
-
-@media (min-width: 761px) {
-  .overview-note {
-    top: auto;
-    bottom: 80px;
-  }
-}
-
 /* Overview targets alone receive input, so invisible card bounds cannot cover neighbors. */
-.thought:has(.overview-target) {
+.thought.thought-overview {
   pointer-events: none;
 }
 .overview-target.card-grip {
@@ -701,9 +666,54 @@ summary {
   cursor: grabbing;
 }
 
-.thought.chosen:has(.overview-target) {
+.thought.chosen.thought-overview {
   outline: none;
 }
 .thought.chosen .overview-target {
   box-shadow: 0 0 0 3px var(--bronze);
+}
+
+.workspace-browser {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+.workspace-browser a { color: var(--teal); }
+.save-status {
+  position: fixed;
+  bottom: 80px;
+  left: 24px;
+  z-index: 20;
+  max-width: min(500px, calc(100vw - 48px));
+  padding: 8px 12px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  font: 12px/1.4 ui-monospace, monospace;
+}
+.brand a { color: var(--teal); font: 12px/1.4 ui-monospace, monospace; }
+.layout-menu { position: relative; background: var(--card); border: 1px solid var(--line); padding: 10px; font-size: 12px; max-width: 300px; }
+.layout-menu summary { cursor: pointer; min-height: 24px; }
+.layout-menu[open] { z-index: 30; }
+.layout-menu input, .layout-menu select { max-width: 100%; display: block; margin: 8px 0; }
+.workspace-columns {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(0, 3fr);
+  gap: 32px;
+}
+.workspace-columns nav button { margin: 4px; }
+.workspace-columns ul { list-style: none; padding: 0; }
+.workspace-columns fieldset { border: 0; padding: 0; margin: 0 0 20px; }
+.workspace-columns label { display: block; margin: 16px 0; }
+.workspace-columns input, .workspace-columns textarea {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  font-size: 16px;
+}
+.workspace-columns button:disabled { cursor: default; opacity: 0.65; }
+@media (max-width: 650px) {
+  .workspace-columns { grid-template-columns: 1fr; gap: 16px; }
 }

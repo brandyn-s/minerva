@@ -5,9 +5,11 @@ export type Thought = {
   summary: string;
   body: string;
   kind: "brief" | "proposal" | "recombination" | "exploration";
-  decision: "starting material" | "kept" | "unkept draft";
-  evidence: "prepared example" | "unknown";
+  decision: "starting material" | "kept" | "unkept draft" | "set aside";
+  evidence: "prepared example" | "unknown" | "pending" | "unavailable" | "supported" | "contradicted" | "unclear";
   contribution: string;
+  generation?: { model: string; manifestId: string; mechanism: string; prerequisites: string[]; uncertainties: string[]; requestedChange: string; observedChange: string };
+  assessment?: { goalFidelity: string; constraints: string; causalDependencies: string; transformation: string };
   move: { title: string; question: string; preview: string };
 };
 export type Relationship = {

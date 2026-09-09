@@ -1,6 +1,6 @@
 # Minerva: architecture
 
-The shell does not yet implement the services described here.
+The saved MVP integrates Postgres, AI Gateway and Vercel Workflow; voice and later capabilities remain open. CAPABILITIES records demonstrated scope.
 
 ## System shape
 
@@ -223,8 +223,9 @@ configured budget, database, voice implementation or deployed application.
 
 The application implements isolated development/review data/configuration, explicit
 migration execution, pooler-compatible database connections, durable dispatch
-reconciliation, correlated run/request diagnostics, and documented backup/
-restore and reproducible local startup paths. Test recovery on isolated data.
+reconciliation, correlated run/request diagnostics and reproducible local startup
+paths. Database backup/restore features and procedures are excluded. Test
+application restart recovery on isolated data.
 Browser close does not stop running local services; service shutdown does stop
 local execution. Preserve checkpoints and reconcile work after service restart.
 The local Workflow world queues steps in memory, so a local restart surfaces
@@ -250,7 +251,7 @@ existing handoff rather than another decision system.
 
 | Owning milestone/package | Policy to define with the affected feature |
 |---|---|
-| M2 / 4 | Workspace deletion, retained history, export and backup/restore interactions |
+| M2 / 4 | Managed Postgres; recoverable workspace deletion hides work while retaining history until explicit permanent purge; complete versioned JSON export. Backup/restore is excluded. |
 | M2 / 8 | Pause/stop versus admitted work, restart reconciliation and conflicting run effects |
 | M2 / 11-12 | Transcript retention/deletion before typed-conversation storage; raw-audio retention and reconnect behavior with voice |
 | M4 / 21-24 | Concurrent Wander/Agent Drive scope and goal-specific completion evidence, including human judgment for subjective outcomes |

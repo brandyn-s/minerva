@@ -193,6 +193,11 @@ operator handoff at the stopping boundary defined in AGENTS.md.
 
 ## Vercel demonstration hosting
 
+Fable's M1 review found the stable alias public while per-deployment URLs
+redirected to Vercel SSO under default deployment protection. Use the stable
+alias for judge-facing links and verify that behavior again at M6. The owner
+deferred hosted atlas verification; local M1 approval does not establish it.
+
 ### Node and npm
 
 Vercel supports Node 24 and manages minor/patch upgrades within that major.
@@ -249,3 +254,20 @@ Record the window's dates, audience, budget and teardown owner in `docs/HANDOFF.
 
 See [ARCHITECTURE](./product/ARCHITECTURE.md#provider-and-deployment-boundaries)
 for the ownership and spend boundaries these steps implement.
+
+## Saved MVP operation
+
+Open `/workspaces` for managed persistence and bounded live generation; `/` is
+still the offline M1 fixture. Copy the variable names from `.env.example` and
+obtain development credentials with the linked Vercel environment. Neon Free
+is connected to development/preview only. Run `npm run db:migrate` explicitly
+when applying the checked-in migrations. No database backup/restore feature is
+included. Full workspace JSON exports include execution records.
+
+Host/Origin guards allow configured exact origins; preview builds also accept
+the immutable hostname supplied by `VERCEL_URL`. Other local ports need
+`MINERVA_ORIGINS` configured accordingly. A local production build also needs
+that setting. Generated Workflow routes and local execution data are ignored.
+Keep the Next server running for local Workflow execution, independently of the
+browser. Project and application spending limits are in HANDOFF; no automatic
+budget reset or provider retry is configured.

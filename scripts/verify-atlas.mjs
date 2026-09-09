@@ -29,6 +29,27 @@ async function inspectFromIndex(title) {
     .filter({ has: page.getByRole("heading", { name: title, exact: true }) });
   await row.getByRole("button", { name: "Inspect", exact: true }).click();
 }
+async function assertAttached() {
+  const attached = await page.evaluate(() => {
+    const path = document.querySelector('[data-id="food-repair"] .react-flow__edge-path');
+    return ["food", "repair"].every((id, index) => {
+      const node = document.querySelector(`[data-id="${id}"]`);
+      const surface = node.querySelector(".overview-target") || node.querySelector(".thought");
+      const rect = surface.getBoundingClientRect();
+      const point = path.getPointAtLength(index ? path.getTotalLength() : 0)
+        .matrixTransform(path.getScreenCTM());
+      if (surface.classList.contains("compact-target")) {
+        return Math.abs(Math.hypot(point.x - (rect.left + rect.width / 2),
+          point.y - (rect.top + rect.height / 2)) - rect.width / 2) < 3;
+      }
+      return point.x >= rect.left - 3 && point.x <= rect.right + 3 &&
+        point.y >= rect.top - 3 && point.y <= rect.bottom + 3 &&
+        Math.min(Math.abs(point.x - rect.left), Math.abs(point.x - rect.right),
+          Math.abs(point.y - rect.top), Math.abs(point.y - rect.bottom)) < 3;
+    });
+  });
+  assert.ok(attached, "connection endpoints must follow visible card boundaries");
+}
 try {
   await page.goto(base);
   await page.locator(".thought").first().waitFor();
@@ -42,6 +63,41 @@ try {
       .evaluate((e) => e.getBoundingClientRect().height / innerHeight)) >= 0.8,
   );
   await page.screenshot({ path: `${artifacts}/desktop.png` });
+  await assertAttached();
+  // Farthest zoom-out must preserve distinct, clickable overview markers.
+  for (let i = 0; i < 15; i++) await button("Zoom out").click();
+  await settle();
+  await assertAttached();
+  const markerRects = await page
+    .locator(".overview-target")
+    .evaluateAll((elements) =>
+      elements.map((e) => {
+        const r = e.getBoundingClientRect();
+        return {
+          label: e.textContent,
+          left: r.left,
+          right: r.right,
+          top: r.top,
+          bottom: r.bottom,
+        };
+      }),
+    );
+  assert.equal(markerRects.length, 6);
+  for (let i = 0; i < markerRects.length; i++)
+    for (let j = i + 1; j < markerRects.length; j++) {
+      const a = markerRects[i],
+        b = markerRects[j];
+      assert.ok(
+        !(
+          a.left < b.right &&
+          a.right > b.left &&
+          a.top < b.bottom &&
+          a.bottom > b.top
+        ),
+        `overview markers overlap: ${a.label}, ${b.label}`,
+      );
+    }
+  await fit();
 
   // IB01: drag across title pans without selecting text or opening inspection.
   const title = page.locator('[data-id="food"] .card-title');
@@ -80,6 +136,7 @@ try {
   await settle();
   assert.notEqual(await node.evaluate((e) => e.style.transform), beforeNode);
   assert.notEqual(await edge.getAttribute("d"), beforeEdge);
+  await assertAttached();
   assert.equal(await transform(), camera);
   await button("Fit").focus();
   await page.keyboard.press("Enter");
@@ -225,6 +282,11 @@ try {
   }
   await page.screenshot({ path: `${artifacts}/short-desktop.png` });
   const overviewCard = page.locator('[data-id="food"] .overview-target');
+  assert.equal(
+    await overviewCard.innerText(),
+    "A food hall",
+    "overview shows only the title",
+  );
   const overviewRect = await overviewCard.boundingBox();
   const overviewCamera = await transform();
   const overviewPosition = await node.evaluate((e) => e.style.transform);
@@ -232,6 +294,31 @@ try {
   await page.mouse.move(overviewRect.x + 30, overviewRect.y + 20);
   await page.mouse.down();
   await page.mouse.move(overviewRect.x + 90, overviewRect.y + 45, { steps: 8 });
+  await page.waitForTimeout(100);
+  const dragSurface = await page
+    .locator('[data-id="food"] .thought')
+    .evaluate((e) => ({
+      background: getComputedStyle(e).backgroundColor,
+      shadow: getComputedStyle(e).boxShadow,
+      outline: getComputedStyle(e).outlineStyle,
+    }));
+  assert.equal(
+    dragSurface.background,
+    "rgba(0, 0, 0, 0)",
+    "overview layout container stays transparent while dragging",
+  );
+  assert.equal(
+    dragSurface.shadow,
+    "none",
+    "overview drag has no ghost rectangular shadow",
+  );
+  assert.equal(
+    dragSurface.outline,
+    "none",
+    "overview drag has no hidden rectangular outline",
+  );
+  await page.screenshot({ path: `${artifacts}/overview-drag.png` });
+
   await page.mouse.up();
   await settle();
   assert.notEqual(
@@ -292,10 +379,6 @@ try {
   assert.equal(await page.locator(".thought-group").count(), 3);
   for (const group of await page.locator(".thought-group button").all())
     assert.ok(await group.isVisible());
-  assert.match(
-    await page.locator(".overview-note").innerText(),
-    /24 variations grouped by source/,
-  );
   assert.equal(
     await page.locator(".react-flow__edge").count(),
     10,
@@ -304,6 +387,13 @@ try {
   await page.locator(".thought-group button").last().click();
   assert.equal(await page.locator(".reference-list section").count(), 8);
   await close();
+  for (let i = 0; i < 6; i++) await button("Zoom in").click();
+  await settle();
+  assert.equal(await page.locator(".thought-group").count(), 3,
+    "zooming in keeps dense variations grouped");
+  assert.equal(await page.locator(".react-flow__edge").count(), 10,
+    "zooming in must not restore the dense web of variation edges");
+  await fit();
   await inspectFromIndex("beginner session · tools");
   assert.match(
     await page.getByRole("dialog").innerText(),
@@ -392,6 +482,21 @@ try {
       type: "touchMove",
       touchPoints: [{ x: tx + i * 5, y: ty + i * 4, id: 1 }],
     });
+  const compactDragSurface = await mobile
+    .locator('[data-id="food"] .thought')
+    .evaluate((e) => ({
+      background: getComputedStyle(e).backgroundColor,
+      shadow: getComputedStyle(e).boxShadow,
+      outline: getComputedStyle(e).outlineStyle,
+    }));
+  assert.equal(compactDragSurface.background, "rgba(0, 0, 0, 0)");
+  assert.equal(
+    compactDragSurface.shadow,
+    "none",
+    "compact drag has no rectangular ghost shadow",
+  );
+  assert.equal(compactDragSurface.outline, "none");
+  await mobile.screenshot({ path: `${artifacts}/compact-drag.png` });
   await cdp.send("Input.dispatchTouchEvent", {
     type: "touchEnd",
     touchPoints: [],
