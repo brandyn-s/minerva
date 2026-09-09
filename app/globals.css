@@ -845,5 +845,15 @@ summary {
 }
 .minerva-launcher:hover .minerva-launcher-label, .minerva-launcher:focus-visible .minerva-launcher-label { opacity: 1; }
 @media (max-width: 700px) {
-  .minerva-launcher.has-selection { bottom: max(104px, calc(env(safe-area-inset-bottom) + 104px)); }
+  .minerva-launcher.has-selection { bottom: max(160px, calc(env(safe-area-inset-bottom) + 160px)); }
 }
+
+.expedition-panel[hidden] { display: none; }
+.expedition-panel label { display: grid; gap: 6px; margin: 14px 0; }
+.expedition-panel input, .expedition-panel select { width: 100%; padding: 9px; }
+.expedition-panel button { margin: 4px 6px 4px 0; }
+.expedition-goal { white-space: pre-wrap; overflow-wrap: anywhere; border-left: 3px solid #28686a; padding-left: 12px; }
+.expedition-steps { padding-left: 22px; }
+.expedition-links { display: inline-flex; flex-wrap: wrap; }
+.expedition-reading { border-top: 1px solid #aaa084; margin-top: 18px; }
+.expedition-stop { font-weight: 600; }

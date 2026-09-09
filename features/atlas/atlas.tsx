@@ -40,6 +40,7 @@ import { cardHash, validateThemes, type ThemeGroup } from "./themes";
 import TalkPanel from "./talk-panel";
 import DownloadButton from "./download-button";
 import MovesPanel from "./moves-panel";
+import ExpeditionPanel from "./expedition-panel";
 import { overviewDiameter, overviewLabels, overviewName } from "./overview";
 import ExplorationPanel, { ProposalDecisions } from "../exploration/panel";
 
@@ -47,7 +48,7 @@ type CardNode = Node<{ thought: Thought; geometry?: { width: number; height: num
 // Keep screen-sized overview markers separated at the farthest zoom-out.
 const MIN_ZOOM = 0.03;
 
-type Panel = "talk" | "inspect" | "compare" | "moves" | "index" | "text" | "explore" | null;
+type Panel = "expedition" | "talk" | "inspect" | "compare" | "moves" | "index" | "text" | "explore" | null;
 const Interaction = createContext<{
   live?: { sources: Thought[]; feature: LiveFeature; move?: ContextualMove; error?: string };
   busy?: boolean;
@@ -424,7 +425,7 @@ function Studio({ session }: { session?: AtlasSession }) {
       }
       setThemeCache({ groups: groups.filter(g => g.memberIds.length), hashes, time: new Date().toLocaleTimeString() });
       setPositions(current => ({ ...current, Constellation: {} }));
-      if (perspectiveRef.current === "Constellation" && !cameras.current.Constellation) fitPerspective.current = true;
+      if (perspectiveRef.current === "Constellation") fitPerspective.current = true;
     } catch (error) { setThemeError(error instanceof Error ? error.message : String(error)); }
     finally { themePending.current = false; setThemeBusy(false); }
   }
@@ -464,7 +465,7 @@ function Studio({ session }: { session?: AtlasSession }) {
   });
   const themeNodes: CardNode[] = perspective === "Constellation" ? groups.map((g, i) => ({ id: `theme-${i}`, type: "theme", position: { x: i * 760, y: -70 }, width: 440, height: 140, measured: { width: 440, height: 140 }, style: { width: 440, height: 140 }, draggable: false, data: { thought: { ...thought, title: g.name, summary: g.reason } } })) : [];
   useLayoutEffect(() => {
-    if (!fitPerspective.current) return;
+    if (!fitPerspective.current || (perspective === "Constellation" && !themeCache)) return;
     fitPerspective.current = false;
     const all = [...renderedNodes, ...themeNodes];
     const x = Math.min(...all.map(n => n.position.x)), y = Math.min(...all.map(n => n.position.y));
@@ -579,6 +580,21 @@ function Studio({ session }: { session?: AtlasSession }) {
       generating.current = false;
       setBusy(false);
     }
+  }
+  function addExpeditionCard(card: GeneratedCard, parent: Thought, step: number, rationale: string): Thought {
+    const id = crypto.randomUUID();
+    const thought: Thought = { ...card, id, revision: 1, kind: "exploration", decision: "unkept draft", evidence: "unknown",
+      contribution: rationale, provenance: { feature: `Expedition · step ${step}`, tag: "feature:expedition", sourceTitles: [parent.title] },
+      move: { title: "Explore this direction", question: "Where could this idea lead?", preview: card.summary } };
+    setNodes(current => {
+      const origin = current.find(n => n.id === parent.id)!;
+      let x = origin.position.x + 530;
+      const y = origin.position.y;
+      while (current.some(n => n.position.x < x + 440 && n.position.x + (n.measured?.width ?? 440) > x && n.position.y < y + 380 && n.position.y + (n.measured?.height ?? 380) > y)) x += 530;
+      return [...current, { id, type: "thought", position: { x, y }, dragHandle: ".card-grip", ariaLabel: card.title, data: { thought } }];
+    });
+    setLiveEdges(current => [...current, { id: `${parent.id}-${id}`, from: parent.id, to: id, kind: "derivation", label: `Expedition · step ${step}`, sourceRevision: parent.revision, contribution: rationale }]);
+    return thought;
   }
   function fit() {
     void flow.fitView({
@@ -1000,6 +1016,7 @@ function Studio({ session }: { session?: AtlasSession }) {
             Thoughts <span>{nodes.length}</span>
           </button>
           <button onClick={() => open("text")}>Read as text</button>
+          {!session && <button onClick={() => open("expedition")}>Expedition panel</button>}
 
           {session && <>
             <button onClick={() => { void session.command({ operation: "seed-mall" }).catch(() => {}); }} disabled={nodes.length > 0}>Load prepared mall</button>
@@ -1065,6 +1082,7 @@ function Studio({ session }: { session?: AtlasSession }) {
             <button onClick={() => open("compare")}>Compare</button>
             {session ? <button onClick={() => move(selected)}>Weave · preview</button> : <>
               <button disabled={busy || selected.length !== 1} onClick={() => void generate("wander", selected.map((id) => byId.get(id)!))} aria-busy={busy && live?.feature === "wander"}>{busy && live?.feature === "wander" && <span className="generation-spinner" aria-hidden="true" />}{busy && live?.feature === "wander" ? "Wandering…" : "Wander"}</button>
+              <button disabled={selected.length !== 1} onClick={() => open("expedition")}>Expedition</button>
               <button disabled={busy || selected.length < 2} onClick={() => void generate("weave", selected.map((id) => byId.get(id)!))} aria-busy={busy && live?.feature === "weave"}>{busy && live?.feature === "weave" && <span className="generation-spinner" aria-hidden="true" />}{busy && live?.feature === "weave" ? "Weaving…" : "Weave"}</button>
             </>}
             {session && selected.length === 2 && <details className="layout-menu"><summary>Connect selected</summary>
@@ -1105,7 +1123,9 @@ function Studio({ session }: { session?: AtlasSession }) {
         <span className="minerva-launcher-label" aria-hidden="true">Talk to Minerva</span>
       </button>}
       {!session && <TalkPanel open={panel === "talk"} close={close} selectedIds={selected} cards={nodes.map(({ id, data }) => ({ ...data.thought, relationships: relationshipsFor(id, relationships) }))} />}
-      {panel && panel !== "talk" && (
+      {!session && <ExpeditionPanel open={panel === "expedition"} close={close} source={selected.length === 1 ? byId.get(selected[0]) : undefined}
+        cards={nodes.map(n => n.data.thought)} add={addExpeditionCard} focus={id => { focus(id); setPanel("expedition"); }} />}
+      {panel && panel !== "talk" && panel !== "expedition" && (
         <aside
           ref={panelRef}
           tabIndex={-1}

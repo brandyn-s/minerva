@@ -1,56 +1,55 @@
-# Root atlas demo handoff
-Root `/` now includes Lineage, Evolution, Constellation and inspection inheritance/provenance.
-Owner scope ends after merge and deployment to https://minerva-eight.vercel.app/; one operator-started Fable review follows.
-- Branch: `demo/perspectives-inheritance`; base: `118b095`; integrated main through `c61e843` (Talk smoothing).
-- Worktree: `/Users/brandyn.schult/code/minerva`; released SHA and hosted result are in the operator response.
-- No persistence, admission/budget logic, dependencies, database, workspace or Workflow changes.
+# Root atlas: Expedition and reading
+Branch: `demo-expedition-reading`, based on `origin/main` at `c5676cc`.
+Worktree: `/Users/brandyn.schult/code/minerva`; release SHA and stable verification are in the operator handoff.
+Scope ends after merge and deployment to https://minerva-eight.vercel.app/; one operator-started Fable review follows.
+Root atlas only, in memory. No persistence, new dependencies, admission, database, /workspaces or Workflow changes.
 
 ## Behavior
-Microphone denial explains browser site settings and Retry; Thoughts uses “Download all cards”.
-Lineage retains the original layout. Evolution uses deepest-parent generation columns and creation order.
-Every view shares cards, selection, comparison and Talk; cameras and manual positions are separate in memory.
-Unknown-evidence and unkept cards remain visible. Lineage/Evolution switches make no requests.
-Constellation calls `/api/themes` with `generateObject`, `anthropic/claude-sonnet-5`, `feature:themes`.
-Its screen states the method and grouping time; named groups show reasons and cross-group associations.
-Derivation/recombination edges are hidden there. Every submitted card must be assigned exactly once.
-The in-memory cache tracks card IDs and SHA-256(title, body); only entering a stale view computes.
-Incremental calls send changed/new cards and existing names, permitting at most one new theme.
-Regroup recomputes all cards. Errors retain the prior grouping with Retry.
-Inspection Inheritance lists each parent's title, stored edge contribution and contextual move title.
-Provenance freezes the feature/move name, tag and source titles when root-generated cards are created.
-Both sections are included in card Markdown. Prepared cards do not invent generated provenance.
+Constellation fits after grouping arrives, including theme headings, cards and cross-group associations.
+One selected card opens Expedition: frozen goal, 2–5 steps, one Sonnet 5 call per step, derivation edges and rationales.
+Stops on budget, Stop, model claim of reached, or two consecutive near-identical title/summary transitions.
+Completed cards remain; Stop aborts the in-flight request and ignores late output. Errors retain completed work.
+Reading groups mechanisms, explains changes, labels observations/hypotheses, suggests two experiments and names coverage gaps.
+Every reading item focuses its actual card; Challenge only adds a user disagreement note. Edits mark readings stale; Re-read refreshes them.
 
 ## Verification
-`npm run check`: lint, TypeScript, 12 tests and production build passed.
-Existing replay covers generated cards across views, selection/comparison and cameras, request counts,
-cache reuse, incremental edits, failed Regroup retention/Retry, group edges and Markdown sections.
-Dev replay: `/tmp/minerva-perspectives-dev`; production and stable results are in the operator response.
-`MINERVA_LIVE=1` full dev replay passed with exactly one real themes call using project OIDC.
-Other model paths stayed mocked; no real voice call in this batch. Existing voice replay still passes.
-Full input/response: `/tmp/minerva-perspectives-live/themes-live.json` (10 cards, 4 groups).
+Full dev replay passed with MINERVA_LIVE=1: exactly two real expedition calls and one real reading; other model paths mocked.
+Routes: `/api/expedition` and `/api/reading`; `generateObject`, `anthropic/claude-sonnet-5`, `feature:expedition` / `feature:reading`.
+Replay covers all four stops, frozen request/UI goal, frontier/previous cards, retained partial work, reading links, Challenge and stale/Re-read.
+It also asserts every theme heading is in the viewport on first Constellation entry, without Fit; existing desktop/mobile/voice replay passed.
+`npm run check` and the full mocked next-start replay passed; stable-URL verification is in the operator handoff.
+Full live requests/responses: `/tmp/minerva-expedition-live/expedition-live.json` and `reading-live.json`.
 
-## Real themes response
-The response's `groups` array, one object per line (member IDs preserved):
-```json
-{"name": "The Mall Brief", "reason": "The originating brief that frames all exploration of what the dead mall could become.", "memberIds": ["brief"]}
-{"name": "Foundational Mall Concepts", "reason": "Independent, standalone starting ideas for the mall brief covering retail, food, tools, and flexible retail space.", "memberIds": ["retail", "food", "tools", "rotation"]}
-{"name": "Repair-and-Meal Synthesis (Unassessed)", "reason": "A hybrid draft combining the food hall and tool library ideas into a repair-and-supper format, explicitly flagged as unendorsed with unresolved unknowns.", "memberIds": ["repair"]}
-{"name": "Repair Concept Explorations", "reason": "Concrete drafts that build out variations of the repair theme—apprenticeships, workshop borrowing, and timed repair/meal sessions.", "memberIds": ["662587ec-98fd-41b2-aef1-f87ecf6efa97", "2304c893-12ce-4101-bebf-56f36876b8be", "2b362fef-200f-44b4-a5fc-a6513393c8cc", "2f4b7e3b-c0bf-43cf-8a36-ef2db791c58b"]}
-```
-Generated IDs above correspond, in order, to Repair apprenticeships, Borrow a workshop,
-Cook and mend evenings, and Morning repair table (synthetic cards; grouping is actual Sonnet output).
+## Actual two-step expedition
+Frozen goal: Develop two distinct, connected drafts toward a testable evening repair service, first defining a session format and then a booking experiment.
+1. Evening Repair Circle: 90-Minute Session Format — Define a recurring evening session where visitors bring broken items and fix them together using the mall's shared tool library.
+   Draft: Each session runs 6:30–8:00pm, capped at 8 participants. A volunteer 'fix-guide' rotates tools from the shared library to stations; visitors work in pairs on their own broken items (small appliances, clothing, bikes). First 15 minutes: intake and tool checkout. Middle hour: guided repair work. Final 15 minutes: tool return and quick show-and-tell of what got fixed. This format is speculative—no attendance or repair-success data exists yet.'
+   Rationale: Turns the abstract shared tool library into a concrete, time-boxed evening service format, the first of the two drafts the goal requires.
+   Model self-report: false — Only the session format draft exists; the second required draft—a booking experiment—has not yet been created or connected to this format.
+2. Booking Experiment: 3-Week Signup Test — Design a minimal-cost experiment to test whether people will actually book slots for the Evening Repair Circle before building full infrastructure.
+   Draft: Launch a simple booking page (shared calendar link or paper sign-up sheet at mall info desk) offering 3 consecutive weeks of the 90-minute session at the same time slot, capped at 8 spots each. Track: (1) time-to-fill each session, (2) no-show rate, (3) walk-in demand beyond capacity, (4) item categories people mention when booking (appliance/clothing/bike). No paid promotion—only a flyer near the tool library and one social post per week. Success threshold: at least 2 of 3 sessions reach 5+ bookings with under 30% no-shows, signaling enough organic demand to justify a recurring slot and dedicated booking system.'
+   Rationale: This directly builds the second requested draft—a testable booking experiment—by attaching measurable demand signals to the already-defined session format.
+   Model self-report: true — Both required drafts now exist: the session format card and this new booking experiment card, together forming a connected, testable pair as the goal specified.
+Stopped on the model’s step-2 claim; no success or empirical validation is asserted.
 
-## Startup and review
-Use Node 24.20.0/npm 12.0.2 via `npx --yes --package=node@24.20.0 --package=npm@12.0.2`.
-Dev: `npm run dev -- --port 3048`; replay: `MINERVA_URL=http://127.0.0.1:3048 npm run test:browser`.
-Production: `npm run build`, then `npm run start -- --port 3049`; replay with that `MINERVA_URL`.
-Use separate dev/build runs; after refreshing dependencies, discard stale ignored dev compiler caches.
-`MINERVA_LIVE=1` allows one themes call; `MINERVA_LIVE=1 MINERVA_VOICE_ONLY=1` remains the voice-only opt-in.
-Next role: operator-started Fable 5.1 at low effort, read-only, exact released candidate, C04/C07 and carry-overs.
-Use docs/setup.md's bounded review prompt; no additional paid calls or feature work are authorized by this handoff.
+## Actual reading
+- Mechanism (steps 1): Service format design (defining structure, timing, roles, and flow of the repair session)
+- Mechanism (steps 2): Demand validation experiment design (low-cost test of booking behavior before infrastructure investment)
+- Change at step 2: Shifts from specifying the internal structure of the session (roles, timing, phases) to designing an external test of whether anyone will actually show up for it, moving from format definition to hypothesis-testing methodology.
+- observation (steps 1): The session format explicitly states it is speculative, with no attendance or repair-success data yet collected.
+- observation (steps 2): The booking experiment specifies concrete tracking metrics (time-to-fill, no-show rate, walk-in overflow, item categories) and a numeric success threshold (2 of 3 sessions with 5+ bookings, under 30% no-shows).
+- observation (steps 2): The experiment card limits promotion to a single flyer and one weekly social post, explicitly avoiding paid promotion.
+- hypothesis (steps 1): An 8-participant cap and 90-minute window (15/60/15 split) is a workable size and pacing for pairing visitors with a rotating tool library.
+- hypothesis (steps 2): Minimal-cost signage and social posts will surface enough organic demand to distinguish real interest from indifference within three weeks.
+- hypothesis (steps 2): Reaching the stated booking threshold would indicate sufficient demand to justify a recurring slot and dedicated booking system, though this causal link is untested.
+- hypothesis (steps 1): Pairing strangers on their own broken items for guided repair will produce enough mutual help to complete fixes within the session, though no repair-outcome mechanism is described.
+- Next experiment (steps 2): Run the described 3-week booking test exactly as specified in step 2, logging fill time, no-shows, walk-in overflow, and item categories to see if the stated threshold is met.
+- Next experiment (steps 1, 2): After the booking test, run a session-format probe that varies the intake/repair/show-and-tell time split (e.g., 10/70/10) with the same 8-person cap to see whether more guided repair time changes completion or satisfaction, independent of booking demand.
+- Coverage (steps 1, 2): Neither step tests actual repair success/completion rates, participant satisfaction, alternate time slots or days, different capacity sizes, pricing or donation models, or whether walk-in-only (no booking) demand differs from pre-booked demand. The booking experiment also does not vary promotion intensity to isolate its effect from organic interest.
 
-## Minerva launcher
-Root Talk opens from the owner's selected engraved cameo at bottom-right (64px, 24px inset).
-Hover/focus shows its name; Enter opens and Escape restores focus. Mobile selection raises it above the action bar.
-Branch `feat/minerva-launcher`; worktree `/Users/brandyn.schult/code/minerva-remove-denser`; local production port 3035.
-`npm run check` and full mocked browser replay passed; screenshots `/tmp/minerva-cameo-local`; visual QA in `design-qa.md`.
+## Startup and next role
+Use `npx --yes --package=node@24.20.0 --package=npm@12.0.2` before npm commands.
+Dev: `npm run dev -- --port 3048`; production: `npm run build`, then `npm run start -- --port 3049`.
+Replay: `MINERVA_URL=http://127.0.0.1:3049 npm run test:browser` (use 3048 for dev). No new scripts.
+`MINERVA_LIVE=1` opts into two expedition steps and one reading; no additional live calls are authorized for the review.
+Next: operator-started Fable 5.1 at low effort, exact released candidate, read-only, C11/C12 and first-entry fit; use docs/setup.md’s bounded prompt.
