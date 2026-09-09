@@ -53,3 +53,6 @@ Dev: `npm run dev -- --port 3048`; production: `npm run build`, then `npm run st
 Replay: `MINERVA_URL=http://127.0.0.1:3049 npm run test:browser` (use 3048 for dev). No new scripts.
 `MINERVA_LIVE=1` opts into two expedition steps and one reading; no additional live calls are authorized for the review.
 Next: operator-started Fable 5.1 at low effort, exact released candidate, read-only, C11/C12 and first-entry fit; use docs/setup.md’s bounded prompt.
+
+Talk header now uses the Minerva cameo in place of both visible headings; the idle voice instruction is removed.
+Verified: npm run check and full browser replay `/tmp/minerva-chat-header`; local production port 3038.

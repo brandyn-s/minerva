@@ -1266,7 +1266,7 @@ try {
       await voicePage.waitForTimeout(600);
       await voicePage.mouse.up();
     }
-    await voicePage.getByText("Hold to speak, release to send.", { exact: true }).waitFor({ timeout: 60000 });
+    await voicePage.waitForFunction(() => document.querySelector("#voice-status")?.textContent === "", undefined, { timeout: 60000 });
     const transcript = await voicePage.locator(".talk-transcript").innerText();
     const stats = await voicePage.evaluate(() => window.voiceStats);
     assert.ok(transcript.includes("You") && transcript.includes("Minerva"));

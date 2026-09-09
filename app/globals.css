@@ -857,3 +857,7 @@ summary {
 .expedition-links { display: inline-flex; flex-wrap: wrap; }
 .expedition-reading { border-top: 1px solid #aaa084; margin-top: 18px; }
 .expedition-stop { font-weight: 600; }
+
+.talk-heading { margin-bottom: 0; }
+.talk-cameo { border-radius: 50%; display: block; }
+.voice-control .small-note:empty { display: none; }
