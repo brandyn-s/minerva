@@ -10,12 +10,12 @@ This owner-directed batch ends after merge and stable deployment; one operator-s
 
 ## Behavior
 
-Includes main through `0a84c4f`: loading circles/rings and card type colors across zoom levels.
+Includes main through `31b4b8b`: loading circles/colors, full-canvas Talk context and Enter/Shift+Enter controls.
 
 Talk's Hold to talk button accepts mouse/touch and held Space/Enter. Only a deliberate press requests
 microphone permission. Speech buffers in memory while connecting; release stops capture and sends it.
 Pressing again stops playback and replaces the prior session. Dismissal/cancellation cleans up capture.
-Heard user turns and streamed spoken-reply transcripts join typed Talk's existing conversation/context.
+Heard user turns and streamed spoken-reply transcripts join typed Talk's full-canvas conversation/context, with selected IDs indicating focus.
 Errors stay in the panel; hold Retry to record again. Typed Talk retains its existing route and OIDC.
 `POST /api/voice` mints a short-lived Gateway token with the server-only `MINERVA_PRIME_VOICE_API` key.
 The key came from the owner's Keychain and is a Vercel Secret for production/preview; never public/client-side.

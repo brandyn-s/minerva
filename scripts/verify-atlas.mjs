@@ -420,7 +420,6 @@ try {
   }
   // Typed conversation: failure, retry, streamed response, selected context and follow-up history.
   await button("Clear selection").click();
-  await selectFromIndex("A shared tool library");
   let talkAttempts = 0;
   const talkInputs = [];
   await page.route("**/api/talk", async (route) => {
@@ -437,7 +436,7 @@ try {
   });
   await button("Talk to Minerva").click();
   await page.getByLabel("Message Minerva").fill("Suggest one concrete improvement to this selected idea in two sentences.");
-  await button("Send").click();
+  await page.getByLabel("Message Minerva").press("Enter");
   await page.getByRole("dialog").getByRole("alert").waitFor();
   assert.match(await page.getByRole("dialog").getByRole("alert").innerText(), /Talk test failure/);
   const talkResponse = page.waitForResponse((r) => r.url().endsWith("/api/talk") && r.status() === 200, { timeout: 90000 });
@@ -455,19 +454,24 @@ try {
   assert.equal(await page.getByRole("dialog").getByRole("alert").count(), 0);
   assert.ok((await page.locator(".talk-transcript").innerText()).includes(evidence.talk));
   assert.deepEqual(talkInputs[0], talkInputs[1], "retry retains the failed turn and context");
-  assert.equal(talkInputs[1].cards[0].title, "A shared tool library");
+  assert.equal(talkInputs[1].cards.length, total, "empty selection still includes all fixture and generated cards");
+  assert.deepEqual(talkInputs[1].selectedIds, []);
   for (const key of ["summary", "body", "relationships"]) assert.ok(talkInputs[1].cards[0][key].length);
   await close();
-  await button("Clear selection").click();
   await selectFromIndex("A food hall");
   await button("Talk to Minerva").click();
   assert.ok((await page.locator(".talk-transcript").innerText()).includes(evidence.talk), "dismiss keeps conversation in memory");
-  await page.getByLabel("Message Minerva").fill("How does that connect with this card?");
-  await button("Send").click();
+  await page.getByLabel("Message Minerva").fill("How does that connect");
+  await page.getByLabel("Message Minerva").press("Shift+Enter");
+  assert.equal(talkInputs.length, 2, "Shift+Enter does not send");
+  await page.getByLabel("Message Minerva").pressSequentially("with this card?");
+  await page.getByLabel("Message Minerva").press("Enter");
   await button("Replying…").waitFor({ state: "hidden" });
   assert.equal(talkInputs[2].messages.length, 3);
   assert.equal(talkInputs[2].messages[1].content, evidence.talk);
-  assert.equal(talkInputs[2].cards[0].title, "A food hall");
+  assert.equal(talkInputs[2].cards.length, total, "selection does not restrict canvas context");
+  assert.deepEqual(talkInputs[2].selectedIds, ["food"]);
+  assert.equal(talkInputs[2].messages[2].content, "How does that connect\nwith this card?");
   assert.equal(await page.locator(".thought").count(), total, "talk never creates cards");
   await page.getByLabel("Message Minerva").fill("Name one risk.");
   await button("Send").click();
@@ -1030,6 +1034,8 @@ try {
       assert.equal(events.filter((event) => event.type === "input-audio-commit").length, 1);
       const config = events.find((event) => event.type === "session-update").config;
       assert.equal(config.turnDetection, null);
+      assert.ok(config.instructions.includes("A shared tool library"), "voice receives the full canvas with no selection");
+      assert.ok(config.instructions.includes("Selected IDs: []"));
       assert.deepEqual(config.providerOptions.gateway.tags, ["feature:voice"]);
       // A fresh press must stop queued output immediately, including a late reply.
       await vb("Hold to talk").focus();
