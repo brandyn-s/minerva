@@ -721,9 +721,6 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
       setLive(undefined);
       setPanel(null);
       setSelected(added.map((node) => node.id));
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        void flow.fitView({ nodes: [...parentNodes, ...added], padding: 0.2, minZoom: 0.73, maxZoom: 1 });
-      }));
     } catch (error) {
       setLive({ feature, sources, move: contextualMove, error: error instanceof Error ? error.message : String(error) });
       if (!contextualMove) focus(sources[0].id);
