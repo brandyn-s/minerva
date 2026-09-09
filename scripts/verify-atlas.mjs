@@ -922,7 +922,7 @@ try {
   const backupDownload = page.waitForEvent("download").catch(() => null);
   try { await openAtlasMenu(); await button("Export atlas").click({ timeout: 5000 }); }
   catch (error) { await page.screenshot({ path: `${artifacts}/export-failure.png` }); throw error; }
-  assert.equal(await page.locator('.atlas-storage [role="alert"]').count(), 0, await page.locator('.atlas-storage').innerText());
+  assert.equal(await page.locator('.atlas-menu-options [role="alert"]').count(), 0, await page.locator('.atlas-menu-options').innerText());
   const backup = await backupDownload; assert.ok(backup, "JSON backup download starts"); assert.equal(backup.suggestedFilename(), "minerva-atlas.json");
   const backupBytes = await readFile(await backup.path()); const backupState = JSON.parse(backupBytes);
   await resetFixture(); assert.equal(await page.locator(".thought").count(), 6);
