@@ -253,6 +253,17 @@ Record the window's dates, audience, budget and teardown owner in `docs/HANDOFF.
   and a separate production database with its own credentials. Seed the
   demonstration workspace before the window opens; judges start by duplicating
   it, and re-running the seed restores it.
+
+  Connecting a Marketplace resource targets production, preview and development
+  together by default, which is the opposite of the split above, so the two
+  databases need deliberate scoping rather than two plain connections. Connect
+  the production store, then set the non-production connection string on the
+  preview and development targets so the same variable name resolves per
+  environment; a second store connected alongside takes a name prefix to avoid
+  collisions. Audit the result per environment before relying on it, because a
+  wrong value here is silent and points development at production data. Marking
+  the variable sensitive hides it from the dashboard but also withholds it from
+  the development target, so a local checkout can no longer pull it.
 - **Durable runs.** Vercel Workflows execute Wander, Agent Drive and other runs.
   The demonstration is single-region, so the stable SDK line is sufficient;
   multi-region run placement is what requires the beta line, and no demonstrated
