@@ -159,17 +159,6 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
   }, [id, ui.zoom, ui.overview, ui.compact, updateNodeInternals]);
   const diameter = ui.scalable ? overviewDiameter(ui.zoom) : ui.compact ? 48 : 170;
   const anchorY = ui.overview ? (ui.scalable ? diameter / 2 : ui.compact ? 24 : 35) / ui.zoom : undefined;
-  const marker =
-    (
-      {
-        brief: "Seed",
-        retail: "A",
-        food: "B",
-        tools: "C",
-        repair: "B+C",
-        rotation: "A.1",
-      } as Record<string, string>
-    )[thought.id] || thought.title.split(/\s+/).slice(0, 2).map((s) => s[0]).join("");
   const loading = !!ui.busy && !!ui.live?.sources.some((source) => source.id === id);
   return (
     <article
@@ -199,7 +188,7 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
           className={`overview-target card-grip nopan ${ui.scalable ? "scale-target" : ui.compact ? "compact-target" : ""}`}
           style={{ transform: `scale(${1 / ui.zoom})`, ...(ui.scalable ? { width: diameter, height: diameter, minHeight: diameter } : {}) }}
         >
-          {ui.scalable ? <><span className="overview-code">{diameter >= 30 ? marker : ""}</span>{ui.labels?.has(id) && <span className="overview-name">{overviewName(thought)}</span>}</> : ui.compact ? marker : thought.title}
+          {ui.scalable ? ui.labels?.has(id) && <span className="overview-name">{overviewName(thought)}</span> : ui.compact ? null : thought.title}
         </TooltipButton>
       ) : (
         <div className="card-content">
@@ -1368,7 +1357,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
         <aside
           ref={panelRef}
           tabIndex={-1}
-          className={`detail-panel ${panel === "compare" || panel === "text" ? "wide-panel" : ""}`}
+          className={`detail-panel ${panel === "text" ? "text-reader" : ""} ${panel === "compare" || panel === "text" ? "wide-panel" : ""}`}
           role="dialog"
           aria-modal="false"
           aria-label={
@@ -1396,7 +1385,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
                 : panel === "moves"
                   ? (session ? "Prepared move / no model call" : "Wander")
                   : panel === "text"
-                    ? "Same material / text reference"
+                    ? `Read as text · ${nodes.length} ideas`
                     : panel === "index"
                       ? "Find your place"
                       : "Selected contributions"}
@@ -1543,7 +1532,33 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
               </details>
             </>
           )}
-          {(panel === "index" || panel === "text") && (
+          {panel === "text" && <div className="reader-layout">
+            <nav className="reader-contents" aria-label="Ideas">
+              {nodes.map(n => <button key={n.id} aria-current={n.id === thought.id ? "true" : undefined} onClick={() => setActive(n.id)}>{n.data.thought.title}</button>)}
+            </nav>
+            <div className="reader-main">
+              <article className="reader-article" key={thought.id}>
+                <span className="instrument-label">{thought.kind === "proposal" ? "Starting idea" : thought.kind}</span>
+                <h2>{thought.title}</h2>
+                <p className="reader-summary">{thought.summary}</p>
+                <div className="body-copy">{(thought.body.startsWith(thought.summary) ? thought.body.slice(thought.summary.length).trim() : thought.body).split("\n\n").filter(Boolean).map((paragraph, i) => <p key={i}>{paragraph}</p>)}</div>
+                <details className="reader-details"><summary>Details</summary>
+                  <p>Contribution: {thought.contribution}</p>
+                  <p>Evidence: {thought.evidence}</p>
+                  <ul>{relationshipsFor(thought.id, relationships).map(e => <li key={e.id}><button onClick={() => setActive(e.otherId)}>{byId.get(e.otherId)?.title}</button> · {e.contribution || e.label}</li>)}</ul>
+                </details>
+                <div className="reader-actions">
+                  <label><input type="checkbox" checked={selected.includes(thought.id)} onChange={() => select(thought.id)} /> Select</label>
+                  <button className="reader-open" onClick={() => inspect(thought.id)}>Open card</button>
+                  <button className="reader-center" onClick={() => focus(thought.id)}>Center on canvas</button>
+                </div>
+              </article>
+              <nav className="reader-pagination" aria-label="Reading navigation">
+                {[-1, 1].map(direction => { const neighbor = nodes[nodes.findIndex(n => n.id === thought.id) + direction]; return <button key={direction} disabled={!neighbor} onClick={() => neighbor && setActive(neighbor.id)}><span className="instrument-label">{direction < 0 ? "Previous" : "Next"}</span><span>{neighbor?.data.thought.title ?? (direction < 0 ? "First idea" : "Last idea")}</span></button>; })}
+              </nav>
+            </div>
+          </div>}
+          {panel === "index" && (
             <>
               <h2>
                 {panel === "index"
@@ -1568,7 +1583,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
                 {nodes
                   .filter(
                     (n) =>
-                      panel === "text" ||
+
                       n.data.thought.title.toLowerCase().includes(query.toLowerCase()),
                   )
                   .map((n) => (
@@ -1578,24 +1593,6 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
                       </span>
                       <h3>{n.data.thought.title}</h3>
                       {!session && foldedUnder.has(n.id) && <p>folded under {foldedUnder.get(n.id)!.map(id => byId.get(id)?.title).join(", ")} <button onClick={() => setFolds(current => current.filter(id => !foldedUnder.get(n.id)!.includes(id)))}>Unfold</button></p>}
-                      {panel === "text" && (
-                        <>
-                          <p className="body-copy">{n.data.thought.body}</p>
-                          <p>Contribution: {n.data.thought.contribution}</p>
-                          <p>Evidence: {n.data.thought.evidence}</p>
-                          <ul>
-                            {relationshipsFor(n.id, relationships).map(
-                              (e) => (
-                                <li key={e.id}>
-                                  {e.direction} {e.kind}:{" "}
-                                  {byId.get(e.otherId)?.title} ·{" "}
-                                  {e.contribution || e.label}
-                                </li>
-                              ),
-                            )}
-                          </ul>
-                        </>
-                      )}
                       <div className="panel-actions">
                         <button onClick={() => focus(n.id)}>Focus ↗</button>
                         <button onClick={() => inspect(n.id)}>Inspect</button>

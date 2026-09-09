@@ -984,6 +984,7 @@ try {
     });
   }, corrupt);
   await page.goto(base); await page.locator(".thought").first().waitFor();
+  await openAtlasMenu();
   await page.getByText(/The save could not be read.*recovery copy/).waitFor();
   assert.equal(await page.locator(".thought").count(), 6);
   const recoveries = await page.evaluate(() => new Promise(resolve => {
@@ -1124,8 +1125,8 @@ try {
   const overviewCard = page.locator('[data-id="food"] .overview-target');
   assert.equal(
     await overviewCard.innerText(),
-    "B\nFood hall",
-    "overview shows an identifier and short label",
+    "Food hall",
+    "overview keeps the title without lineage notation",
   );
   const overviewRect = await overviewCard.boundingBox();
   const overviewCamera = await transform();
