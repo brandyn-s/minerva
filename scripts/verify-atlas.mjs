@@ -732,7 +732,7 @@ try {
   for (const view of ["Evolution", "Lineage", "Constellation", "Evolution", "Constellation", "Lineage"]) {
     const start = requests.length;
     await button(view).click(); await settle();
-    if (view === "Constellation") await page.getByText(/ideas · .* themes by Minerva/).waitFor({ timeout: 90000 });
+    if (view === "Constellation") await page.getByText(/\d+ ideas · \d+ themes/).waitFor({ timeout: 90000 });
     await settle();
     assert.equal(await page.locator(".comparison-grid").innerText(), comparison);
     if (cameras.has(view)) assert.equal(await transform(), cameras.get(view), `${view} remembers its camera`);

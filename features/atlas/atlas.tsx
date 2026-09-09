@@ -1088,7 +1088,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
               // React Flow's geometry updates replace the rendered node, whose position
               // belongs to this view. Keep those updates from overwriting Lineage,
               // or discarding measurements that arrived while geometry was publishing.
-              setNodes((current) => applyNodeChanges(changes.filter(c => (!("id" in c) || !c.id.startsWith("theme-")) && (perspective === "Lineage" || c.type !== "position")).map(c => c.type === "replace" ? { ...c, item: { ...c.item, measured: current.find(n => n.id === c.id)?.measured ?? c.item.measured, position: current.find(n => n.id === c.id)?.position ?? c.item.position } } : c), current));
+              setNodes((current) => applyNodeChanges(changes.filter(c => (!("id" in c) || !c.id.startsWith("theme-")) && (perspective === "Lineage" || c.type !== "position")).map(c => c.type === "replace" ? { ...c, item: { ...c.item, measured: changes.flatMap(change => change.type === "dimensions" && change.id === c.id && change.dimensions ? [change.dimensions] : []).at(-1) ?? current.find(n => n.id === c.id)?.measured ?? c.item.measured, position: current.find(n => n.id === c.id)?.position ?? c.item.position } } : c), current));
             }}
             onNodeDragStart={() => { if (!session) gesture.current = captureLayout(); }}
             onNodeDragStop={(_, node) => { if (session) void saveLayout(node.id, node.position).catch(() => {});
