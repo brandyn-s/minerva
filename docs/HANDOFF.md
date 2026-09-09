@@ -5,10 +5,10 @@ This owner-directed demo supersedes the M2 packages and all earlier handoff plan
 No workspace, database, Workflow, request-policy or migration code was changed.
 No new voice, drive, perspectives, outputs, assessments, decisions, ledgers, export, duplication, history or quality controls.
 
-- Checkout: `/Users/brandyn.schult/code/minerva`; branch: `fix/wander-progress`.
-- Base: `origin/main` at `30467c1c5c87d1cd2f3d79ff085326f772816e14`.
+- Checkout: `/Users/brandyn.schult/code/minerva`; branch: `fix/remove-denser-study`.
+- Base: `origin/main` at `90ce710da3fdea84b4372c8beb252bc25e2f69e2`.
 - Release target: https://minerva-eight.vercel.app/; exact released SHA and hosted evidence go in the operator response.
-- The original post-deployment Fable review is complete; this follow-up makes generation progress visible across zoom and selection changes.
+- The original post-deployment Fable review is complete; Denser Study is removed, including its fixture variations, group tiles and scene switching.
 
 ## Behavior and authentication
 
@@ -52,4 +52,4 @@ Parent 3: Independent retail supplies the small, distinct shops that sell the go
 `cd /Users/brandyn.schult/code/minerva` then `npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run dev`; open `/`.
 Browser check: `npm run test:browser`; `MINERVA_LIVE=1` opts into one paid call per feature.
 Generated content is speculative. Local mocked checks cover failures; they do not prove hosted fault recovery.
-No persistence or owner acceptance is claimed. The original Fable review is complete; stop after deploying this progress indicator.
+No persistence or owner acceptance is claimed. The original Fable review is complete; stop after deploying the Denser Study removal.

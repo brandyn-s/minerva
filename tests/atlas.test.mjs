@@ -59,30 +59,28 @@ test("association is navigable from both ends without becoming parentage", () =>
   assert.equal(incoming.direction, "incoming");
   assert.equal(incoming.id, outgoing.id);
 });
-test("both scenes have unique references, positions, and acyclic inheritance", () => {
-  for (const dense of [false, true]) {
-    const fixture = mallFixture(dense);
-    const ids = new Set(fixture.thoughts.map((t) => t.id));
-    assert.equal(ids.size, dense ? 30 : 6);
-    assert.equal(
-      new Set(fixture.relationships.map((e) => e.id)).size,
-      dense ? 31 : 7,
-    );
-    for (const id of ids) assert.ok(fixture.positions[id]);
-    for (const edge of fixture.relationships) {
-      assert.ok(ids.has(edge.from));
-      assert.ok(ids.has(edge.to));
-    }
-    const visit = (id, ancestors = new Set()) => {
-      assert.ok(!ancestors.has(id), `cycle at ${id}`);
-      const next = new Set([...ancestors, id]);
-      fixture.relationships
-        .filter(
-          (e) =>
-            e.from === id && ["derivation", "recombination"].includes(e.kind),
-        )
-        .forEach((e) => visit(e.to, next));
-    };
-    for (const id of ids) visit(id);
+test("mall fixture has unique references, positions, and acyclic inheritance", () => {
+  const fixture = mallFixture();
+  const ids = new Set(fixture.thoughts.map((t) => t.id));
+  assert.equal(ids.size, 6);
+  assert.equal(
+    new Set(fixture.relationships.map((e) => e.id)).size,
+    7,
+  );
+  for (const id of ids) assert.ok(fixture.positions[id]);
+  for (const edge of fixture.relationships) {
+    assert.ok(ids.has(edge.from));
+    assert.ok(ids.has(edge.to));
   }
+  const visit = (id, ancestors = new Set()) => {
+    assert.ok(!ancestors.has(id), `cycle at ${id}`);
+    const next = new Set([...ancestors, id]);
+    fixture.relationships
+      .filter(
+        (e) =>
+          e.from === id && ["derivation", "recombination"].includes(e.kind),
+      )
+      .forEach((e) => visit(e.to, next));
+  };
+  for (const id of ids) visit(id);
 });
