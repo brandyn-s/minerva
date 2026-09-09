@@ -42,6 +42,7 @@ import { cardHash, validateThemes, type ThemeGroup } from "./themes";
 import { atlasSaveSchema, fixtureSave, restoreSave, writeSave, mergeAtlas, interruptSavedRuns, type AtlasSave } from "./local-state";
 import TalkPanel from "./talk-panel";
 import DownloadButton from "./download-button";
+import ThoughtCatalogue from "./thought-catalogue";
 import MovesPanel from "./moves-panel";
 import ExpeditionPanel from "./expedition-panel";
 import TooltipButton from "./tooltip-button";
@@ -370,7 +371,6 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
   const [preview, setPreview] = useState(false);
   const [overview, setOverview] = useState((initial?.cameras[initial.perspective]?.zoom ?? 1) < .62);
   const [viewport, setViewport] = useState<Viewport>(initial?.cameras[initial.perspective] ?? { x: 0, y: 0, zoom: 1 });
-  const [query, setQuery] = useState("");
   const [compact, setCompact] = useState((initial?.cameras[initial.perspective]?.zoom ?? 1) < .45);
   const [pinching, setPinching] = useState(false);
   const field = useRef<HTMLDivElement>(null);
@@ -1235,7 +1235,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
         <aside
           ref={panelRef}
           tabIndex={-1}
-          className={`detail-panel ${panel === "compare" || panel === "text" ? "wide-panel" : ""}`}
+          className={`detail-panel ${panel === "index" ? "catalogue-panel" : ""} ${panel === "compare" || panel === "text" ? "wide-panel" : ""}`}
           role="dialog"
           aria-modal="false"
           aria-label={
@@ -1256,7 +1256,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
             }
           }}
         >
-          <div className="panel-heading">
+          {panel !== "index" && <div className="panel-heading">
             <span className="instrument-label">
               {panel === "inspect"
                 ? "Thought / source material"
@@ -1264,14 +1264,13 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
                   ? (session ? "Prepared move / no model call" : "Wander")
                   : panel === "text"
                     ? "Same material / text reference"
-                    : panel === "index"
-                      ? "Find your place"
-                      : "Selected contributions"}
+                    : "Selected contributions"}
             </span>
             <button aria-label="Close panel" onClick={close}>
               ×
             </button>
-          </div>
+          </div>}
+          {panel === "index" && <ThoughtCatalogue cards={nodes.map(n => n.data.thought)} relationships={relationships} selected={selected} select={select} focus={focus} close={close} downloadable={!session} />}
           {panel === "explore" && session && <ExplorationPanel workspaceId={savedGraph!.workspaceId}
             sources={selected.map((id) => byId.get(id)!).filter(Boolean)} inspect={inspect} />}
           {panel === "inspect" && (
@@ -1407,34 +1406,11 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
               </details>
             </>
           )}
-          {(panel === "index" || panel === "text") && (
+          {panel === "text" && (
             <>
-              <h2>
-                {panel === "index"
-                  ? "Every thought has a place."
-                  : "What to do with a dead shopping mall"}
-              </h2>
-              {panel === "index" && (
-                <>
-                {!session && <DownloadButton cards={nodes.map((node) => node.data.thought)} relationships={relationships} />}
-                <label>
-                  Find a thought
-                  <input
-                    autoComplete="off"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search titles"
-                  />
-                </label>
-                </>
-              )}
+              <h2>What to do with a dead shopping mall</h2>
               <div className="reference-list">
                 {nodes
-                  .filter(
-                    (n) =>
-                      panel === "text" ||
-                      n.data.thought.title.toLowerCase().includes(query.toLowerCase()),
-                  )
                   .map((n) => (
                     <section key={n.id}>
                       <span className="instrument-label">
