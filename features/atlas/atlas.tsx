@@ -41,6 +41,8 @@ import { wanderSchema, weaveSchema, moveCardSchema, type ContextualMove, type Ge
 import { cardHash, validateThemes, type ThemeGroup } from "./themes";
 import { atlasSaveSchema, fixtureSave, restoreSave, writeSave, mergeAtlas, interruptSavedRuns, type AtlasSave } from "./local-state";
 import TalkPanel from "./talk-panel";
+import RegroupPanel from "./regroup-panel";
+import { applyRegroup } from "./regroup-layout";
 import DownloadButton from "./download-button";
 import ThoughtCatalogue from "./thought-catalogue";
 import MovesPanel from "./moves-panel";
@@ -155,17 +157,6 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
   }, [id, ui.zoom, ui.overview, ui.compact, updateNodeInternals]);
   const diameter = ui.scalable ? overviewDiameter(ui.zoom) : ui.compact ? 48 : 170;
   const anchorY = ui.overview ? (ui.scalable ? diameter / 2 : ui.compact ? 24 : 35) / ui.zoom : undefined;
-  const marker =
-    (
-      {
-        brief: "Seed",
-        retail: "A",
-        food: "B",
-        tools: "C",
-        repair: "B+C",
-        rotation: "A.1",
-      } as Record<string, string>
-    )[thought.id] || thought.title.split(/\s+/).slice(0, 2).map((s) => s[0]).join("");
   const loading = !!ui.busy && !!ui.live?.sources.some((source) => source.id === id);
   return (
     <article
@@ -194,7 +185,7 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
           className={`overview-target card-grip nopan ${ui.scalable ? "scale-target" : ui.compact ? "compact-target" : ""}`}
           style={{ transform: `scale(${1 / ui.zoom})`, ...(ui.scalable ? { width: diameter, height: diameter, minHeight: diameter } : {}) }}
         >
-          {ui.scalable ? <><span className="overview-code">{diameter >= 30 ? marker : ""}</span>{ui.labels?.has(id) && <span className="overview-name">{overviewName(thought)}</span>}</> : ui.compact ? marker : thought.title}
+          {ui.scalable ? ui.labels?.has(id) && <span className="overview-name">{overviewName(thought)}</span> : ui.compact ? null : thought.title}
         </TooltipButton>
       ) : (
         <>
@@ -389,6 +380,9 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
   const [cameras, setCameras] = useState<Partial<Record<Perspective, Viewport>>>(initial?.cameras ?? {});
   const [positions, setPositions] = useState<Record<string, Record<string, { x: number; y: number }>>>(initial?.positions ?? {});
   const [themeCache, setThemeCache] = useState<{ groups: ThemeGroup[]; hashes: Record<string, string>; time: string } | undefined>(initial?.themeCache);
+  const [regroupIds, setRegroupIds] = useState<string[] | null>(null);
+  const [regroupedIds, setRegroupedIds] = useState<string[]>([]);
+  const [themeUndo, setThemeUndo] = useState<{ cache: typeof themeCache; positions: typeof positions; viewport: Viewport }>();
   const [themeError, setThemeError] = useState("");
   const [themeBusy, setThemeBusy] = useState(false);
   const themePending = useRef(false);
@@ -396,7 +390,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
   async function groupThemes(full = false) {
     if (themePending.current) return;
     themePending.current = true;
-    setThemeBusy(true); setThemeError(""); themeRetryFull.current = full;
+    setThemeBusy(true); setThemeError(""); setThemeUndo(undefined); setRegroupedIds([]); themeRetryFull.current = full;
     try {
       const cards = nodes.map(n => n.data.thought);
       const hashes = Object.fromEntries(await Promise.all(cards.map(async c => [c.id, await cardHash(c)])));
@@ -422,6 +416,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
   }
   function switchPerspective(next: Perspective) {
     if (next === perspective) return;
+    setRegroupIds(null);
     setCameras(current => ({ ...current, [perspective]: flow.getViewport() }));
     perspectiveRef.current = next;
     setPerspective(next);
@@ -454,13 +449,13 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
     }
     return { ...n, position: perspective === "Lineage" ? position : positions[perspective]?.[n.id] ?? position, style: { ...n.style, pointerEvents: overview ? "none" : "all" } };
   });
-  const themeNodes: CardNode[] = perspective === "Constellation" ? groups.map((g, i) => ({ id: `theme-${i}`, type: "theme", position: { x: i * 760, y: -70 }, width: 440, height: 140, measured: { width: 440, height: 140 }, style: { width: 440, height: 140 }, draggable: false, data: { thought: { ...thought, title: g.name, summary: g.reason } } })) : [];
+  const themeNodes: CardNode[] = perspective === "Constellation" ? groups.map((g, i) => ({ hidden: !g.memberIds.length, id: `theme-${i}`, type: "theme", position: { x: i * 760, y: -70 }, width: 440, height: 140, measured: { width: 440, height: 140 }, style: { width: 440, height: 140 }, draggable: false, data: { thought: { ...thought, title: g.name, summary: g.reason } } })) : [];
   const nodesInitialized = useNodesInitialized();
   useLayoutEffect(() => {
     if (!fitPerspective.current || !nodesInitialized || themeBusy || (perspective === "Constellation" && !themeCache)) return;
     let frame = 0;
     const fitMeasured = () => {
-      const all = [...renderedNodes, ...themeNodes];
+      const all = [...renderedNodes, ...themeNodes].filter(n => !n.hidden);
       // The renderer commits a newly grouped column after this parent layout
       // effect. Wait for that commit and every node's measured dimensions.
       if (all.some(n => !flow.getNode(n.id)?.measured?.height)) {
@@ -684,6 +679,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
   }
   function open(next: Panel) {
     if (!panel) returnFocus.current = document.activeElement as HTMLElement;
+    setRegroupIds(null);
     setPanel(next);
     setPreview(false);
   }
@@ -1151,12 +1147,26 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           {focusedRelations.length > 6 && <div><button disabled={!connectionPage} onClick={() => { setConnectionPage(p => p - 1); setBranchId(null); }}>Previous connections</button><button disabled={(connectionPage + 1) * 6 >= focusedRelations.length} onClick={() => { setConnectionPage(p => p + 1); setBranchId(null); }}>Next connections</button></div>}
         </details>
         </section>}
-        {perspective === "Constellation" && <section className="themes-status" aria-label="Theme grouping">
-          <p>{themeCache ? `Grouped into themes by Minerva · grouped at ${themeCache.time}` : "Group cards into themes by Minerva"}</p>
-          {themeBusy && <p role="status">Grouping themes…</p>}
-          {themeError && <><p role="alert">{themeError}</p><button disabled={themeBusy} onClick={() => void groupThemes(themeRetryFull.current)}>Retry</button></>}
-          <button disabled={themeBusy} onClick={() => void groupThemes(true)}>Regroup</button>
+        {perspective === "Constellation" && !regroupIds && <section className="themes-status" aria-label="Theme grouping">
+          <span>{themeCache ? `${nodes.length} ideas · ${themeCache.groups.filter(g => g.memberIds.length).length} themes by Minerva` : "Group ideas into themes"}</span>
+          {themeBusy && <span role="status">Grouping themes…</span>}
+          {themeError && <><span role="alert">{themeError}</span><button disabled={themeBusy} onClick={() => void groupThemes(themeRetryFull.current)}>Retry</button></>}
+          <button data-regroup-trigger disabled={themeBusy || !themeCache} onClick={() => { setPanel(null); setFocusedId(null); setRegroupIds(selected.length ? selected : nodes.map(n => n.id)); }}>Regroup{selected.length ? ` ${selected.length} selected` : " all"}</button>
+          {selected.length > 0 && <button onClick={() => setSelected([])}>Clear selection</button>}
+          {regroupedIds.length > 0 && <><span role="status">Regrouped {regroupedIds.length} ideas</span><button onClick={() => void flow.fitView({ nodes: [...regroupedIds, ...themeCache!.groups.flatMap((g, i) => g.memberIds.some(id => regroupedIds.includes(id)) ? [`theme-${i}`] : [])].map(id => ({ id })), padding: .3, maxZoom: 1 })}>View regrouped ideas</button></>}
+          {themeUndo && <button onClick={() => { setThemeCache(themeUndo.cache); setPositions(themeUndo.positions); void flow.setViewport(themeUndo.viewport); setThemeUndo(undefined); setRegroupedIds([]); }}>Undo regroup</button>}
         </section>}
+        {perspective === "Constellation" && regroupIds && themeCache && <RegroupPanel
+          key={regroupIds.join(",")} cards={nodes.map(n => n.data.thought)} ids={regroupIds}
+          close={() => setRegroupIds(null)}
+          apply={(incoming) => {
+            setThemeUndo({ cache: themeCache, positions, viewport: flow.getViewport() });
+            setRegroupedIds(regroupIds);
+            const { groups: next, layout } = applyRegroup(themeCache.groups, incoming, regroupIds, renderedNodes);
+            setPositions(current => ({ ...current, Constellation: layout }));
+            setThemeCache({ ...themeCache, groups: next, time: new Date().toLocaleString() });
+            setRegroupIds(null);
+          }} />}
         <div className="legend" hidden={perspective === "Constellation"}>
           <span>
             <i className="legend-line inheritance" aria-hidden="true" />
@@ -1180,7 +1190,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
             </div>
           </div>}
         </div>
-        {selected.length > 0 && (
+        {selected.length > 0 && !regroupIds && (
           <div className="selection-bar">
             <span>{selected.length} selected</span>
             {session ? <><button onClick={() => open("compare")}>Compare</button><button onClick={() => move(selected)}>Weave · preview</button></> : <>
@@ -1235,7 +1245,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
         <aside
           ref={panelRef}
           tabIndex={-1}
-          className={`detail-panel ${panel === "index" ? "catalogue-panel" : ""} ${panel === "compare" || panel === "text" ? "wide-panel" : ""}`}
+          className={`detail-panel ${panel === "index" ? "catalogue-panel" : ""} ${panel === "text" ? "text-reader" : ""} ${panel === "compare" || panel === "text" ? "wide-panel" : ""}`}
           role="dialog"
           aria-modal="false"
           aria-label={
@@ -1263,14 +1273,13 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
                 : panel === "moves"
                   ? (session ? "Prepared move / no model call" : "Wander")
                   : panel === "text"
-                    ? "Same material / text reference"
+                    ? `Read as text · ${nodes.length} ideas`
                     : "Selected contributions"}
             </span>
             <button aria-label="Close panel" onClick={close}>
               ×
             </button>
           </div>}
-          {panel === "index" && <ThoughtCatalogue cards={nodes.map(n => n.data.thought)} relationships={relationships} selected={selected} select={select} focus={focus} close={close} downloadable={!session} />}
           {panel === "explore" && session && <ExplorationPanel workspaceId={savedGraph!.workspaceId}
             sources={selected.map((id) => byId.get(id)!).filter(Boolean)} inspect={inspect} />}
           {panel === "inspect" && (
@@ -1406,50 +1415,33 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
               </details>
             </>
           )}
-          {panel === "text" && (
-            <>
-              <h2>What to do with a dead shopping mall</h2>
-              <div className="reference-list">
-                {nodes
-                  .map((n) => (
-                    <section key={n.id}>
-                      <span className="instrument-label">
-                        {n.data.thought.kind} · {n.data.thought.decision}
-                      </span>
-                      <h3>{n.data.thought.title}</h3>
-                      {panel === "text" && (
-                        <>
-                          <p className="body-copy">{n.data.thought.body}</p>
-                          <p>Contribution: {n.data.thought.contribution}</p>
-                          <p>Evidence: {n.data.thought.evidence}</p>
-                          <ul>
-                            {relationshipsFor(n.id, relationships).map(
-                              (e) => (
-                                <li key={e.id}>
-                                  {e.direction} {e.kind}:{" "}
-                                  {byId.get(e.otherId)?.title} ·{" "}
-                                  {e.contribution || e.label}
-                                </li>
-                              ),
-                            )}
-                          </ul>
-                        </>
-                      )}
-                      <div className="panel-actions">
-                        <button onClick={() => focus(n.id)}>Focus ↗</button>
-                        <button onClick={() => inspect(n.id)}>Inspect</button>
-                        <button
-                          aria-pressed={selected.includes(n.id)}
-                          onClick={() => select(n.id)}
-                        >
-                          {selected.includes(n.id) ? "Selected ✓" : "Select"}
-                        </button>
-                      </div>
-                    </section>
-                  ))}
-              </div>
-            </>
-          )}
+          {panel === "text" && <div className="reader-layout">
+            <nav className="reader-contents" aria-label="Ideas">
+              {nodes.map(n => <button key={n.id} aria-current={n.id === thought.id ? "true" : undefined} onClick={() => setActive(n.id)}>{n.data.thought.title}</button>)}
+            </nav>
+            <div className="reader-main">
+              <article className="reader-article" key={thought.id}>
+                <span className="instrument-label">{thought.kind === "proposal" ? "Starting idea" : thought.kind}</span>
+                <h2>{thought.title}</h2>
+                <p className="reader-summary">{thought.summary}</p>
+                <div className="body-copy">{(thought.body.startsWith(thought.summary) ? thought.body.slice(thought.summary.length).trim() : thought.body).split("\n\n").filter(Boolean).map((paragraph, i) => <p key={i}>{paragraph}</p>)}</div>
+                <details className="reader-details"><summary>Details</summary>
+                  <p>Contribution: {thought.contribution}</p>
+                  <p>Evidence: {thought.evidence}</p>
+                  <ul>{relationshipsFor(thought.id, relationships).map(e => <li key={e.id}><button onClick={() => setActive(e.otherId)}>{byId.get(e.otherId)?.title}</button> · {e.contribution || e.label}</li>)}</ul>
+                </details>
+                <div className="reader-actions">
+                  <label><input type="checkbox" checked={selected.includes(thought.id)} onChange={() => select(thought.id)} /> Select</label>
+                  <button className="reader-open" onClick={() => inspect(thought.id)}>Open card</button>
+                  <button className="reader-center" onClick={() => focus(thought.id)}>Center on canvas</button>
+                </div>
+              </article>
+              <nav className="reader-pagination" aria-label="Reading navigation">
+                {[-1, 1].map(direction => { const neighbor = nodes[nodes.findIndex(n => n.id === thought.id) + direction]; return <button key={direction} disabled={!neighbor} onClick={() => neighbor && setActive(neighbor.id)}><span className="instrument-label">{direction < 0 ? "Previous" : "Next"}</span><span>{neighbor?.data.thought.title ?? (direction < 0 ? "First idea" : "Last idea")}</span></button>; })}
+              </nav>
+            </div>
+          </div>}
+          {panel === "index" && <ThoughtCatalogue cards={nodes.map(n => n.data.thought)} relationships={relationships} selected={selected} select={select} focus={focus} close={close} downloadable={!session} />}
           {panel === "compare" && (
             <>
               <h2>Hold the differences in view.</h2>
