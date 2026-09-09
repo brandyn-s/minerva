@@ -24,15 +24,13 @@ try {
     await page.goto(process.env.MINERVA_URL || 'http://127.0.0.1:3000');
     await page.locator('.thought').first().waitFor();
     const button = name => page.getByRole('button', { name, exact: true });
-    await page.getByRole('button', { name: /^Thoughts / }).click();
-    for (const title of feature === 'weave' ? ['A food hall', 'A shared tool library'] : ['Repair, then stay for supper']) {
-      await page.locator('.reference-list section').filter({ has: page.getByRole('heading', { name: title, exact: true }) }).getByRole('button', { name: 'Select', exact: true }).click();
+    for (const id of feature === 'weave' ? ['food', 'tools'] : ['repair']) {
+      await page.locator(`[data-id="${id}"] .select-card`).click();
     }
-    await button('Close panel').click();
     await button(feature === 'wander' ? 'Wander' : feature === 'weave' ? 'Weave' : 'Expedition').click();
     if (feature === 'wander') await button('Explore freely').click();
     if (feature === 'expedition') {
-      await page.getByLabel('Goal in one sentence').fill('Create a practical service');
+      await page.getByLabel('Where would you like to take this idea?').fill('Create a practical service');
       await button('Start expedition').click();
     }
     await started;

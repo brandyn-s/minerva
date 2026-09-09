@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { validateThemes, type ThemeGroup } from "./themes";
 
 type Card = { id: string; title: string; body: string };
-export default function RegroupPanel({ cards, ids, close, apply }: {
+export default function RegroupPanel({ cards, ids, close, apply, onGenerate }: {
+  onGenerate: () => void;
   cards: Card[]; ids: string[]; close: () => void; apply: (groups: ThemeGroup[]) => void;
 }) {
   const [groups, setGroups] = useState<ThemeGroup[]>();
@@ -23,6 +24,7 @@ export default function RegroupPanel({ cards, ids, close, apply }: {
     requestAnimationFrame(() => document.querySelector<HTMLButtonElement>("[data-regroup-trigger]")?.focus({ preventScroll: true }));
   }
   async function preview() {
+    onGenerate();
     controller.current?.abort();
     const request = new AbortController();
     controller.current = request;

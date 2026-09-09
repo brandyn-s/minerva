@@ -7,7 +7,8 @@ import DownloadButton from "./download-button";
 
 const typeIcons = { brief: FileText, proposal: Lightbulb, recombination: GitMerge, exploration: Compass };
 
-export default function ThoughtCatalogue({ cards, relationships, selected, select, focus, close, downloadable }: {
+export default function ThoughtCatalogue({ cards, relationships, selected, select, focus, close, downloadable, foldedUnder, unfold }: {
+  foldedUnder?: Map<string, string[]>; unfold?: (id: string) => void;
   cards: Thought[]; relationships: Relationship[]; selected: string[];
   select: (id: string) => void; focus: (id: string) => void; close: () => void; downloadable: boolean;
 }) {
@@ -44,6 +45,7 @@ export default function ThoughtCatalogue({ cards, relationships, selected, selec
               {isOpen ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
             </button>
           </div>
+          {foldedUnder?.has(card.id) && <p className="catalogue-fold">folded under {foldedUnder.get(card.id)!.map(id => cards.find(c => c.id === id)?.title).join(", ")} <button onClick={() => unfold?.(card.id)}>Unfold</button></p>}
           <div id={`thought-preview-${card.id}`} hidden={!isOpen} className="catalogue-preview">
             <p>{card.summary || card.body}</p>
             <div className="catalogue-actions">
