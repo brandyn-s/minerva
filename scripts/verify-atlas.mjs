@@ -49,7 +49,11 @@ const button = (name) => page.getByRole("button", { name, exact: true });
 const transform = () =>
   page.locator(".react-flow__viewport").getAttribute("style");
 const settle = () => page.waitForTimeout(350);
+const openAtlasMenu = async () => {
+  if (await page.locator(".atlas-menu").getAttribute("open") === null) await page.locator(".atlas-menu > summary").click();
+};
 const resetFixture = async () => {
+  await openAtlasMenu();
   await button("Reset to fixture").click();
   await button("Confirm Reset").click();
   await page.waitForFunction(() => document.querySelectorAll(".thought").length === 6);
@@ -73,6 +77,41 @@ const fit = async () => {
 const close = async () => {
   await button("Close panel").click();
 };
+if (process.env.MINERVA_EXPEDITION_ONLY === "1") {
+  try {
+    await page.goto(base);
+    await page.getByRole("button", { name: "Expedition panel", exact: true }).click();
+    assert.ok(await button("Start expedition").isDisabled());
+    await page.getByText("Select one card on the atlas to begin.").waitFor();
+    await close();
+    await page.getByRole("button", { name: "Select A food hall", exact: true }).click();
+    await page.getByRole("button", { name: "Expedition panel", exact: true }).click();
+    await page.getByLabel("Where would you like to take this idea?").fill("Find a practical way to bring people here on weekday evenings.");
+    const steps = page.getByRole("group", { name: "Maximum steps" });
+    await steps.getByRole("radio", { name: "3", exact: true }).check();
+    await page.screenshot({ path: `${artifacts}/expedition-setup-desktop.png` });
+    await page.setViewportSize({ width: 390, height: 844 });
+    assert.equal(await page.locator(".expedition-panel").evaluate(el => el.scrollWidth <= el.clientWidth), true);
+    await button("Start expedition").scrollIntoViewIfNeeded();
+    await page.screenshot({ path: `${artifacts}/expedition-setup-mobile.png` });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    let count = 0;
+    await page.route("**/api/expedition", route => {
+      const input = route.request().postDataJSON(); count++;
+      assert.equal(input.step, count);
+      return route.fulfill({ json: { card: { title: ["", "Repair supper club", "Bookable kitchen lessons", "Neighbourhood maker market"][count], summary: `Explore a different format: ${["", "repairing over dinner", "learning kitchen skills", "selling local crafts"][count]}.`, body: "A staffed table with shared activities." }, rationale: "A practical next step.", reached: false, reason: "More exploration remains." } });
+    });
+    await button("Start expedition").click();
+    await page.getByText("Step budget reached.", { exact: true }).waitFor();
+    assert.equal(count, 3);
+    assert.equal(await page.locator(".expedition-steps > li").count(), 3);
+    await button("New expedition").click();
+    await page.getByLabel("Where would you like to take this idea?").waitFor();
+    assert.deepEqual(errors, []);
+    console.log("Expedition setup: empty state, selection, three steps, completion and responsive layout passed.");
+  } finally { await browser.close(); streamServer.close(); }
+  process.exit(0);
+}
 async function inspectFromIndex(title) {
   await page.getByRole("button", { name: /^Thoughts / }).click();
   const row = page
@@ -264,8 +303,7 @@ try {
   await button("Repair, then stay for supper").click();
   await page.getByRole("dialog").waitFor();
   const dialog = page.getByRole("dialog");
-  assert.doesNotMatch(await dialog.locator(".status-line").allTextContents().then(lines => lines.join(" ")), /unkept draft/);
-  assert.doesNotMatch(await dialog.innerText(), /Evidence: unknown/);
+  assert.equal(await dialog.locator(".status-line").count(), 0, "default draft and unknown evidence labels stay hidden");
   assert.equal(await dialog.locator(".relationship-list li").count(), 2);
   await dialog
     .getByRole("button", { name: "A food hall ←", exact: true })
@@ -313,6 +351,12 @@ try {
   assert.equal(await page.locator(".thought.chosen").count(), 2);
   await button("Clear selection").click();
 
+  await page.route("**/api/moves", route => route.fulfill({ json: { moves: [
+    { title: "Try a workshop", question: "Who could learn here?", preview: "Host a repair workshop." },
+    { title: "Share tools", question: "What could circulate?", preview: "Lend tools locally." },
+    { title: "Invite neighbors", question: "Who could join?", preview: "Run an open evening." },
+  ] } }));
+
   // Wander and Weave: injected failure on the source card, retry and lineage.
   // MINERVA_LIVE=1 opts into two expedition steps and one reading; voice requires VOICE_ONLY too.
   const live = process.env.MINERVA_LIVE_TALK_MOVES === "1";
@@ -343,6 +387,21 @@ try {
       await selectFromIndex("Independent retail shops");
       assert.equal(await button("Weave").isEnabled(), true, "three parents can be woven");
     }
+    if (feature === "wander") {
+      assert.equal(await page.locator(".card-actions").count(), 0, "cards no longer repeat the move action");
+      assert.equal(await page.locator('[data-id="tools"] .card-top .select-card').getAttribute("aria-pressed"), "true");
+      for (const width of [1440, 390]) {
+        await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
+        const toolbar = page.locator(".selection-bar");
+        const bar = await toolbar.boundingBox();
+        const dismiss = await toolbar.getByRole("button", { name: "Clear selection", exact: true }).boundingBox();
+        assert.ok(bar.x >= 0 && bar.x + bar.width <= width, "toolbar fits viewport");
+        assert.ok(dismiss.width >= 44 && dismiss.height >= 44, "small X keeps a full click target");
+        assert.ok(Math.abs(dismiss.y - bar.y) < 2 && Math.abs(dismiss.x + dismiss.width - bar.x - bar.width) < 2, "X sits in top right");
+        await page.screenshot({ path: `${artifacts}/wander-toolbar-${width}.png` });
+      }
+      await page.setViewportSize({ width: 1440, height: 900 });
+    }
     const label = feature === "wander" ? "Wander" : "Weave";
     assert.equal(await button(feature === "wander" ? "Weave" : "Wander").isDisabled(), true);
     let attempts = 0;
@@ -361,6 +420,7 @@ try {
       else await route.fulfill({ json: mocked[feature] });
     });
     await button(label).click();
+    if (feature === "wander") await button("Explore freely").click();
     const progress = page.locator(".generation-progress");
     await progress.waitFor();
     assert.match(await progress.innerText(), feature === "wander" ? /Wander is generating new cards/ : /Weave is combining your cards/);
@@ -525,7 +585,7 @@ try {
     else await route.fulfill({ json: mockMoves });
   });
   await inspectFromIndex("A food hall");
-  await button("Consider a move").click();
+  await page.getByRole("dialog").getByRole("button", { name: "Wander", exact: true }).click();
   await page.getByRole("dialog").getByRole("alert").waitFor();
   assert.match(await page.getByRole("dialog").getByRole("alert").innerText(), /Moves test failure/);
   assert.ok(await button("Try Explore the quiet hours →").isVisible(), "prepared move remains usable");
@@ -737,10 +797,10 @@ try {
     });
     await button("Expedition").click();
     const goal = condition === "live" ? "Develop two distinct, connected drafts toward a testable evening repair service, first defining a session format and then a booking experiment." : frozenGoal;
-    await page.getByLabel("Goal in one sentence").fill(goal);
-    await page.getByLabel("Step budget", { exact: true }).selectOption(condition === "stagnation" ? "5" : "2");
+    await page.getByLabel("Where would you like to take this idea?").fill(goal);
+    await page.getByRole("group", { name: "Maximum steps" }).getByRole("radio", { name: condition === "stagnation" ? "5" : "2", exact: true }).check();
     await button("Start expedition").click();
-    assert.equal(await page.getByLabel("Goal in one sentence").count(), 0, "goal cannot be edited after start");
+    assert.equal(await page.getByLabel("Where would you like to take this idea?").count(), 0, "goal cannot be edited after start");
     if (condition === "stop") {
       await page.waitForFunction(() => document.querySelector(".expedition-steps")?.children.length === 1);
       while (calls.length < 2) await page.waitForTimeout(25);
@@ -826,7 +886,7 @@ try {
 
   // C01/C14: one versioned backup carries the complete browser atlas.
   await page.route("**/api/wander", route => route.fulfill({ json: mocked.wander }));
-  await selectFromIndex("A shared tool library"); await button("Wander").click();
+  await selectFromIndex("A shared tool library"); await button("Wander").click(); await button("Explore freely").click();
   await page.waitForFunction(() => document.querySelectorAll(".thought").length === 8);
   await inspectFromIndex("Repair apprenticeships");
   await page.getByText("Edit prepared text", { exact: true }).click();
@@ -844,7 +904,7 @@ try {
     return route.fulfill({ json: { card: card(`Durable expedition ${input.step}`), rationale: `Durable rationale ${input.step}`, reached: false, reason: "Continue exploring." } });
   });
   await page.route("**/api/reading", route => route.fulfill({ json: readingFixture }));
-  await button("Expedition").click(); await page.getByLabel("Goal in one sentence").fill("Preserve this expedition"); await button("Start expedition").click();
+  await button("Expedition").click(); await page.getByLabel("Where would you like to take this idea?").fill("Preserve this expedition"); await button("Start expedition").click();
   await page.locator(".expedition-stop").waitFor(); await button("What this expedition suggests").click();
   await page.getByRole("button", { name: "Challenge group 1" }).click();
   await button("New expedition").click();
@@ -868,13 +928,13 @@ try {
   await page.getByRole("region", { name: "What this expedition suggests" }).waitFor();
   assert.equal(await page.getByText(/Stale reading/).count(), 0, "restoring unchanged cards does not stale the reading"); await close();
   const backupDownload = page.waitForEvent("download").catch(() => null);
-  try { await button("Export atlas").click({ timeout: 5000 }); }
+  try { await openAtlasMenu(); await button("Export atlas").click({ timeout: 5000 }); }
   catch (error) { await page.screenshot({ path: `${artifacts}/export-failure.png` }); throw error; }
-  assert.equal(await page.locator('.atlas-storage [role="alert"]').count(), 0, await page.locator('.atlas-storage').innerText());
+  assert.equal(await page.locator('.atlas-menu-options [role="alert"]').count(), 0, await page.locator('.atlas-menu-options').innerText());
   const backup = await backupDownload; assert.ok(backup, "JSON backup download starts"); assert.equal(backup.suggestedFilename(), "minerva-atlas.json");
   const backupBytes = await readFile(await backup.path()); const backupState = JSON.parse(backupBytes);
   await resetFixture(); assert.equal(await page.locator(".thought").count(), 6);
-  const upload = async buffer => page.getByLabel("Import atlas", { exact: true }).setInputFiles({ name: "atlas.json", mimeType: "application/json", buffer });
+  const upload = async buffer => { await openAtlasMenu(); await page.getByLabel("Import atlas file", { exact: true }).setInputFiles({ name: "atlas.json", mimeType: "application/json", buffer }); };
   await upload(backupBytes); await button("Replace").click(); await button("Confirm Replace").click();
   await page.waitForFunction(() => document.querySelectorAll(".thought").length === 10); await settle();
   const replacedSave = await storedSave();
@@ -931,7 +991,7 @@ try {
   assert.ok(recoveries.some(({ key, value }) => key.startsWith("root-atlas-recovery-") && JSON.stringify(value) === JSON.stringify(corrupt)), "broken save is preserved verbatim");
   await storagePage.close();
   await page.getByText(/^Recovery copies \(/).click();
-  const recoveryList = page.locator(".atlas-storage details");
+  const recoveryList = page.locator(".atlas-menu-options details");
   const recoveryDownload = page.waitForEvent("download"); await recoveryList.getByRole("button", { name: "Export", exact: true }).first().click();
   assert.deepEqual(JSON.parse(await readFile(await (await recoveryDownload).path())), corrupt);
   while (await recoveryList.getByRole("button", { name: "Discard", exact: true }).count()) { await recoveryList.getByRole("button", { name: "Discard", exact: true }).first().click(); await settle(); }
@@ -948,7 +1008,7 @@ try {
   const migrated = await storedSave(); assert.equal(migrated.version, 2);
   assert.deepEqual(migrated.sizes, { Lineage: {}, Evolution: {}, Constellation: {} });
   assert.deepEqual(migrated.folds, []); assert.equal(migrated.layoutHistory.Lineage.undo.length, 0);
-  await button("Reset to fixture").click(); await button("Keep current atlas").click();
+  await openAtlasMenu(); await button("Reset to fixture").click(); await button("Keep current atlas").click();
   assert.deepEqual((await storedSave()).thoughts, migrated.thoughts);
   await inspectFromIndex("Repair, then stay for supper"); await button("Focus on atlas ↗").click(); await settle();
   // Close connections so it cannot cover the resize handle.
@@ -1030,7 +1090,7 @@ try {
   await assertFolded();
   await page.screenshot({ path: `${artifacts}/folded-chain.png` });
   await page.reload(); await page.locator(".thought").first().waitFor(); await settle(); await assertFolded();
-  const foldDownload = page.waitForEvent("download"); await button("Export atlas").click();
+  await openAtlasMenu(); const foldDownload = page.waitForEvent("download"); await button("Export atlas").click();
   const foldBytes = await readFile(await (await foldDownload).path()); assert.deepEqual(JSON.parse(foldBytes).folds, ["food"]);
   await resetFixture(); await upload(foldBytes); await button("Replace").click(); await button("Confirm Replace").click(); await settle(); await assertFolded();
   for (const perspective of ["Evolution", "Constellation", "Lineage"]) { await button(perspective).click(); await settle(); await assertFolded(); }
@@ -1322,7 +1382,7 @@ try {
     .locator('[data-id="food"] .card-title')
     .boundingBox();
   const actionBox = await mobile
-    .locator('[data-id="food"] .card-actions button')
+    .locator('[data-id="food"] .card-top .select-card')
     .first()
     .boundingBox();
   const nodeBeforePinch = await mobile
@@ -1331,7 +1391,8 @@ try {
   const prePinch = await mobileTransform();
   const x = titleBox.x + 65;
   const y1 = titleBox.y + 10;
-  const y2 = actionBox.y + 15;
+  const y2 = actionBox.y + actionBox.height / 2;
+  const x2 = actionBox.x + actionBox.width / 2;
   await cdp.send("Input.dispatchTouchEvent", {
     type: "touchStart",
     touchPoints: [{ x, y: y1, id: 1 }],
@@ -1340,7 +1401,7 @@ try {
     type: "touchStart",
     touchPoints: [
       { x, y: y1, id: 1 },
-      { x: x + 30, y: y2, id: 2 },
+      { x: x2, y: y2, id: 2 },
     ],
   });
   for (let i = 1; i <= 5; i++)
@@ -1348,7 +1409,7 @@ try {
       type: "touchMove",
       touchPoints: [
         { x: x - i * 4, y: y1 - i * 4, id: 1 },
-        { x: x + 30 + i * 4, y: y2 + i * 4, id: 2 },
+        { x: x2 + i * 4, y: y2 + i * 4, id: 2 },
       ],
     });
   await cdp.send("Input.dispatchTouchEvent", {
@@ -1392,7 +1453,7 @@ try {
   await mobile.getByRole("dialog").waitFor();
   assert.equal(await mobile.getByRole("dialog").count(), 1);
   await mobile
-    .getByRole("button", { name: "Consider a move", exact: true })
+    .getByRole("dialog").getByRole("button", { name: "Wander", exact: true })
     .tap();
   await mobile
     .getByRole("button", { name: "Try Explore the quiet hours →", exact: true })

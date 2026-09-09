@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { ChevronDown } from "lucide-react";
 import {
   createContext,
   useContext,
@@ -33,6 +34,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import type { AtlasFixture, Thought, Relationship } from "./domain";
 import type { AtlasSession, LayoutRecord } from "../workspaces/graph-domain";
+import { ArrowRight, Crosshair, CaretRight, X } from "@phosphor-icons/react";
 import { relationshipsFor } from "./domain";
 import { mallFixture } from "./fixture";
 import { wanderSchema, weaveSchema, moveCardSchema, type ContextualMove, type GeneratedCard, type LiveFeature } from "./generation";
@@ -63,7 +65,6 @@ const Interaction = createContext<{
   selected: string[];
   inspect: (id: string) => void;
   select: (id: string) => void;
-  move: (id: string) => void;
   focus: (id: string) => void;
   folded?: Record<string, number>;
   unfold?: (id: string) => void;
@@ -76,7 +77,6 @@ const Interaction = createContext<{
   selected: [],
   inspect: () => {},
   select: () => {},
-  move: () => {},
   focus: () => {},
 });
 function ThoughtCard({ id, data }: NodeProps<CardNode>) {
@@ -212,6 +212,14 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
             >
               ⠿
             </TooltipButton>
+            <button
+              className="nodrag nopan select-card"
+              aria-pressed={ui.selected.includes(thought.id)}
+              aria-label={`Select ${thought.title}`}
+              onClick={() => ui.select(thought.id)}
+            >
+              {ui.selected.includes(thought.id) ? "✓" : "+"}
+            </button>
           </div>
           <button className="card-title nodrag">{thought.title}</button>
           <p className="card-summary">{thought.summary}</p>
@@ -230,22 +238,6 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
                   ? "Shared context"
                   : "Independent starting idea"}
           </div>}
-          <div className="card-actions">
-            <button
-              className="nodrag nopan"
-              onClick={() => ui.move(thought.id)}
-            >
-              Consider a move ↗
-            </button>
-            <button
-              className="nodrag nopan select-card"
-              aria-pressed={ui.selected.includes(thought.id)}
-              aria-label={`Select ${thought.title}`}
-              onClick={() => ui.select(thought.id)}
-            >
-              {ui.selected.includes(thought.id) ? "✓" : "+"}
-            </button>
-          </div>
         </div>
       )}
     </article>
@@ -558,6 +550,16 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
   const [expeditions, setExpeditions] = useState<AtlasSave["expeditions"]>(initial?.expeditions ?? []);
   const [activeExpedition, setActiveExpedition] = useState<number | null>(initial?.activeExpedition ?? null);
   const [storageNotice, setStorageNotice] = useState(restoreNotice);
+  const storageMenu = useRef<HTMLDetailsElement>(null);
+  useEffect(() => { if (restoreNotice && storageMenu.current) storageMenu.current.open = true; }, [restoreNotice]);
+  const importInput = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const dismiss = (event: PointerEvent) => {
+      if (storageMenu.current && !storageMenu.current.contains(event.target as HTMLElement)) storageMenu.current.open = false;
+    };
+    document.addEventListener("pointerdown", dismiss);
+    return () => document.removeEventListener("pointerdown", dismiss);
+  }, []);
   const [importFile, setImportFile] = useState<AtlasSave>();
   const [importBusy, setImportBusy] = useState(false);
   const [importNotice, setImportNotice] = useState("");
@@ -1006,22 +1008,27 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           <h1>{session ? "Saved idea atlas" : "The mall, reconsidered"}</h1>
         </div>
         {!session && <nav className="perspective-switch" aria-label="Atlas perspective">{(["Lineage", "Evolution", "Constellation"] as const).map(view => <button key={view} aria-pressed={perspective === view} onClick={() => switchPerspective(view)}>{view}</button>)}</nav>}
-      </header>
-      {!session && <div className="atlas-storage" aria-label="Atlas storage">
-        <button onClick={exportAtlas}>Export atlas</button>
-        <label>Import atlas <input aria-label="Import atlas" type="file" accept=".json,application/json" onChange={async e => {
+      {!session && <details ref={storageMenu} className="atlas-menu" onKeyDown={event => {
+          if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); }
+        }}>
+        <summary>Menu <ChevronDown size={14} aria-hidden="true" /></summary>
+        <div className="atlas-menu-options" aria-label="Atlas storage">
+        <button onClick={() => { exportAtlas(); if (storageMenu.current) storageMenu.current.open = false; }}>Export atlas</button>
+        <button onClick={() => importInput.current?.click()}>Import atlas</button>
+        <input ref={importInput} hidden aria-label="Import atlas file" type="file" accept=".json,application/json" onChange={async e => {
           const file = e.target.files?.[0]; e.target.value = ""; setImportFile(undefined); setImportNotice("");
           if (!file) return;
           try { setImportFile(interruptSavedRuns(atlasSaveSchema.parse(JSON.parse(await file.text())))); }
           catch (error) { setImportNotice(`Invalid atlas file: ${error instanceof Error ? error.message : String(error)}`); }
-        }} /></label>
+        }} />
         <button onClick={() => setConfirmation("reset")}>Reset to fixture</button>
         {importFile && <span>{importFile.thoughts.length} cards ready. <button disabled={importBusy} onClick={() => setConfirmation("replace")}>Replace</button> <button disabled={importBusy} onClick={() => void importAtlas(true)}>Merge</button> <button onClick={() => setImportFile(undefined)}>Cancel import</button></span>}
         {confirmation && <div role="group" aria-label="Confirm atlas change"><p>{confirmation === "reset" ? "Reset to fixture? This discards the atlas, Talk and expeditions." : "Replace this atlas with the backup? Current content will be discarded."}</p><button onClick={() => { const action = confirmation; setConfirmation(null); if (action === "reset") void resetFixture(); else void importAtlas(false); }}>Confirm {confirmation === "reset" ? "Reset" : "Replace"}</button><button onClick={() => setConfirmation(null)}>Keep current atlas</button></div>}
         {!!recoveries.length && <details><summary>Recovery copies ({recoveries.length})</summary><ul>{recoveries.map(copy => <li key={copy.key}>{copy.key}<button onClick={() => { const url = URL.createObjectURL(new Blob([JSON.stringify(copy.value, null, 2)], { type: "application/json" })); const a = document.createElement("a"); a.href = url; a.download = `${copy.key}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }}>Export</button><button onClick={() => void discardRecovery(copy.key).then(() => setRecoveries(current => current.filter(c => c.key !== copy.key))).catch(() => setImportNotice("Could not discard recovery copy."))}>Discard</button></li>)}</ul></details>}
         {importNotice && <p role="alert">{importNotice}</p>}
         {storageNotice && <p role="status">{storageNotice}</p>}
-      </div>}
+      </div></details>}
+      </header>
       <div
         className="field"
         ref={field}
@@ -1064,7 +1071,6 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
             selected,
             inspect,
             select,
-            move: (id) => move([id]),
             focus,
             folded: foldedCounts,
             unfold: id => setFolds(current => current.filter(key => key !== id)),
@@ -1239,15 +1245,22 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           </>}
         </nav>
         {!session && focusedId && <section className="focus-navigation" aria-label="Focused card connections">
-          <div className="focus-heading"><strong>{byId.get(focusedId)?.title}</strong><button aria-label="Close focused connections" onClick={() => setFocusedId(null)}>×</button></div>
-          <button onClick={() => focus(focusedId)}>Focus card</button>
+          <div className="focus-heading"><strong>{byId.get(focusedId)?.title}</strong><button aria-label="Close focused connections" onClick={() => setFocusedId(null)}><X size={20} aria-hidden="true" /></button></div>
+          <p className="focus-summary">{byId.get(focusedId)?.summary}</p>
+          <div className="focus-actions">
+            <button className="focus-open" onClick={() => inspect(focusedId)}>Open card <ArrowRight size={22} aria-hidden="true" /></button>
+            <button className="focus-center" onClick={() => focus(focusedId)}><Crosshair size={24} aria-hidden="true" />Center on canvas</button>
+          </div>
+          <details className="focus-connections" key={focusedId}>
+          <summary>Connections <CaretRight size={20} aria-hidden="true" /></summary>
           <GraphNavigation id={focusedId} chain={chain} chainIds={chainIds} byId={byId} folds={folds} setChain={setChain} setFolds={setFolds} focus={focus} />
           <label>Show connections <select value={connectionKind} onChange={e => { setConnectionKind(e.target.value); setConnectionPage(0); setBranchId(null); }}>
             <option value="parents">Parents</option><option value="children">Children</option><option value="associations">Associations</option><option value="context">Shared brief</option>
           </select></label>
-          <p className="small-note">{focusedRelations.length} connections · up to 6 shown at a time. Follow a link to bring that card into view.</p>
+          <p className="small-note">{focusedRelations.length ? `${focusedRelations.length} connection${focusedRelations.length === 1 ? "" : "s"}` : `No ${connectionKind === "context" ? "shared brief connections" : connectionKind}.`}</p>
           <ul>{relationPage.map(edge => <li key={edge.id}><button className="relative-link" onClick={() => focus(edge.otherId)}>{byId.get(edge.otherId)?.title} ↗</button><button aria-label={`Highlight only ${byId.get(edge.otherId)?.title}`} aria-pressed={branchId === edge.id} onClick={() => setBranchId(branchId === edge.id ? null : edge.id)}>Trace</button></li>)}</ul>
           {focusedRelations.length > 6 && <div><button disabled={!connectionPage} onClick={() => { setConnectionPage(p => p - 1); setBranchId(null); }}>Previous connections</button><button disabled={(connectionPage + 1) * 6 >= focusedRelations.length} onClick={() => { setConnectionPage(p => p + 1); setBranchId(null); }}>Next connections</button></div>}
+        </details>
         </section>}
         {perspective === "Constellation" && <section className="themes-status" aria-label="Theme grouping">
           <p>{themeCache ? `Grouped into themes by Minerva · grouped at ${themeCache.time}` : "Group cards into themes by Minerva"}</p>
@@ -1281,9 +1294,9 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
         {selected.length > 0 && (
           <div className="selection-bar">
             <span>{selected.length} selected</span>
-            <button onClick={() => open("compare")}>Compare</button>
-            {session ? <button onClick={() => move(selected)}>Weave · preview</button> : <>
-              <button disabled={busy || selected.length !== 1} onClick={() => void generate("wander", selected.map((id) => byId.get(id)!))} aria-busy={busy && live?.feature === "wander"}>{busy && live?.feature === "wander" && <span className="generation-spinner" aria-hidden="true" />}{busy && live?.feature === "wander" ? "Wandering…" : "Wander"}</button>
+            {session ? <><button onClick={() => open("compare")}>Compare</button><button onClick={() => move(selected)}>Weave · preview</button></> : <>
+              <button className="wander-action" disabled={busy || selected.length !== 1} onClick={() => move(selected)} aria-busy={busy && live?.feature === "wander"}>{busy && live?.feature === "wander" && <span className="generation-spinner" aria-hidden="true" />}{busy && live?.feature === "wander" ? "Wandering…" : "Wander"}</button>
+              <button onClick={() => open("compare")}>Compare</button>
               <button disabled={selected.length !== 1} onClick={() => open("expedition")}>Expedition</button>
               <button disabled={busy || selected.length < 2} onClick={() => void generate("weave", selected.map((id) => byId.get(id)!))} aria-busy={busy && live?.feature === "weave"}>{busy && live?.feature === "weave" && <span className="generation-spinner" aria-hidden="true" />}{busy && live?.feature === "weave" ? "Weaving…" : "Weave"}</button>
             </>}
@@ -1298,8 +1311,10 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
                 kind: relationshipKind, label: relationshipLabel, contribution: relationshipLabel }).catch(() => {}); }}>Save relationship</button>
             </details>}
             <button
+              className="selection-close"
               aria-label="Clear selection"
-              onClick={() => { setSelected([]); setFocusedId(null); }}
+              title="Clear selection"
+              onClick={() => { setSelected([]); setFocusedId(null); if (panel === "moves") setPanel(null); }}
             >
               ×
             </button>
@@ -1338,7 +1353,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
             panel === "inspect"
               ? thought.title
               : panel === "moves"
-                ? "Contextual moves"
+                ? (session ? "Contextual moves" : "Wander")
                 : panel === "index"
                   ? "Thought index"
                   : panel === "compare"
@@ -1357,7 +1372,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
               {panel === "inspect"
                 ? "Thought / source material"
                 : panel === "moves"
-                  ? (session ? "Prepared move / no model call" : "Consider a move")
+                  ? (session ? "Prepared move / no model call" : "Wander")
                   : panel === "text"
                     ? "Same material / text reference"
                     : panel === "index"
@@ -1407,7 +1422,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
                     ? "Remove from selection"
                     : "Select for comparison"}
                 </button>
-                <button onClick={() => move([active])}>Consider a move</button>
+                <button disabled={!session && busy} onClick={() => move([active])}>{session ? "Consider a move" : "Wander"}</button>
                 <button onClick={() => focus(active)}>Focus on atlas ↗</button>
               </div>
               <h3>Relationships</h3>
@@ -1603,6 +1618,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           {panel === "moves" && !session && selected.length === 1 && <MovesPanel
             key={selected[0]} source={{ ...byId.get(selected[0])!, relationships: relationshipsFor(selected[0], relationships) }}
             prepared={byId.get(selected[0])!.move} busy={busy} error={live?.move ? live.error : undefined}
+            explore={() => void generate("wander", [byId.get(selected[0])!])}
             choose={(move) => void generate("wander", [byId.get(selected[0])!], move)}
             retryGeneration={() => { if (live) void generate(live.feature, live.sources, live.move); }} />}
           {panel === "moves" && (session || selected.length !== 1) && (
