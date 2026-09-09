@@ -77,6 +77,44 @@ const fit = async () => {
 const close = async () => {
   await button("Close panel").click();
 };
+if (process.env.MINERVA_SELECTION_DOCK_ONLY === "1") {
+  try {
+    await page.goto(base);
+    await page.getByRole("button", { name: "Select A food hall", exact: true }).click();
+    const dock = page.locator(".light-selection-dock");
+    const action = name => dock.getByRole("button", { name, exact: true });
+    assert.ok(await action("Wander").isEnabled());
+    assert.ok(await action("Weave").isDisabled());
+    await page.screenshot({ path: `${artifacts}/selection-dock-desktop.png` });
+    await action("Compare").click();
+    await page.getByRole("dialog").waitFor(); await close();
+    await action("Expedition").click();
+    await page.getByRole("dialog", { name: "Expedition", exact: true }).waitFor(); await close();
+    await page.route("**/api/moves", route => route.fulfill({ status: 500, json: { error: "Prepared moves fixture" } }));
+    await action("Wander").click();
+    await page.getByRole("dialog").waitFor(); await close();
+    await page.getByRole("button", { name: "Select A shared tool library", exact: true }).click();
+    assert.ok(await action("Wander").isDisabled());
+    assert.ok(await action("Expedition").isDisabled());
+    assert.ok(await action("Weave").isEnabled());
+    await page.setViewportSize({ width: 390, height: 844 });
+    assert.ok(await dock.evaluate(el => { const r = el.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth; }));
+    await page.screenshot({ path: `${artifacts}/selection-dock-mobile.png` });
+    await page.route("**/api/weave", async route => {
+      await new Promise(resolve => setTimeout(resolve, 600));
+      await route.fulfill({ json: { card: { title: "Repair supper", summary: "Share tools and supper.", body: "A repair station beside shared tables." }, contributions: ["Shared tables", "Tools and skills"] } });
+    });
+    await action("Weave").click();
+    await action("Weaving…").waitFor();
+    assert.ok(await action("Weaving…").getAttribute("aria-busy") === "true");
+    await page.waitForFunction(() => [...document.querySelectorAll(".thought")].some(el => el.textContent.includes("Repair supper")));
+    await action("Clear selection").click();
+    await dock.waitFor({ state: "hidden" });
+    assert.deepEqual(errors, []);
+    console.log("Selection dock: single/multiple selection, all actions, loading, clearing and narrow layout passed.");
+  } finally { await browser.close(); streamServer.close(); }
+  process.exit(0);
+}
 if (process.env.MINERVA_EXPEDITION_ONLY === "1") {
   try {
     await page.goto(base);

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, GitFork, Copy, Compass, Shuffle } from "lucide-react";
 import {
   createContext,
   useContext,
@@ -34,7 +34,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import type { AtlasFixture, Thought, Relationship } from "./domain";
 import type { AtlasSession, LayoutRecord } from "../workspaces/graph-domain";
-import { ArrowRight, Crosshair, CaretRight, X } from "@phosphor-icons/react";
+import { ArrowRight, ArrowClockwise, Crosshair, CaretRight, X } from "@phosphor-icons/react";
 import { relationshipsFor } from "./domain";
 import { mallFixture } from "./fixture";
 import { wanderSchema, weaveSchema, moveCardSchema, type ContextualMove, type GeneratedCard, type LiveFeature } from "./generation";
@@ -185,7 +185,8 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
       {ui.overview ? (
         <TooltipButton
           aria-label={`Open ${thought.title}`}
-          title="Click to open; double-click to select; drag or use arrow keys to move"
+          title="Click to open · Double-click to select"
+          aria-description="Drag or use arrow keys to move"
           className={`overview-target card-grip nopan ${ui.scalable ? "scale-target" : ui.compact ? "compact-target" : ""}`}
           style={{ transform: `scale(${1 / ui.zoom})`, ...(ui.scalable ? { width: diameter, height: diameter, minHeight: diameter } : {}) }}
         >
@@ -223,13 +224,6 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
               </>}
             </div>
           )}
-          {thought.decision !== "unkept draft" && <div className="card-state">
-            {thought.decision === "kept"
-                ? "● Kept example"
-                : thought.id === "brief"
-                  ? "Shared context"
-                  : "Independent starting idea"}
-          </div>}
         </div>
       )}
     </article>
@@ -1263,10 +1257,10 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
         </details>
         </section>}
         {perspective === "Constellation" && !regroupIds && <section className="themes-status" aria-label="Theme grouping">
-          <span>{themeCache ? `${nodes.length} ideas · ${themeCache.groups.filter(g => g.memberIds.length).length} themes by Minerva` : "Group ideas into themes"}</span>
+          <span>{themeCache ? `${nodes.length} ideas · ${themeCache.groups.filter(g => g.memberIds.length).length} themes` : "Group ideas into themes"}</span>
           {themeBusy && <span role="status">Grouping themes…</span>}
           {themeError && <><span role="alert">{themeError}</span><button disabled={themeBusy} onClick={() => void groupThemes(themeRetryFull.current)}>Retry</button></>}
-          <button data-regroup-trigger disabled={themeBusy || !themeCache} onClick={() => { setPanel(null); setFocusedId(null); setRegroupIds(selected.length ? selected : nodes.map(n => n.id)); }}>Regroup{selected.length ? ` ${selected.length} selected` : " all"}</button>
+          <button data-regroup-trigger title={selected.length ? `Regroup ${selected.length} selected ideas` : "Regroup all ideas"} disabled={themeBusy || !themeCache} onClick={() => { setPanel(null); setFocusedId(null); setRegroupIds(selected.length ? selected : nodes.map(n => n.id)); }}><ArrowClockwise size={18} aria-hidden="true" />{themeBusy ? "Finding themes…" : "Regroup"}{!themeBusy && selected.length > 0 ? ` ${selected.length} selected` : ""}</button>
           {selected.length > 0 && <button onClick={() => setSelected([])}>Clear selection</button>}
           {regroupedIds.length > 0 && <><span role="status">Regrouped {regroupedIds.length} ideas</span><button onClick={() => void flow.fitView({ nodes: [...regroupedIds, ...themeCache!.groups.flatMap((g, i) => g.memberIds.some(id => regroupedIds.includes(id)) ? [`theme-${i}`] : [])].map(id => ({ id })), padding: .3, maxZoom: 1 })}>View regrouped ideas</button></>}
           {themeUndo && <button onClick={() => { clearHistory(); setThemeCache(themeUndo.cache); setPositions(themeUndo.positions); void flow.setViewport(themeUndo.viewport); setThemeUndo(undefined); setRegroupedIds([]); }}>Undo regroup</button>}
@@ -1307,13 +1301,13 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           </div>}
         </div>
         {selected.length > 0 && !regroupIds && (
-          <div className="selection-bar">
-            <span>{selected.length} selected</span>
+          <div className={`selection-bar${session ? "" : " light-selection-dock"}`}>
+            <span className="selection-count">{selected.length} selected</span>
             {session ? <><button onClick={() => open("compare")}>Compare</button><button onClick={() => move(selected)}>Weave · preview</button></> : <>
-              <button className="wander-action" disabled={busy || selected.length !== 1} onClick={() => move(selected)} aria-busy={busy && live?.feature === "wander"}>{busy && live?.feature === "wander" && <span className="generation-spinner" aria-hidden="true" />}{busy && live?.feature === "wander" ? "Wandering…" : "Wander"}</button>
-              <button onClick={() => open("compare")}>Compare</button>
-              <button disabled={selected.length !== 1} onClick={() => open("expedition")}>Expedition</button>
-              <button disabled={busy || selected.length < 2} onClick={() => void generate("weave", selected.map((id) => byId.get(id)!))} aria-busy={busy && live?.feature === "weave"}>{busy && live?.feature === "weave" && <span className="generation-spinner" aria-hidden="true" />}{busy && live?.feature === "weave" ? "Weaving…" : "Weave"}</button>
+              <button className="wander-action" disabled={busy || selected.length !== 1} onClick={() => move(selected)} aria-busy={busy && live?.feature === "wander"}>{busy && live?.feature === "wander" ? <span className="generation-spinner" aria-hidden="true" /> : <GitFork size={22} aria-hidden="true" />}{busy && live?.feature === "wander" ? "Wandering…" : "Wander"}</button>
+              <button onClick={() => open("compare")}><Copy size={22} aria-hidden="true" />Compare</button>
+              <button disabled={selected.length !== 1} onClick={() => open("expedition")}><Compass size={24} aria-hidden="true" />Expedition</button>
+              <button disabled={busy || selected.length < 2} onClick={() => void generate("weave", selected.map((id) => byId.get(id)!))} aria-busy={busy && live?.feature === "weave"}>{busy && live?.feature === "weave" ? <span className="generation-spinner" aria-hidden="true" /> : <Shuffle size={22} aria-hidden="true" />}{busy && live?.feature === "weave" ? "Weaving…" : "Weave"}</button>
             </>}
             {session && selected.length === 2 && <details className="layout-menu"><summary>Connect selected</summary>
               <p>From {byId.get(selected[0])?.title} to {byId.get(selected[1])?.title}</p>
@@ -1331,7 +1325,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
               title="Clear selection"
               onClick={() => { setSelected([]); setFocusedId(null); if (panel === "moves") setPanel(null); }}
             >
-              ×
+              {session ? "×" : <X size={24} aria-hidden="true" />}
             </button>
           </div>
         )}
