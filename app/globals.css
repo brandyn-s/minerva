@@ -974,6 +974,39 @@ summary {
 .atlas-menu { margin-left: auto; position: relative; flex-shrink: 0; z-index: 30; }
 .atlas-menu summary { display: flex; align-items: center; justify-content: center; gap: 10px; list-style: none; cursor: pointer; min-height: 44px; padding: 10px 16px; border: 1px solid #aa9168; border-radius: 6px; background: #faf6ea; font: 13px/1.5 ui-monospace, monospace; }
 .atlas-menu summary::-webkit-details-marker { display: none; }
+.atlas-header-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0; }
+.atlas-header-actions .atlas-menu { margin-left: 0; }
+.guide-launcher { min-height: 44px; padding: 10px 16px; border: 1px solid #aa9168; border-radius: 6px; background: #faf6ea; font: 13px/1.5 ui-monospace, monospace; }
+.guide-launcher[aria-expanded="true"] { background: var(--teal); color: var(--card); }
+.detail-panel.guide-panel { width: min(680px, calc(100vw - 40px)); bottom: 20px; padding: 20px 30px 30px; }
+.guide-panel .panel-heading { margin-bottom: 12px; }
+.guide-content h2 { font-size: clamp(26px, 3vw, 36px); line-height: 1.15; margin: 10px 0 16px; font-weight: 400; max-width: 18ch; }
+.guide-content h3 { font-size: 21px; margin: 0 0 12px; }
+.guide-content p { margin: 0 0 16px; }
+.guide-content .guide-intro { font-size: 18px; line-height: 1.6; }
+.guide-start { border-left: 3px solid var(--teal); padding: 4px 0 4px 20px; margin: 26px 0; }
+.guide-start > p:last-child { color: #52605a; font-size: 15px; margin-bottom: 0; }
+.guide-content ol, .guide-content ul { padding-left: 22px; margin: 0 0 18px; }
+.guide-content li + li { margin-top: 12px; }
+.guide-chapters details { border-top: 1px solid var(--line); }
+.guide-chapters details:last-child { border-bottom: 1px solid var(--line); }
+.guide-chapters summary { cursor: pointer; padding: 16px 0; min-height: 48px; font-size: 18px; font-weight: 600; }
+.guide-chapters details > div { padding: 4px 0 12px; }
+.guide-content dl { margin: 0 0 20px; }
+.guide-content dt { font-weight: 600; margin-top: 18px; }
+.guide-content dd { margin: 4px 0 0; }
+.guide-content kbd { font: 12px/1.5 ui-monospace, monospace; border: 1px solid var(--line); border-radius: 3px; padding: 2px 5px; white-space: nowrap; }
+@media (max-width: 700px) {
+  .atlas-header-actions { gap: 6px; }
+  .guide-launcher, .atlas-header-actions .atlas-menu summary { padding: 10px 12px; }
+  .detail-panel.guide-panel { top: 160px; right: 10px; bottom: 10px; width: calc(100vw - 20px); padding: 16px 20px 24px; }
+  .guide-panel .panel-heading { top: -16px; }
+}
+@media (min-width: 701px) and (max-width: 1000px) {
+  .scalable-atlas .masthead { flex-wrap: wrap; height: auto; min-height: 76px; padding: 12px 20px; gap: 12px; }
+  .scalable-atlas .perspective-switch { order: 3; flex-basis: 100%; flex-wrap: nowrap; }
+  .detail-panel.guide-panel { top: 142px; }
+}
 .atlas-menu[open] summary svg { transform: rotate(180deg); }
 .atlas-menu[open] summary { background: var(--teal); color: var(--card); }
 .atlas-menu-options { position: absolute; right: 0; top: calc(100% + 8px); width: 280px; max-width: calc(100vw - 20px); max-height: calc(100dvh - 100px); overflow: auto; padding: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 8px 24px #273a3526; }

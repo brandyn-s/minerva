@@ -47,6 +47,7 @@ import DownloadButton from "./download-button";
 import ThoughtCatalogue from "./thought-catalogue";
 import MovesPanel from "./moves-panel";
 import ExpeditionPanel from "./expedition-panel";
+import GuideContent from "./guide-content";
 import TooltipButton from "./tooltip-button";
 import { overviewDiameter, overviewLabels, overviewName } from "./overview";
 import ExplorationPanel, { ProposalDecisions } from "../exploration/panel";
@@ -55,7 +56,7 @@ type CardNode = Node<{ thought: Thought; geometry?: { width: number; height: num
 // Keep screen-sized overview markers separated at the farthest zoom-out.
 const MIN_ZOOM = 0.03;
 
-type Panel = "expedition" | "talk" | "inspect" | "compare" | "moves" | "index" | "text" | "explore" | null;
+type Panel = "guide" | "expedition" | "talk" | "inspect" | "compare" | "moves" | "index" | "text" | "explore" | null;
 const Interaction = createContext<{
   live?: { sources: Thought[]; feature: LiveFeature; move?: ContextualMove; error?: string };
   busy?: boolean;
@@ -919,7 +920,13 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           <h1>{session ? "Saved idea atlas" : "The mall, reconsidered"}</h1>
         </div>
         {!session && <nav className="perspective-switch" aria-label="Atlas perspective">{(["Lineage", "Evolution", "Constellation"] as const).map(view => <button key={view} aria-pressed={perspective === view} onClick={() => switchPerspective(view)}>{view}</button>)}</nav>}
-      {!session && <details ref={storageMenu} className="atlas-menu" onKeyDown={event => {
+      {!session && <div className="atlas-header-actions">
+        <button className="guide-launcher" aria-haspopup="dialog" aria-expanded={panel === "guide"} aria-controls="atlas-guide" onClick={event => {
+          if (storageMenu.current) storageMenu.current.open = false;
+          if (panel === "guide") close();
+          else { open("guide"); returnFocus.current = event.currentTarget; }
+        }}>Guide</button>
+        <details ref={storageMenu} className="atlas-menu" onKeyDown={event => {
           if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); }
         }}>
         <summary>Menu <ChevronDown size={14} aria-hidden="true" /></summary>
@@ -937,7 +944,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
         {importFile && <span>{importFile.thoughts.length} cards ready. <button disabled={importBusy} onClick={() => void importAtlas(false)}>Replace</button> <button disabled={importBusy} onClick={() => void importAtlas(true)}>Merge</button> <button onClick={() => setImportFile(undefined)}>Cancel import</button></span>}
         {importNotice && <p role="alert">{importNotice}</p>}
         {storageNotice && <p role="status">{storageNotice}</p>}
-      </div></details>}
+      </div></details></div>}
       </header>
       <div
         className="field"
@@ -1240,13 +1247,15 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
         cards={nodes.map(n => n.data.thought)} add={addExpeditionCard} focus={id => { focus(id); setPanel("expedition"); }} />}
       {panel && panel !== "talk" && panel !== "expedition" && (
         <aside
+          key={panel === "guide" ? "guide" : "detail"}
+          id={panel === "guide" ? "atlas-guide" : undefined}
           ref={panelRef}
           tabIndex={-1}
-          className={`detail-panel ${panel === "index" ? "catalogue-panel" : ""} ${panel === "text" ? "text-reader" : ""} ${panel === "compare" || panel === "text" ? "wide-panel" : ""}`}
+          className={`detail-panel ${panel === "guide" ? "guide-panel" : ""} ${panel === "index" ? "catalogue-panel" : ""} ${panel === "text" ? "text-reader" : ""} ${panel === "compare" || panel === "text" ? "wide-panel" : ""}`}
           role="dialog"
           aria-modal="false"
           aria-label={
-            panel === "inspect"
+            panel === "guide" ? "Guide to Minerva" : panel === "inspect"
               ? thought.title
               : panel === "moves"
                 ? (session ? "Contextual moves" : "Wander")
@@ -1265,7 +1274,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
         >
           {panel !== "index" && <div className="panel-heading">
             <span className="instrument-label">
-              {panel === "inspect"
+              {panel === "guide" ? "Guide" : panel === "inspect"
                 ? "Thought / source material"
                 : panel === "moves"
                   ? (session ? "Prepared move / no model call" : "Wander")
@@ -1277,6 +1286,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
               ×
             </button>
           </div>}
+          {panel === "guide" && <GuideContent />}
           {panel === "explore" && session && <ExplorationPanel workspaceId={savedGraph!.workspaceId}
             sources={selected.map((id) => byId.get(id)!).filter(Boolean)} inspect={inspect} />}
           {panel === "inspect" && (
