@@ -112,12 +112,16 @@ if (process.env.MINERVA_EXPEDITION_ONLY === "1") {
   } finally { await browser.close(); streamServer.close(); }
   process.exit(0);
 }
+const catalogueRow = (target, title) => target.locator(".catalogue-entry").filter({ has: target.getByText(title, { exact: true }) });
+async function focusFromIndex(target, title) {
+  const row = catalogueRow(target, title);
+  await row.locator(".catalogue-disclosure").click();
+  await row.getByRole("button", { name: "Show in atlas", exact: true }).click();
+}
 async function inspectFromIndex(title) {
   await page.getByRole("button", { name: /^Thoughts / }).click();
-  const row = page
-    .locator(".reference-list section")
-    .filter({ has: page.getByRole("heading", { name: title, exact: true }) });
-  await row.getByRole("button", { name: "Inspect", exact: true }).click();
+  await focusFromIndex(page, title);
+  await button("Open card").click();
 }
 async function assertAttached() {
   const attached = await page.evaluate(() => {
@@ -649,6 +653,7 @@ try {
   await page.getByRole("button", { name: /^Thoughts / }).click();
   await page.getByPlaceholder("Search titles").fill("Morning repair table");
   const downloadedAtlas = page.waitForEvent("download");
+  await page.locator(".catalogue-menu > summary").click();
   await button("Download all cards").click();
   assert.equal((await downloadedAtlas).suggestedFilename(), "minerva-atlas.md");
   const atlasMarkdown = await page.evaluate(() => window.downloads[1]);
@@ -761,7 +766,7 @@ try {
   assert.equal(await page.locator(".talk-transcript section").count(), 0, "reset clears conversation");
   await close();
   await button("Read as text").click();
-  assert.equal(await page.locator(".reference-list section").count(), 6);
+  assert.equal(await page.locator(".catalogue-entry").count(), 6);
   await close();
 
   // C12/C11: expedition lifecycle and navigable interpretations.
@@ -1101,9 +1106,9 @@ try {
   for (const perspective of ["Evolution", "Constellation", "Lineage"]) { await button(perspective).click(); await settle(); await assertFolded(); }
   await page.getByRole("button", { name: /^Thoughts / }).click();
   await page.getByLabel("Find a thought").fill("Repair, then stay for supper");
-  const foldedRow = page.locator(".reference-list section"); assert.match(await foldedRow.innerText(), /folded under A food hall/);
-  await foldedRow.getByRole("button", { name: "Select", exact: true }).click();
-  assert.equal(await foldedRow.getByRole("button", { name: "Selected ✓", exact: true }).count(), 1);
+  const foldedRow = page.locator(".catalogue-entry"); assert.match(await foldedRow.innerText(), /folded under A food hall/);
+  await foldedRow.getByRole("checkbox").check();
+  assert.equal(await foldedRow.getByRole("checkbox").isChecked(), true);
   await foldedRow.getByRole("button", { name: "Unfold", exact: true }).click(); await close(); await settle();
   assert.equal(await page.locator(".thought").count(), 6); assert.deepEqual((await storedSave()).positions, foldedPositions);
   assert.equal(navigationCalls, 0, "focus, fold, unfold and navigation make no model calls");
@@ -1375,10 +1380,7 @@ try {
   );
 
   await mobile.getByRole("button", { name: /^Thoughts / }).click();
-  const row = mobile.locator(".reference-list section").filter({
-    has: mobile.getByRole("heading", { name: "A food hall", exact: true }),
-  });
-  await row.getByRole("button", { name: "Focus ↗", exact: true }).click();
+  await focusFromIndex(mobile, "A food hall");
   await mobile.waitForTimeout(350);
 
   const mobileTransform = () =>
@@ -1444,13 +1446,7 @@ try {
   await mobile
     .getByRole("button", { name: /^Thoughts / })
     .evaluate((e) => e.click());
-  await mobile
-    .locator(".reference-list section")
-    .filter({
-      has: mobile.getByRole("heading", { name: "A food hall", exact: true }),
-    })
-    .getByRole("button", { name: "Focus ↗", exact: true })
-    .click();
+  await focusFromIndex(mobile, "A food hall");
   await mobile.waitForTimeout(350);
   await mobile.route("**/api/moves", (route) => route.fulfill({ status: 500, json: { error: "Offline test" } }));
   await mobile.route("**/api/wander", (route) => route.fulfill({ json: { cards: [card("Quiet morning table")] } }));
