@@ -633,27 +633,6 @@ summary {
     14px/48px ui-monospace,
     monospace;
 }
-.thought-group {
-  width: 290px;
-  height: 200px;
-}
-.thought-group button {
-  transform-origin: top left;
-  width: 210px;
-  padding: 14px;
-  border-top: 3px solid var(--teal);
-  text-align: left;
-}
-.thought-group strong {
-  display: block;
-  font:
-    23px/1.2 Georgia,
-    serif;
-  margin-bottom: 8px;
-}
-.thought-group span {
-  font-size: 11px;
-}
 /* Overview targets alone receive input, so invisible card bounds cannot cover neighbors. */
 .thought.thought-overview {
   pointer-events: none;

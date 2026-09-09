@@ -1,15 +1,17 @@
-# Talk and contextual moves demo handoff
+# Atlas demo handoff
 
 Root `/` runs the mall atlas with live Wander, Weave, typed Talk and contextual moves.
 All new state stays in memory; reload clears conversation, generated cards and edges.
 This owner-directed batch supersedes earlier handoff outcomes. Stop after stable deployment.
 
-- Checkout: `/Users/brandyn.schult/code/minerva`; branch: `feat/atlas-talk-moves`.
+- Checkout: `/Users/brandyn.schult/code/minerva-remove-denser`; branch: `fix/remove-denser-study`.
 - Base: `origin/main` at `30467c1c5c87d1cd2f3d79ff085326f772816e14`.
 - Stable target: https://minerva-eight.vercel.app/; released SHA and hosted evidence are in the operator response.
 - Next role: one operator-started Fable 5.1 review, read-only; no further build is authorized.
 
 ## Behavior
+
+Denser Study is removed: no scene switch, prepared variation groups or extra 24-card fixture. The six-card mall remains.
 
 Talk to Minerva opens a dismissible panel; each turn includes prior conversation and selected cards' title, summary, body and relationships.
 `POST /api/talk` uses AI SDK `streamText`, plain `anthropic/claude-sonnet-5`, tag `feature:talk`.
@@ -45,6 +47,6 @@ Moves input: A food hall and its relationships. Actual returned response:
 
 ## Startup
 
-`cd /Users/brandyn.schult/code/minerva`; `npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run dev -- --port 3011`; open `/`.
-Mocked browser check: `MINERVA_URL=http://127.0.0.1:3011 npm run test:browser`.
+`cd /Users/brandyn.schult/code/minerva-remove-denser`; `npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run dev -- --port 3016`; open `/`.
+Mocked browser check: `MINERVA_URL=http://127.0.0.1:3016 npm run test:browser`.
 Live suggestions are speculative. No persistence or owner experience acceptance is claimed.

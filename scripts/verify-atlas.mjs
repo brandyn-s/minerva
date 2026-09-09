@@ -611,34 +611,8 @@ try {
   await close();
 
   await page.setViewportSize({ width: 1440, height: 900 });
-  await button("Denser study").click();
-  await settle();
-  await fit();
-  assert.equal(await page.locator(".thought-group").count(), 3);
-  for (const group of await page.locator(".thought-group button").all())
-    assert.ok(await group.isVisible());
-  assert.equal(
-    await page.locator(".react-flow__edge").count(),
-    10,
-    "seven original relationships plus three grouped derivation paths remain visible",
-  );
-  await page.locator(".thought-group button").last().click();
-  assert.equal(await page.locator(".reference-list section").count(), 8);
-  await close();
-  for (let i = 0; i < 6; i++) await cameraKey("+");
-  await settle();
-  assert.equal(await page.locator(".thought-group").count(), 3,
-    "zooming in keeps dense variations grouped");
-  assert.equal(await page.locator(".react-flow__edge").count(), 10,
-    "zooming in must not restore the dense web of variation edges");
-  await fit();
-  await inspectFromIndex("beginner session · tools");
-  assert.match(
-    await page.getByRole("dialog").innerText(),
-    /incoming \/ derivation/i,
-  );
-  await close();
-  await page.screenshot({ path: `${artifacts}/dense.png` });
+  assert.equal(await button("Denser study").count(), 0);
+  assert.equal(await button("Mall demo").count(), 0);
 
   // IB02/03/04: Chromium CDP touch simulation, including contacts on a title and action.
   const touch = await browser.newContext({
@@ -893,7 +867,6 @@ try {
         result:
           "IB01–IB06 passed with mouse/keyboard and simulated CDP touch; programmatic click is simulated assistive activation, not a screen-reader review",
         demo: "6 cards / 7 edges",
-        dense: "30 cards / 31 edges",
         viewports: ["1440x900", "1280x600", "390x844"],
         artifacts,
       },

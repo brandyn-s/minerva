@@ -28,7 +28,7 @@ function thought(
     ...extra,
   };
 }
-export function mallFixture(dense = false): AtlasFixture {
+export function mallFixture(): AtlasFixture {
   const thoughts = [
     thought(
       "brief",
@@ -163,46 +163,5 @@ export function mallFixture(dense = false): AtlasFixture {
     repair: { x: 850, y: 425 },
   };
   const fixture: AtlasFixture = { thoughts, relationships, positions };
-  if (dense)
-    for (let i = 0; i < 24; i++) {
-      const id = "study-" + i;
-      const parent = ["retail", "food", "tools"][i % 3];
-      const activities = [
-        "weekend trial",
-        "weekday invitation",
-        "shared workshop",
-        "neighborhood evening",
-        "small membership",
-        "seasonal exchange",
-        "beginner session",
-        "open demonstration",
-      ];
-      fixture.thoughts.push(
-        thought(
-          id,
-          `${activities[Math.floor(i / 3)]} · ${["shops", "kitchens", "tools"][i % 3]}`,
-          "A prepared variation for checking orientation in a denser field.",
-          `Retains the ${parent} starting proposal; changes the occasion.`,
-          {
-            kind: "exploration",
-            decision: "unkept draft",
-            evidence: "unknown",
-          },
-        ),
-      );
-      fixture.positions[id] = {
-        x: 1280 + (i % 4) * 370,
-        y: Math.floor(i / 4) * 300,
-      };
-      fixture.relationships.push({
-        id: parent + "-" + id,
-        from: parent,
-        to: id,
-        kind: "derivation",
-        label: "prepared variation",
-        sourceRevision: 1,
-        contribution: `Retains the ${parent} proposal; changes the occasion.`,
-      });
-    }
   return fixture;
 }

@@ -40,7 +40,7 @@ import TalkPanel from "./talk-panel";
 import MovesPanel from "./moves-panel";
 import ExplorationPanel, { ProposalDecisions } from "../exploration/panel";
 
-type CardNode = Node<{ thought: Thought; members?: string[]; geometry?: { width: number; height: number; circular: boolean } }, "thought">;
+type CardNode = Node<{ thought: Thought; geometry?: { width: number; height: number; circular: boolean } }, "thought">;
 // Keep screen-sized overview markers separated at the farthest zoom-out.
 const MIN_ZOOM = 0.24;
 
@@ -57,7 +57,6 @@ const Interaction = createContext<{
   select: (id: string) => void;
   move: (id: string) => void;
   focus: (id: string) => void;
-  showGroup: (ids: string[]) => void;
   resize?: (id: string, size: { x: number; y: number; width: number; height: number }) => void;
 }>({
   overview: false,
@@ -68,7 +67,6 @@ const Interaction = createContext<{
   select: () => {},
   move: () => {},
   focus: () => {},
-  showGroup: () => {},
 });
 function ThoughtCard({ id, data }: NodeProps<CardNode>) {
   const { thought } = data;
@@ -79,14 +77,14 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
   useLayoutEffect(() => {
     const element = surface.current;
     if (!element) return;
-    const visible = data.members || ui.overview
+    const visible = ui.overview
       ? element.querySelector("button")! : element;
     const measure = () => {
-      const scale = data.members || ui.overview ? ui.zoom : 1;
+      const scale = ui.overview ? ui.zoom : 1;
       const geometry = {
         width: visible.offsetWidth / scale,
         height: visible.offsetHeight / scale,
-        circular: !data.members && ui.overview && ui.compact,
+        circular: ui.overview && ui.compact,
       };
       const signature = JSON.stringify(geometry);
       if (measuredGeometry.current !== signature) {
@@ -98,7 +96,7 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
     const observer = new ResizeObserver(measure);
     observer.observe(visible);
     return () => observer.disconnect();
-  }, [id, data.members, ui.overview, ui.compact, ui.zoom, updateNodeData]);
+  }, [id, ui.overview, ui.compact, ui.zoom, updateNodeData]);
   const pendingOpen = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(
     () => () => {
@@ -127,7 +125,6 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
     ui.focus(thought.id);
   }
   const updateNodeInternals = useUpdateNodeInternals();
-  const isGroup = Boolean(data.members);
   const lastGeometry = useRef({
     zoom: ui.zoom,
     overview: ui.overview,
@@ -136,7 +133,6 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
   useEffect(() => {
     const previous = lastGeometry.current;
     if (
-      isGroup ||
       previous.zoom !== ui.zoom ||
       previous.overview !== ui.overview ||
       previous.compact !== ui.compact
@@ -147,26 +143,8 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
       overview: ui.overview,
       compact: ui.compact,
     };
-  }, [id, ui.zoom, ui.overview, ui.compact, isGroup, updateNodeInternals]);
+  }, [id, ui.zoom, ui.overview, ui.compact, updateNodeInternals]);
   const anchorY = ui.overview ? (ui.compact ? 24 : 35) / ui.zoom : undefined;
-  if (data.members)
-    return (
-      <article ref={surface} className="thought-group">
-        <Handle
-          type="target"
-          position={Position.Left}
-          style={{ top: 40 / ui.zoom }}
-        />
-        <button
-          className="nodrag nopan"
-          style={{ transform: `scale(${1 / ui.zoom})` }}
-          onClick={() => ui.showGroup(data.members!)}
-        >
-          <strong>{thought.title}</strong>
-          <span>{data.members.length} prepared variations · open list ↗</span>
-        </button>
-      </article>
-    );
   const marker =
     (
       {
@@ -177,7 +155,7 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
         repair: "B+C",
         rotation: "A.1",
       } as Record<string, string>
-    )[thought.id] || (thought.id.startsWith("study-") ? thought.id.replace("study-", "") : thought.title.split(/\s+/).slice(0, 2).map((s) => s[0]).join(""));
+    )[thought.id] || thought.title.split(/\s+/).slice(0, 2).map((s) => s[0]).join("");
   return (
     <article
       ref={surface}
@@ -309,8 +287,8 @@ function FloatingEdge(props: EdgeProps) {
 }
 const edgeTypes = { floating: FloatingEdge };
 const nodeTypes = { thought: ThoughtCard };
-function presentNodes(dense: boolean, saved?: AtlasFixture): CardNode[] {
-  const fixture = saved ?? mallFixture(dense);
+function presentNodes(saved?: AtlasFixture): CardNode[] {
+  const fixture = saved ?? mallFixture();
   return fixture.thoughts.map((thought) => ({
     id: thought.id,
     type: "thought",
@@ -323,10 +301,9 @@ function presentNodes(dense: boolean, saved?: AtlasFixture): CardNode[] {
 }
 
 function Studio({ session }: { session?: AtlasSession }) {
-  const [dense, setDense] = useState(false);
   const [savedGraph, setSavedGraph] = useState(session?.initial);
-  const fixture = useMemo(() => savedGraph ?? mallFixture(dense), [dense, savedGraph]);
-  const [nodes, setNodes] = useState<CardNode[]>(() => presentNodes(false, session?.initial).map((node) => session ? {
+  const fixture = useMemo(() => savedGraph ?? mallFixture(), [savedGraph]);
+  const [nodes, setNodes] = useState<CardNode[]>(() => presentNodes(session?.initial).map((node) => session ? {
     ...node, style: { ...node.style, width: session.initial.layouts[node.id].width, height: session.initial.layouts[node.id].height },
   } : node));
   const dirtyText = useRef(new Set<string>());
@@ -342,7 +319,7 @@ function Studio({ session }: { session?: AtlasSession }) {
     setSavedGraph(graph);
     setNodes((current) => {
       const byId = new Map(current.map((node) => [node.id, node]));
-      return presentNodes(false, graph).map((node) => {
+      return presentNodes(graph).map((node) => {
         const previous = byId.get(node.id);
         return { ...node, ...previous,
           data: dirtyText.current.has(node.id) && previous ? previous.data : node.data,
@@ -387,7 +364,6 @@ function Studio({ session }: { session?: AtlasSession }) {
   const [overview, setOverview] = useState(false);
   const [viewport, setViewport] = useState<Viewport>({ x: 0, y: 0, zoom: 1 });
   const [query, setQuery] = useState("");
-  const [group, setGroup] = useState<string[] | null>(null);
   const [compact, setCompact] = useState(false);
   const [pinching, setPinching] = useState(false);
   const field = useRef<HTMLDivElement>(null);
@@ -397,43 +373,10 @@ function Studio({ session }: { session?: AtlasSession }) {
   const flow = useReactFlow<CardNode>();
   const byId = new Map(nodes.map((n) => [n.id, n.data.thought]));
   const thought = byId.get(active)!;
-  const aggregated = dense;
-  const groupedIds = aggregated
-    ? nodes
-        .filter((n) => n.id.startsWith("study-") && !selected.includes(n.id))
-        .map((n) => n.id)
-    : [];
-  const groups: CardNode[] = aggregated
-    ? ["retail", "food", "tools"]
-        .map<CardNode>((id, index) => ({
-          id: "group-" + id,
-          type: "thought",
-          width: 290,
-          height: 200,
-          measured: { width: 290, height: 200 },
-          position: { x: 1600, y: index * 580 },
-          style: { pointerEvents: "all" },
-          data: {
-            thought: {
-              ...byId.get(id)!,
-              title: ["Shop studies", "Kitchen studies", "Tool studies"][index],
-            },
-            members: fixture.relationships
-              .filter((e) => e.from === id && groupedIds.includes(e.to))
-              .map((e) => e.to),
-          },
-          draggable: false,
-        }))
-        .filter((n) => n.data.members!.length > 0)
-    : [];
-  const renderedNodes = [
-    ...nodes.map<CardNode>((n) => ({
-      ...n,
-      hidden: groupedIds.includes(n.id),
-      style: { ...n.style, pointerEvents: overview ? "none" : "all" },
-    })),
-    ...groups,
-  ];
+  const renderedNodes = nodes.map<CardNode>((n) => ({
+    ...n,
+    style: { ...n.style, pointerEvents: overview ? "none" : "all" },
+  }));
   const [liveEdges, setLiveEdges] = useState<Relationship[]>([]);
   const relationships = [...fixture.relationships, ...liveEdges];
   const [live, setLive] = useState<{ sources: Thought[]; feature: LiveFeature; move?: ContextualMove; error?: string }>();
@@ -444,7 +387,6 @@ function Studio({ session }: { session?: AtlasSession }) {
     source: edge.from,
     target: edge.to,
     type: "floating",
-    hidden: groupedIds.includes(edge.to),
     label: overview ? undefined : edge.label,
     markerEnd:
       edge.kind === "association" || edge.kind === "context"
@@ -478,17 +420,6 @@ function Studio({ session }: { session?: AtlasSession }) {
             : undefined,
     },
   }));
-  const renderedEdges = [
-    ...edges,
-    ...groups.map((n) => ({
-      id: n.id + "-edge",
-      type: "floating",
-      source: n.id.replace("group-", ""),
-      target: n.id,
-      label: overview ? undefined : `${n.data.members!.length} derivations`,
-      style: { stroke: "#28686a", strokeWidth: 2 / viewport.zoom },
-    })),
-  ];
   async function generate(feature: LiveFeature, sources: Thought[], contextualMove?: ContextualMove) {
     if (session || generating.current || (feature === "wander" ? sources.length !== 1 : sources.length < 2)) return;
     generating.current = true;
@@ -554,13 +485,12 @@ function Studio({ session }: { session?: AtlasSession }) {
   }
   function fit() {
     void flow.fitView({
-      padding: dense ? 0.5 : 0.18,
+      padding: 0.18,
       maxZoom: 1,
       nodes: renderedNodes.filter((n) => !n.hidden).map((n) => ({ id: n.id })),
     });
   }
   function open(next: Panel) {
-    if (next === "index") setGroup(null);
     if (!panel) returnFocus.current = document.activeElement as HTMLElement;
     setPanel(next);
     setPreview(false);
@@ -788,21 +718,6 @@ function Studio({ session }: { session?: AtlasSession }) {
       element.removeEventListener("pointerdown", down, true);
     };
   }, [flow]);
-  function changeScene() {
-    if (generating.current) return;
-    setLiveEdges([]);
-    setLive(undefined);
-    setDense(!dense);
-    setNodes(presentNodes(!dense));
-    setSelected([]);
-    setPanel(null);
-    setActive("repair");
-    requestAnimationFrame(() =>
-      requestAnimationFrame(() => {
-        void flow.fitView({ padding: !dense ? 0.5 : 0.18, maxZoom: 1 });
-      }),
-    );
-  }
   return (
     <main className="studio">
       <a className="skip-link" href="#atlas-tools">
@@ -860,28 +775,16 @@ function Studio({ session }: { session?: AtlasSession }) {
             select,
             move: (id) => move([id]),
             focus,
-            showGroup: (ids) => {
-              open("index");
-              setGroup(ids);
-              setQuery("");
-            },
             resize: session ? (id, size) => { void saveLayout(id, size, size).catch(() => {}); } : undefined,
           }}
         >
           <ReactFlow<CardNode>
             nodes={renderedNodes}
-            edges={renderedEdges}
+            edges={edges}
             nodeTypes={nodeTypes}
             edgeTypes={edgeTypes}
             onNodesChange={(changes) => {
-              const contentChanges = changes.filter(
-                (change) =>
-                  !("id" in change) || !change.id.startsWith("group-"),
-              );
-              if (contentChanges.length)
-                setNodes((current) =>
-                  applyNodeChanges(contentChanges, current),
-                );
+              setNodes((current) => applyNodeChanges(changes, current));
             }}
             onNodeDragStop={(_, node) => { void saveLayout(node.id, node.position).catch(() => {}); }}
             fitView={!savedGraph?.viewpoint.revision}
@@ -987,9 +890,6 @@ function Studio({ session }: { session?: AtlasSession }) {
           <button onClick={() => open("text")}>Read as text</button>
           {!session && <button onClick={() => open("talk")}>Talk to Minerva</button>}
           {!session && <span className="demo-note">Select 1 to Wander · 2+ to Weave · Reload resets</span>}
-          {!session && <button disabled={busy} onClick={changeScene}>
-            {dense ? "Mall demo" : "Denser study"}
-          </button>}
           {session && <>
             <button onClick={() => { void session.command({ operation: "seed-mall" }).catch(() => {}); }} disabled={nodes.length > 0}>Load prepared mall</button>
             <button onClick={() => { void session.command({ operation: "create-idea", ideaId: crypto.randomUUID(), title: "New idea", body: "Write your idea here." }).catch(() => {}); }}>New idea</button>
@@ -1265,20 +1165,12 @@ function Studio({ session }: { session?: AtlasSession }) {
                   />
                 </label>
               )}
-              {group && (
-                <button onClick={() => setGroup(null)}>
-                  Show all {nodes.length} thoughts
-                </button>
-              )}
               <div className="reference-list">
                 {nodes
                   .filter(
                     (n) =>
                       panel === "text" ||
-                      ((!group || group.includes(n.id)) &&
-                        n.data.thought.title
-                          .toLowerCase()
-                          .includes(query.toLowerCase())),
+                      n.data.thought.title.toLowerCase().includes(query.toLowerCase()),
                   )
                   .map((n) => (
                     <section key={n.id}>
