@@ -219,13 +219,6 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
               </>}
             </div>
           )}
-          {thought.decision !== "unkept draft" && <div className="card-state">
-            {thought.decision === "kept"
-                ? "● Kept example"
-                : thought.id === "brief"
-                  ? "Shared context"
-                  : "Independent starting idea"}
-          </div>}
         </>
       )}
     </article>
