@@ -1,55 +1,52 @@
-# Wander and Weave demo handoff
+# Atlas demo handoff
 
-Root `/` runs the mall fixture plus in-memory Wander and Weave. Reload resets.
-This owner-directed demo supersedes the M2 packages and all earlier handoff plans.
-No workspace, database, Workflow, request-policy or migration code was changed.
-No new voice, drive, perspectives, outputs, assessments, decisions, ledgers, export, duplication, history or quality controls.
+Root `/` runs the mall atlas with live Wander, Weave, typed Talk and contextual moves.
+All new state stays in memory; reload clears conversation, generated cards and edges.
+This owner-directed batch supersedes earlier handoff outcomes. Stop after stable deployment.
 
-- Checkout: `/Users/brandyn.schult/code/minerva`; branch: `fix/remove-denser-study`.
-- Base: `origin/main` at `90ce710da3fdea84b4372c8beb252bc25e2f69e2`.
-- Release target: https://minerva-eight.vercel.app/; exact released SHA and hosted evidence go in the operator response.
-- The original post-deployment Fable review is complete; Denser Study is removed, including its fixture variations, group tiles and scene switching.
+- Checkout: `/Users/brandyn.schult/code/minerva-remove-denser`; branch: `fix/remove-denser-study`.
+- Base: `origin/main` at `30467c1c5c87d1cd2f3d79ff085326f772816e14`.
+- Stable target: https://minerva-eight.vercel.app/; released SHA and hosted evidence are in the operator response.
+- Next role: one operator-started Fable 5.1 review, read-only; no further build is authorized.
 
-## Behavior and authentication
+## Behavior
 
-Select one card → Wander → two or three adjacent cards with derivation edges.
-Select two or more cards → Weave → one recombination draft with an edge for every parent.
-Inspect the draft to read its full body and one-line contribution from each parent.
-An atlas-level spinner and status stay visible during generation, including overview and cleared selection. Errors appear on source cards; Retry repeats that feature with the same source snapshot.
-`POST /api/wander` and `POST /api/weave` each call AI SDK `generateObject` once.
-Both use plain `anthropic/claude-sonnet-5`, confirmed once with `gateway.getAvailableModels()` on 2026-09-09.
-Tags: `feature:wander`, `feature:weave`. SDK automatic retries are disabled.
-Authentication: Vercel OIDC, locally refreshed with `vercel env pull .env.local --yes`; automatic when hosted.
-No key was created or requested. No application admission, reservation, budget or receipt logic in this path.
-The existing Gateway project budget is the only spend control for these features; it was not changed.
+Denser Study is removed: no scene switch, prepared variation groups or extra 24-card fixture. The six-card mall remains.
 
-## Verification and actual returned cards
+Talk to Minerva opens a dismissible panel; each turn includes prior conversation and selected cards' title, summary, body and relationships.
+`POST /api/talk` uses AI SDK `streamText`, plain `anthropic/claude-sonnet-5`, tag `feature:talk`.
+The composer stays visible while the transcript scrolls. HTTP, interrupted-stream and provider errors show Retry in the panel.
+Consider a move selects its source; exactly one selection requests three title/question/preview suggestions.
+`POST /api/moves` uses one `generateObject` call, the same model and tag `feature:moves`.
+A failed planner keeps the prepared move available and offers Retry. Choosing a move creates one card via `/api/wander` and the shared placement path.
+The derivation edge carries the move title; card-generation failures offer Retry in the panel.
+The atlas-level generation spinner from `90ce710` remains visible through overview, pan and cleared selection.
+Wander, Weave and contextual generation fit with `minZoom: 0.73`; overview thresholds are unchanged.
+Vercel OIDC authenticates Gateway calls; SDK automatic retries are disabled. No new dependencies.
+No voice, chat tools, chat-created cards, persistence, admission, budgets or workspace changes.
 
-Local `npm run check` passes: lint, TypeScript, inherited tests and production build.
-Browser checks include delayed generation: status survives zoom, pan, cleared selection and narrow screens; clears on error/success and returns on retry.
-Three-parent browser error/retry, edges, contributions and reload checks passed; one real three-parent Weave call returned HTTP 200.
-Live evidence: `/tmp/minerva-weave-three-live.json`; original Wander: `/tmp/minerva-live-wander-weave/wander-weave.json`.
-Wander input: A shared tool library. HTTP 200 returned these three cards:
+## Verification and real responses
 
-**The Depreciation Bank** — A mall wing where former anchor-store inventory is checked out against a decaying local currency instead of returned.
-Instead of borrowing tools that must come back, shoppers 'withdraw' leftover retail stock (furniture, appliances, clothing) using a scrip that loses value the longer an item sits unused in someone's home, tracked via tags. The mechanism inverts library logic: return is discouraged, hoarding is penalized, and the old department store becomes a slow-motion auction where usage itself is the currency. Empty anchor stores become sorting and tagging floors; the mall's parking structure becomes a rotating outdoor market for reappraising scrip value weekly.
+`npm run check`: lint, TypeScript, all 12 tests and production build passed.
+Only `scripts/verify-atlas.mjs` extended: mocked failures/retries, partial streaming, conversation context, three moves, lineage and reload reset.
+Each generation asserts zoom output >=73% and a generated card's Select control is visible, including mobile fallback generation.
+`MINERVA_LIVE=1` opts into one Talk and one moves-planner call; older generation calls stay mocked unless `MINERVA_LIVE_EXISTING=1` is also set.
+Live Gateway evidence: `/tmp/minerva-talk-moves-live/talk-moves.json`; mocked screenshots/checks: `/tmp/minerva-talk-moves-mock`.
+An initial live run lost the response in Chromium's network-body reader; the corrected run captures rendered text and passed.
+Talk input: selected A shared tool library; “Suggest one concrete improvement to this selected idea in two sentences.”
 
-**Skill Escrow Court** — Tool lending is replaced by a peer-arbitration system where you borrow expertise, not objects, and disputes are settled publicly in the mall's old food court.
-The food court's abandoned seating becomes a standing tribunal: anyone can 'check out' a skilled neighbor's time (rewiring a lamp, patching drywall) but must post a skill of equal value in escrow. If the exchange goes wrong, a rotating panel of mall regulars hears the case that afternoon, judgment enforced by reputation scores displayed on old directory screens. The mechanism shifts the tool-library idea from object circulation to obligation circulation, using the mall's central gathering architecture as an actual civic instrument rather than a metaphorical one.
+One concrete improvement: pair each tool checkout with a mandatory short skills-check or video demo logged in a simple membership system, so borrowers show basic competence before taking higher-risk equipment (saws, drills) home. This reduces damage/injury risk and creates a natural on-ramp to the peer-taught repair sessions already linked to this idea.
 
-**The Un-Return Wing** — One anchor store never takes anything back — instead it becomes a permanent record of what the neighborhood needed and never gave back.
-A single former department store is converted into a growing archive: every tool, appliance, or item borrowed elsewhere in the mall that is never returned gets logged here with a note from the borrower explaining why. Shelves fill not with objects but with placards, photos, and stories of failure-to-return, curated as an evolving exhibition on community trust and breakdown. The mechanism replaces circulation with confession, turning the mall's dead retail architecture into a monument to unmet reciprocity rather than a functioning exchange.
+Moves input: A food hall and its relationships. Actual returned response:
 
-Weave inputs, in order: A food hall; A shared tool library; Independent retail shops. HTTP 200 returned:
-**The Fixed & Fed Mall** — A dead mall becomes a repair-and-provisioning commons where borrowed tools, cooked food, and small maker-shops circulate through the same daily loop.
-The anchor department stores become a tool library, its checkout counter feeding directly into a central food hall built from the old atrium. Members borrow a sewing machine or drill, sit down to a shared table meal while waiting on a repair class, then walk the surrounding corridor of independent shops—each one stocked and often staffed by people who fix things with the borrowed tools, selling mended, remade, or small-batch goods that never existed in the mall's old retail mix. Tool returns happen at the food hall's edge, so borrowing, eating, and buying become one continuous, self-reinforcing walk through the building rather than three separate destinations.
-Parent 1: The food hall supplies the daily communal rhythm and central gathering space that anchors the whole loop.
-Parent 2: The tool library supplies the skill-building, borrowing, and repair activity that gives shoppers a reason to return and use the mall's other spaces.
-Parent 3: Independent retail supplies the small, distinct shops that sell the goods made or mended using the borrowed tools, closing the loop back into commerce.
+**Repair-and-Refuel Counters** — What if each kitchen stall shared a wall with a repair bench, so diners watch shoes, phones, or bikes get fixed while they eat? Turns waiting time for repairs into a dining ritual, blending trades and tables.
 
-## Startup and limits
+**Communal Weave Table** — Could one long table rotate ownership hourly between kitchens and craftspeople, becoming a living timetable of the mall's rhythms? A single table that narrates the mall's day through who's sitting at it.
 
-`cd /Users/brandyn.schult/code/minerva` then `npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run dev`; open `/`.
-Browser check: `npm run test:browser`; `MINERVA_LIVE=1` opts into one paid call per feature.
-Generated content is speculative. Local mocked checks cover failures; they do not prove hosted fault recovery.
-No persistence or owner acceptance is claimed. The original Fable review is complete; stop after deploying the Denser Study removal.
+**Ingredient Barter Board** — What if kitchens traded surplus ingredients with repair stalls for scrap materials, displayed on a public barter board? Makes the food hall a visible economy of exchange, not just consumption.
+
+## Startup
+
+`cd /Users/brandyn.schult/code/minerva-remove-denser`; `npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run dev -- --port 3016`; open `/`.
+Mocked browser check: `MINERVA_URL=http://127.0.0.1:3016 npm run test:browser`.
+Live suggestions are speculative. No persistence or owner experience acceptance is claimed.
