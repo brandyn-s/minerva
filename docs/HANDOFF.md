@@ -1,59 +1,50 @@
-# Atlas demo handoff
-Root `/` is the in-memory mall atlas with Wander, Weave, typed/spoken Talk and moves.
-This owner-directed batch ends after merge and stable deployment; one operator-started Fable review follows.
-- Worktree: `/Users/brandyn.schult/code/minerva-remove-denser`; branch: `fix/talk-markdown-readability`.
-- Started from refreshed `origin/main` at `f989afa`; exact released SHA is in the operator response.
-- Stable target: https://minerva-eight.vercel.app/; hosted verification is in the operator response.
-- No persistence, admission/budget logic, new dependencies or workspace features were added.
-Root overview: tinted circles, short collision-filtered labels, and distant dots. Focus stays at 100%, with mobile room for the connection panel.
-Relatives are paged by category, six at a time; Trace highlights one branch. Node positions stay stable.
-Actual React Flow scale evidence: `/tmp/minerva-scale-runtime-results.json` (30/100/300 cards, desktop/mobile); browser evidence: `/tmp/minerva-scale-final-release`.
+# Root atlas demo handoff
+Root `/` now includes Lineage, Evolution, Constellation and inspection inheritance/provenance.
+Owner scope ends after merge and deployment to https://minerva-eight.vercel.app/; one operator-started Fable review follows.
+- Branch: `demo/perspectives-inheritance`; base: refreshed `origin/main` at `118b095`.
+- Worktree: `/Users/brandyn.schult/code/minerva`; released SHA and hosted result are in the operator response.
+- No persistence, admission/budget logic, dependencies, database, workspace or Workflow changes.
 
-Talk removes the canvas/reset note, renders CommonMark/GFM safely, uses a compact composer and clearer message typography, and preserves scroll position while reading older replies. Markdown browser evidence: `/tmp/minerva-talk-markdown`.
 ## Behavior
-
-Includes main through `31b4b8b`: loading circles/colors, full-canvas Talk context and Enter/Shift+Enter controls.
-
-Talk's Hold to talk button accepts mouse/touch and held Space/Enter. Only a deliberate press requests
-microphone permission. Speech buffers in memory while connecting; release stops capture and sends it.
-Pressing again stops playback and replaces the prior session. Dismissal/cancellation cleans up capture.
-Heard user turns and streamed spoken-reply transcripts join typed Talk's full-canvas conversation/context, with selected IDs indicating focus.
-Errors stay in the panel; hold Retry to record again. Typed Talk retains its existing route and OIDC.
-`POST /api/voice` mints a short-lived Gateway token with the server-only `MINERVA_PRIME_VOICE_API` key.
-The key came from the owner's Keychain and is a Vercel Secret for production/preview; never public/client-side.
-This owner-authorized voice key supersedes the OIDC-only setup rule for voice; other calls still use OIDC.
-`gateway.getAvailableModels()` confirmed `openai/gpt-realtime-2` (realtime); Sonnet 5 is language-only.
-AI SDK realtime uses that documented model, disabled automatic turn detection, and `feature:voice`.
-One session serves one press/reply; no wake word, always-on listening, tools or card creation via Talk.
-Inspection Download saves one card; Thoughts Download saves all cards, regardless of search filtering.
-Markdown includes title, summary, body, decision, evidence, contribution and relationships/contributions.
-Both downloads use client-side Blobs and include generated/edited cards; failure offers Retry.
+Microphone denial explains browser site settings and Retry; Thoughts uses “Download all cards”.
+Lineage retains the original layout. Evolution uses deepest-parent generation columns and creation order.
+Every view shares cards, selection, comparison and Talk; cameras and manual positions are separate in memory.
+Unknown-evidence and unkept cards remain visible. Lineage/Evolution switches make no requests.
+Constellation calls `/api/themes` with `generateObject`, `anthropic/claude-sonnet-5`, `feature:themes`.
+Its screen states the method and grouping time; named groups show reasons and cross-group associations.
+Derivation/recombination edges are hidden there. Every submitted card must be assigned exactly once.
+The in-memory cache tracks card IDs and SHA-256(title, body); only entering a stale view computes.
+Incremental calls send changed/new cards and existing names, permitting at most one new theme.
+Regroup recomputes all cards. Errors retain the prior grouping with Retry.
+Inspection Inheritance lists each parent's title, stored edge contribution and contextual move title.
+Provenance freezes the feature/move name, tag and source titles when root-generated cards are created.
+Both sections are included in card Markdown. Prepared cards do not invent generated provenance.
 
 ## Verification
+`npm run check`: lint, TypeScript, 12 tests and production build passed.
+Existing replay covers generated cards across views, selection/comparison and cameras, request counts,
+cache reuse, incremental edits, failed Regroup retention/Retry, group edges and Markdown sections.
+Dev replay: `/tmp/minerva-perspectives-dev`; production and stable results are in the operator response.
+`MINERVA_LIVE=1` full dev replay passed with exactly one real themes call using project OIDC.
+Other model paths stayed mocked; no real voice call in this batch. Existing voice replay still passes.
+Full input/response: `/tmp/minerva-perspectives-live/themes-live.json` (10 cards, 4 groups).
 
-The replay's moves mock fails until the visible error is followed by Retry, surviving Strict Mode aborts.
-Removed toolbar buttons are asserted absent. Dropped the legacy zoom-controls visibility assertion;
-camera/overview behavior, attached edges and generated-card readability assertions remain.
-`npm run check`: lint, TypeScript, 12 tests and production build passed; final rerun recorded in operator response.
-Existing `scripts/verify-atlas.mjs` now checks actual download Blob contents, Retry and generated cards;
-voice covers permission denial, setup failure/Retry, delayed setup, transcript streaming, playback interruption,
-mouse/keyboard hold, dismissal, typed follow-up context and reload reset. No new scripts.
-`MINERVA_LIVE=1 MINERVA_VOICE_ONLY=1` passed with a real Gateway exchange using Chromium's synthetic microphone.
-Evidence: `/tmp/minerva-voice-focused/voice-live.json`; earlier full dev replay: `/tmp/minerva-voice-outputs-dev`.
-Final full dev/start and hosted replay results are in the operator response; fixtures are not live-provider evidence.
+## Real themes response
+The response's `groups` array, one object per line (member IDs preserved):
+```json
+{"name": "The Mall Brief", "reason": "The originating brief that frames all exploration of what the dead mall could become.", "memberIds": ["brief"]}
+{"name": "Foundational Mall Concepts", "reason": "Independent, standalone starting ideas for the mall brief covering retail, food, tools, and flexible retail space.", "memberIds": ["retail", "food", "tools", "rotation"]}
+{"name": "Repair-and-Meal Synthesis (Unassessed)", "reason": "A hybrid draft combining the food hall and tool library ideas into a repair-and-supper format, explicitly flagged as unendorsed with unresolved unknowns.", "memberIds": ["repair"]}
+{"name": "Repair Concept Explorations", "reason": "Concrete drafts that build out variations of the repair theme—apprenticeships, workshop borrowing, and timed repair/meal sessions.", "memberIds": ["662587ec-98fd-41b2-aef1-f87ecf6efa97", "2304c893-12ce-4101-bebf-56f36876b8be", "2b362fef-200f-44b4-a5fc-a6513393c8cc", "2f4b7e3b-c0bf-43cf-8a36-ef2db791c58b"]}
+```
+Generated IDs above correspond, in order, to Repair apprenticeships, Borrow a workshop,
+Cook and mend evenings, and Morning repair table (synthetic cards; grouping is actual Sonnet output).
 
-## Real voice exchange (synthetic microphone, actual Gateway response)
-
-You: “Suggest one practical use for an empty shopping mall. Reply in one short sentence. Suggest one practical”
-Minerva: “Convert it into a mixed-use community hub with medical clinics, coworking space, and a food hall to keep steady foot traffic.”
-The fixture loops, explaining the repeated fragment. Actual audio playback was observed in Chromium (22 audio chunks).
-Owner physical check: use localhost/HTTPS with microphone and speakers, allow permission on first press,
-hold/speak/release, confirm the heard transcript and audible reply, then press again to verify interruption.
-
-## Startup
-
+## Startup and review
 Use Node 24.20.0/npm 12.0.2 via `npx --yes --package=node@24.20.0 --package=npm@12.0.2`.
-From the worktree, `npm run dev -- --port 3026`; `MINERVA_URL=http://127.0.0.1:3026 npm run test:browser`.
-Production: `npm run build`, `npm run start -- --port 3027`; set `MINERVA_URL=http://127.0.0.1:3027`.
-Inject the voice key from Keychain into the server environment for live voice; no key needed for mocked replay.
-`MINERVA_LIVE=1` opts into one real voice exchange; other provider paths stay mocked unless separately opted in.
+Dev: `npm run dev -- --port 3048`; replay: `MINERVA_URL=http://127.0.0.1:3048 npm run test:browser`.
+Production: `npm run build`, then `npm run start -- --port 3049`; replay with that `MINERVA_URL`.
+Use separate dev/build runs; after refreshing dependencies, discard stale ignored dev compiler caches.
+`MINERVA_LIVE=1` allows one themes call; `MINERVA_LIVE=1 MINERVA_VOICE_ONLY=1` remains the voice-only opt-in.
+Next role: operator-started Fable 5.1 at low effort, read-only, exact released candidate, C04/C07 and carry-overs.
+Use docs/setup.md's bounded review prompt; no additional paid calls or feature work are authorized by this handoff.

@@ -36,13 +36,14 @@ import type { AtlasSession, LayoutRecord } from "../workspaces/graph-domain";
 import { relationshipsFor } from "./domain";
 import { mallFixture } from "./fixture";
 import { wanderSchema, weaveSchema, moveCardSchema, type ContextualMove, type GeneratedCard, type LiveFeature } from "./generation";
+import { cardHash, validateThemes, type ThemeGroup } from "./themes";
 import TalkPanel from "./talk-panel";
 import DownloadButton from "./download-button";
 import MovesPanel from "./moves-panel";
 import { overviewDiameter, overviewLabels, overviewName } from "./overview";
 import ExplorationPanel, { ProposalDecisions } from "../exploration/panel";
 
-type CardNode = Node<{ thought: Thought; geometry?: { width: number; height: number; circular: boolean } }, "thought">;
+type CardNode = Node<{ thought: Thought; geometry?: { width: number; height: number; circular: boolean } }, "thought" | "theme">;
 // Keep screen-sized overview markers separated at the farthest zoom-out.
 const MIN_ZOOM = 0.03;
 
@@ -293,7 +294,10 @@ function FloatingEdge(props: EdgeProps) {
     labelX={labelX} labelY={labelY} />;
 }
 const edgeTypes = { floating: FloatingEdge };
-const nodeTypes = { thought: ThoughtCard };
+function ThemeNode({ data }: NodeProps<CardNode>) {
+  return <section className="theme-heading"><Handle type="target" position={Position.Left} /><h2>{data.thought.title}</h2><p>{data.thought.summary}</p><Handle type="source" position={Position.Right} /></section>;
+}
+const nodeTypes = { thought: ThoughtCard, theme: ThemeNode };
 function presentNodes(saved?: AtlasFixture): CardNode[] {
   const fixture = saved ?? mallFixture();
   return fixture.thoughts.map((thought) => ({
@@ -384,24 +388,100 @@ function Studio({ session }: { session?: AtlasSession }) {
   const flow = useReactFlow<CardNode>();
   const byId = new Map(nodes.map((n) => [n.id, n.data.thought]));
   const thought = byId.get(active)!;
-  const renderedNodes = nodes.map<CardNode>((n) => ({
-    ...n,
-    style: { ...n.style, pointerEvents: overview ? "none" : "all" },
-  }));
   const [liveEdges, setLiveEdges] = useState<Relationship[]>([]);
   const relationships = [...fixture.relationships, ...liveEdges];
+  type Perspective = "Lineage" | "Evolution" | "Constellation";
+  const [perspective, setPerspective] = useState<Perspective>("Lineage");
+  const perspectiveRef = useRef<Perspective>("Lineage");
+  const fitPerspective = useRef(false);
+  const cameras = useRef<Partial<Record<Perspective, Viewport>>>({});
+  const [positions, setPositions] = useState<Record<string, Record<string, { x: number; y: number }>>>({});
+  const [themeCache, setThemeCache] = useState<{ groups: ThemeGroup[]; hashes: Record<string, string>; time: string }>();
+  const [themeError, setThemeError] = useState("");
+  const [themeBusy, setThemeBusy] = useState(false);
+  const themePending = useRef(false);
+  const themeRetryFull = useRef(false);
+  async function groupThemes(full = false) {
+    if (themePending.current) return;
+    themePending.current = true;
+    setThemeBusy(true); setThemeError(""); themeRetryFull.current = full;
+    try {
+      const cards = nodes.map(n => n.data.thought);
+      const hashes = Object.fromEntries(await Promise.all(cards.map(async c => [c.id, await cardHash(c)])));
+      const missing = cards.filter(c => full || hashes[c.id] !== themeCache?.hashes[c.id]);
+      if (!missing.length) return;
+      const existingGroups = full ? [] : themeCache?.groups.map(g => g.name) ?? [];
+      const response = await fetch("/api/themes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cards: missing.map(({ id, title, body }) => ({ id, title, body })), existingGroups }) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || response.statusText);
+      const incoming = validateThemes(result, missing.map(c => c.id), existingGroups);
+      const changed = new Set(missing.map(c => c.id));
+      const groups = full ? [] : (themeCache?.groups ?? []).map(g => ({ ...g, memberIds: g.memberIds.filter(id => hashes[id] && !changed.has(id)) }));
+      for (const group of incoming) {
+        const previous = groups.find(g => g.name === group.name);
+        if (previous) previous.memberIds.push(...group.memberIds);
+        else groups.push(group);
+      }
+      setThemeCache({ groups: groups.filter(g => g.memberIds.length), hashes, time: new Date().toLocaleTimeString() });
+      setPositions(current => ({ ...current, Constellation: {} }));
+      if (perspectiveRef.current === "Constellation" && !cameras.current.Constellation) fitPerspective.current = true;
+    } catch (error) { setThemeError(error instanceof Error ? error.message : String(error)); }
+    finally { themePending.current = false; setThemeBusy(false); }
+  }
+  function switchPerspective(next: Perspective) {
+    if (next === perspective) return;
+    cameras.current[perspective] = flow.getViewport();
+    perspectiveRef.current = next;
+    setPerspective(next);
+    if (cameras.current[next]) void flow.setViewport(cameras.current[next]!);
+    else fitPerspective.current = true;
+    if (next === "Constellation") void groupThemes();
+  }
+  const depths = new Map<string, number>();
+  function depth(id: string, visiting = new Set<string>()): number {
+    if (depths.has(id)) return depths.get(id)!;
+    if (visiting.has(id)) return 0;
+    const card = byId.get(id);
+    const parents = relationships.filter(e => e.to === id && (e.kind === "derivation" || e.kind === "recombination"));
+    const result = card?.kind === "brief" ? 0 : parents.length ? 1 + Math.max(...parents.map(e => depth(e.from, new Set([...visiting, id])))) : 1;
+    depths.set(id, result); return result;
+  }
+  const rows = new Map<number, number>();
+  const groups = themeCache?.groups ?? [];
+  const groupFor = new Map(groups.flatMap((g, i) => g.memberIds.map(id => [id, i] as const)));
+  let ungrouped = 0;
+  const renderedNodes = nodes.map<CardNode>((n) => {
+    let position = n.position;
+    if (perspective === "Evolution") {
+      const column = depth(n.id), row = rows.get(column) ?? 0;
+      rows.set(column, row + 1); position = { x: column * 440, y: row * 480 };
+    } else if (perspective === "Constellation") {
+      const group = groupFor.get(n.id);
+      const row = group === undefined ? ungrouped++ : groups[group].memberIds.indexOf(n.id);
+      position = { x: (group ?? groups.length) * 760, y: 160 + row * 480 };
+    }
+    return { ...n, position: perspective === "Lineage" ? position : positions[perspective]?.[n.id] ?? position, style: { ...n.style, pointerEvents: overview ? "none" : "all" } };
+  });
+  const themeNodes: CardNode[] = perspective === "Constellation" ? groups.map((g, i) => ({ id: `theme-${i}`, type: "theme", position: { x: i * 760, y: -70 }, width: 440, height: 140, measured: { width: 440, height: 140 }, style: { width: 440, height: 140 }, draggable: false, data: { thought: { ...thought, title: g.name, summary: g.reason } } })) : [];
+  useLayoutEffect(() => {
+    if (!fitPerspective.current) return;
+    fitPerspective.current = false;
+    const all = [...renderedNodes, ...themeNodes];
+    const x = Math.min(...all.map(n => n.position.x)), y = Math.min(...all.map(n => n.position.y));
+    void flow.fitBounds({ x, y, width: Math.max(...all.map(n => n.position.x + 440)) - x, height: Math.max(...all.map(n => n.position.y + 300)) - y }, { padding: .2 });
+  });
   const [live, setLive] = useState<{ sources: Thought[]; feature: LiveFeature; move?: ContextualMove; error?: string }>();
   const [busy, setBusy] = useState(false);
   const generating = useRef(false);
   const focusedRelations = focusedId ? relationshipsFor(focusedId, relationships).filter(e => connectionKind === "associations" ? e.kind === "association" : connectionKind === "context" ? e.kind === "context" : e.kind !== "association" && e.kind !== "context" && e.direction === (connectionKind === "parents" ? "incoming" : "outgoing")) : [];
   const relationPage = focusedRelations.slice(connectionPage * 6, connectionPage * 6 + 6);
   const highlighted = new Set((branchId ? relationPage.filter(e => e.id === branchId) : relationPage).map(e => e.id));
-  const labels = overviewLabels(nodes, viewport, [...(focusedId ? [focusedId] : []), ...selected]);
-  const edges = relationships.map((edge) => ({
+  const labels = overviewLabels(renderedNodes, viewport, [...(focusedId ? [focusedId] : []), ...selected]);
+  const edges = relationships.filter(edge => perspective !== "Constellation" || (edge.kind === "association" && groupFor.has(edge.from) && groupFor.has(edge.to) && groupFor.get(edge.from) !== groupFor.get(edge.to))).map((edge) => ({
     id: edge.id,
-    source: edge.from,
-    target: edge.to,
-    type: "floating",
+    source: perspective === "Constellation" ? `theme-${groupFor.get(edge.from)}` : edge.from,
+    target: perspective === "Constellation" ? `theme-${groupFor.get(edge.to)}` : edge.to,
+    type: perspective === "Constellation" ? "default" : "floating",
     label: overview || (!session && focusedId && !highlighted.has(edge.id)) ? undefined : edge.label,
     markerEnd:
       edge.kind === "association" || edge.kind === "context"
@@ -415,7 +495,7 @@ function Studio({ session }: { session?: AtlasSession }) {
           },
     className: `thread ${edge.kind} ${panel === "inspect" && (edge.from === active || edge.to === active) ? "emphasized" : ""}`,
     style: {
-      opacity: session ? 1 : edge.kind === "association" && !highlighted.has(edge.id) ? .08 : focusedId ? (highlighted.has(edge.id) ? 1 : .12) : overview ? .7 : 1,
+      opacity: perspective === "Constellation" ? 1 : session ? 1 : edge.kind === "association" && !highlighted.has(edge.id) ? .08 : focusedId ? (highlighted.has(edge.id) ? 1 : .12) : overview ? .7 : 1,
       stroke:
         edge.kind === "association"
           ? "#755584"
@@ -458,7 +538,7 @@ function Studio({ session }: { session?: AtlasSession }) {
         cards = [parsed.card];
         contributions = parsed.contributions;
       }
-      const existing = flow.getNodes();
+      const existing = nodes;
       const parentNodes = existing.filter((node) => sources.some((source) => source.id === node.id));
       let x = Math.max(...parentNodes.map((node) => node.position.x + (node.measured?.width ?? 290))) + 90;
       const y = Math.min(...parentNodes.map((node) => node.position.y)) - (cards.length - 1) * 190;
@@ -473,6 +553,7 @@ function Studio({ session }: { session?: AtlasSession }) {
           data: { thought: { ...card, id, revision: 1,
             kind: feature === "wander" ? "exploration" : "recombination",
             decision: "unkept draft", evidence: "unknown",
+            provenance: { feature: contextualMove?.title ?? (feature === "wander" ? "Wander" : "Weave"), tag: `feature:${feature}`, sourceTitles: sources.map(s => s.title), moveTitle: contextualMove?.title },
             contribution: feature === "wander" ? `Derived from ${sources[0].title}.` : contributions.join(" "),
             move: { title: "Explore this direction", question: "Where could this idea lead?", preview: card.summary },
           } },
@@ -483,7 +564,7 @@ function Studio({ session }: { session?: AtlasSession }) {
         id: `${source.id}-${node.id}`, from: source.id, to: node.id,
         kind: feature === "wander" ? "derivation" as const : "recombination" as const,
         label: contextualMove?.title ?? (feature === "wander" ? "Wander" : "Weave"), sourceRevision: source.revision,
-        contribution: feature === "weave" ? contributions[index] : undefined,
+        contribution: feature === "weave" ? contributions[index] : `Derived from ${source.title}.`,
       })))]);
       setLive(undefined);
       setPanel(null);
@@ -503,7 +584,7 @@ function Studio({ session }: { session?: AtlasSession }) {
     void flow.fitView({
       padding: 0.18,
       maxZoom: 1,
-      nodes: renderedNodes.filter((n) => !n.hidden).map((n) => ({ id: n.id })),
+      nodes: [...renderedNodes, ...themeNodes].filter((n) => !n.hidden).map((n) => ({ id: n.id })),
     });
   }
   function open(next: Panel) {
@@ -750,9 +831,10 @@ function Studio({ session }: { session?: AtlasSession }) {
           <Link href="/workspaces">Workspaces</Link>
         </div>
         <div className="workspace-heading">
-          <span className="instrument-label">Studio / Lineage</span>
+          <span className="instrument-label">Studio / {perspective}</span>
           <h1>{session ? "Saved idea atlas" : "The mall, reconsidered"}</h1>
         </div>
+        {!session && <nav className="perspective-switch" aria-label="Atlas perspective">{(["Lineage", "Evolution", "Constellation"] as const).map(view => <button key={view} aria-pressed={perspective === view} onClick={() => switchPerspective(view)}>{view}</button>)}</nav>}
       </header>
       <div
         className="field"
@@ -801,12 +883,15 @@ function Studio({ session }: { session?: AtlasSession }) {
           }}
         >
           <ReactFlow<CardNode>
-            nodes={renderedNodes}
+            nodes={[...renderedNodes, ...themeNodes]}
             edges={edges}
             nodeTypes={nodeTypes}
             edgeTypes={edgeTypes}
             onNodesChange={(changes) => {
-              setNodes((current) => applyNodeChanges(changes, current));
+              if (perspective !== "Lineage") setPositions(current => ({ ...current, [perspective]: { ...current[perspective], ...Object.fromEntries(changes.filter(c => c.type === "position" && c.position).map(c => ["id" in c ? c.id : "", c.type === "position" ? c.position! : { x: 0, y: 0 }])) } }));
+              // React Flow's geometry updates replace the rendered node, whose position
+              // belongs to this view. Keep those updates from overwriting Lineage.
+              setNodes((current) => applyNodeChanges(changes.filter(c => (!("id" in c) || !c.id.startsWith("theme-")) && (perspective === "Lineage" || c.type !== "position")).map(c => c.type === "replace" ? { ...c, item: { ...c.item, position: current.find(n => n.id === c.id)?.position ?? c.item.position } } : c), current));
             }}
             onNodeDragStop={(_, node) => { void saveLayout(node.id, node.position).catch(() => {}); }}
             fitView={!savedGraph?.viewpoint.revision}
@@ -845,6 +930,11 @@ function Studio({ session }: { session?: AtlasSession }) {
                   const id = (event.target as HTMLElement)
                     .closest("[data-id]")
                     ?.getAttribute("data-id");
+                  if (perspective !== "Lineage") {
+                    const node = renderedNodes.find(n => n.id === id);
+                    if (node) setPositions(current => ({ ...current, [perspective]: { ...current[perspective], [node.id]: { x: node.position.x + (event.key === "ArrowRight" ? 25 : event.key === "ArrowLeft" ? -25 : 0), y: node.position.y + (event.key === "ArrowDown" ? 25 : event.key === "ArrowUp" ? -25 : 0) } } }));
+                    return;
+                  }
                   const moved = nodes.find((n) => n.id === id);
                   if (moved) void saveLayout(moved.id, {
                     x: moved.position.x + (event.key === "ArrowRight" ? 25 : event.key === "ArrowLeft" ? -25 : 0),
@@ -940,7 +1030,13 @@ function Studio({ session }: { session?: AtlasSession }) {
           <ul>{relationPage.map(edge => <li key={edge.id}><button className="relative-link" onClick={() => focus(edge.otherId)}>{byId.get(edge.otherId)?.title} ↗</button><button aria-label={`Highlight only ${byId.get(edge.otherId)?.title}`} aria-pressed={branchId === edge.id} onClick={() => setBranchId(branchId === edge.id ? null : edge.id)}>Trace</button></li>)}</ul>
           {focusedRelations.length > 6 && <div><button disabled={!connectionPage} onClick={() => { setConnectionPage(p => p - 1); setBranchId(null); }}>Previous connections</button><button disabled={(connectionPage + 1) * 6 >= focusedRelations.length} onClick={() => { setConnectionPage(p => p + 1); setBranchId(null); }}>Next connections</button></div>}
         </section>}
-        <div className="legend">
+        {perspective === "Constellation" && <section className="themes-status" aria-label="Theme grouping">
+          <p>{themeCache ? `Grouped into themes by Minerva · grouped at ${themeCache.time}` : "Group cards into themes by Minerva"}</p>
+          {themeBusy && <p role="status">Grouping themes…</p>}
+          {themeError && <><p role="alert">{themeError}</p><button disabled={themeBusy} onClick={() => void groupThemes(themeRetryFull.current)}>Retry</button></>}
+          <button disabled={themeBusy} onClick={() => void groupThemes(true)}>Regroup</button>
+        </section>}
+        <div className="legend" hidden={perspective === "Constellation"}>
           <span>
             <i className="legend-line inheritance" aria-hidden="true" />
             Inheritance
@@ -1070,6 +1166,8 @@ function Studio({ session }: { session?: AtlasSession }) {
                 <p>{thought.assessment.causalDependencies}</p><p>{thought.assessment.transformation}</p>
                 <p>Model assessment; real-world feasibility remains unverified.</p>
               </details>}
+              {!session && relationships.some(e => e.to === active && (e.kind === "derivation" || e.kind === "recombination")) && <section aria-label="Inheritance"><h3>Inheritance</h3>{relationships.filter(e => e.to === active && (e.kind === "derivation" || e.kind === "recombination")).map(e => <div key={e.id}><h4>{byId.get(e.from)?.title ?? e.from}</h4><p>{e.contribution || "Not specified"}</p>{thought.provenance?.moveTitle && <p>Move: {thought.provenance.moveTitle}</p>}</div>)}</section>}
+              {!session && thought.provenance && <section aria-label="Provenance"><h3>Provenance</h3><p>{thought.provenance.feature} · {thought.provenance.tag}</p><p>Sources at generation: {thought.provenance.sourceTitles.join("; ")}</p></section>}
               <h3>Contribution</h3>
               <p>{thought.contribution}</p>
               {session && thought.kind !== "brief" && <ProposalDecisions key={`${thought.id}-${thought.revision}`} workspaceId={savedGraph!.workspaceId} thought={thought} />}
