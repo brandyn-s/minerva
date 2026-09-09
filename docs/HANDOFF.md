@@ -1,22 +1,34 @@
-# Olive and scroll toolbar controls
+# Integrated composer
 
-Branch: `codex/toolbar-medallions`; uncommitted changes based on `ea68dab`.
-Worktree: `/Users/brandyn.schult/code/minerva-toolbar-medallions`.
+Branch: `feat/integrated-composer`.
+Worktree: `/Users/brandyn.schult/code/minerva-integrated-composer`.
+Integrated with origin/main `2314038`; owl, toolbar medallions and header cleanup preserved.
 
 ## Outcome
-Thoughts uses the approved olive medallion with a live count badge.
-Read as text uses the approved engraved scroll medallion.
-Both use shared tooltips, accessible names and expanded states, and open the
-existing panels. Compass and other ongoing work are preserved.
+Talk uses one integrated writing surface: hold-to-talk microphone and hands-free
+Voice mode on the left, Send arrow on the right. Icons have accessible names,
+shared hover/focus tooltips and 44px targets. Enter sends; Shift+Enter adds a line.
+Voice mode uses the existing Gateway realtime route and `openai/gpt-realtime-2`.
+Automatic speech detection continues across turns, with spoken interruption,
+shared transcripts, mute/unmute, End and Back to typing. Closing releases audio.
+The active composer shows Minerva, animated waveform and listening/speaking status.
+Typed Markdown, smooth streaming and canvas context remain. State resets on reload.
+No database, workspace, model credentials or server route changes.
 
 ## Evidence
-npm run check passed: lint, TypeScript, 12 tests and production build.
-In-app browser verified both panels, focus return, tooltip focus and Escape.
-Visual comparison passed; see design-qa.md. No paid provider calls.
-Mobile and generated count changes were not exercised in this focused pass.
+`npm run check`: lint, TypeScript, 12 tests and production build passed.
+Browser fixture replay covers microphone denial, token failure, hold/release,
+late connection, queued-audio cancellation, transcript sharing and close cleanup.
+New fixture coverage exercises two automatic voice turns, interruption, microphone
+track mute/unmute, ending, return to typing and narrow layout. Full atlas replay passed.
+Real Gateway hold-to-talk and automatic Voice mode replies were received using
+synthetic spoken input and the existing production token endpoint. The automatic
+reply began “Use a section as a rotating six-” before the test ended the session.
+This verifies live connectivity/turn detection, not physical microphone quality.
+Desktop integrated composer was visually inspected in the in-app browser.
 
 ## Startup and next role
-Preview: http://127.0.0.1:3057/ (local dev server running).
-Run from this worktree:
-`npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run dev -- --port 3057`
-Next role: owner visual inspection. No commit, push or deployment in this task.
+`npm run dev -- --port 3051` (Node/npm launcher in AGENTS.md).
+Local preview: http://127.0.0.1:3051/.
+Stable target: https://minerva-eight.vercel.app/.
+Next role: owner acceptance; no further feature work or critic review is queued.

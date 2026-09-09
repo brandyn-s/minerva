@@ -20,7 +20,7 @@ const voiceInput = "Suggest one practical use for an empty shopping mall. Reply 
 let voiceFile = process.env.MINERVA_VOICE_WAV;
 if (liveVoice && !voiceFile) {
   voiceFile = "/tmp/minerva-voice-input.wav";
-  execFileSync("/usr/bin/say", ["-o", "/tmp/minerva-voice-input.aiff", voiceInput]);
+  execFileSync("/usr/bin/say", ["-o", "/tmp/minerva-voice-input.aiff", voiceInput + " [[slnc 3000]]"]);
   execFileSync("/usr/bin/afconvert", ["-f", "WAVE", "-d", "LEI16@24000", "/tmp/minerva-voice-input.aiff", voiceFile]);
 }
 const browser = await chromium.launch({
@@ -1169,6 +1169,7 @@ try {
         window.voiceStats.microphones++;
         if (window.denyMicrophone) { window.denyMicrophone = false; throw new DOMException("Microphone denied", "NotAllowedError"); }
         const stream = await get(...args);
+        window.latestVoiceStream = stream;
         for (const track of stream.getTracks()) {
           const stop = track.stop.bind(track);
           track.stop = () => { window.voiceStats.stoppedTracks++; stop(); };
@@ -1184,8 +1185,15 @@ try {
         return source;
       };
     });
+    if (real && process.env.MINERVA_VOICE_TOKEN_URL) {
+      await voicePage.route("**/api/voice", async route => {
+        const response = await route.fetch({ url: process.env.MINERVA_VOICE_TOKEN_URL });
+        await route.fulfill({ response });
+      });
+    }
     let tokenCalls = 0;
     const events = [];
+    let voiceSocket;
     if (!real) {
       await voicePage.route("**/api/voice", async (route) => {
         tokenCalls++;
@@ -1194,6 +1202,7 @@ try {
           { json: { token: "mock-token", url: "wss://voice.test/realtime-model", tools: [] } });
       });
       await voicePage.routeWebSocket("wss://voice.test/realtime-model", (socket) => {
+        voiceSocket = socket;
         let closed = false;
         socket.onClose(() => { closed = true; });
         const send = (event) => { if (!closed) socket.send(JSON.stringify({ ...event, raw: {} })); };
@@ -1287,9 +1296,48 @@ try {
       await voicePage.getByText("A typed follow-up.", { exact: true }).waitFor();
       assert.ok(typedInput.messages.some((message) => message.content === "Could the mall host a repair library?"));
       assert.ok(typedInput.messages.some((message) => message.content === "Try a repair library with shared tools."));
-      await vb("Hold to talk").focus();
-      await voicePage.keyboard.down("Space");
-      await voicePage.getByText("Listening… release to send.", { exact: true }).waitFor();
+      await vb("Start voice mode").click();
+      await vb("End voice mode").waitFor();
+      await voicePage.getByText("Listening…", { exact: true }).waitFor();
+      assert.equal(events.filter(e => e.type === "session-update").at(-1).config.turnDetection.type, "server-vad");
+      const committedBefore = events.filter(e => e.type === "input-audio-commit").length;
+      const emit = event => voiceSocket.send(JSON.stringify({ ...event, raw: {} }));
+      for (let i = 0; i < 2; i++) {
+        emit({ type: "speech-started", audioStartMs: i * 1000 });
+        emit({ type: "audio-committed", itemId: `handsfree-user-${i}` });
+        emit({ type: "input-transcription-completed", itemId: `handsfree-user-${i}`, transcript: `Voice question ${i}` });
+        emit({ type: "speech-stopped", audioEndMs: i * 1000 + 500 });
+        emit({ type: "response-created", responseId: `handsfree-${i}` });
+        emit({ type: "audio-transcript-delta", itemId: `handsfree-${i}`, responseId: `handsfree-${i}`, delta: `Voice answer ${i}` });
+        emit({ type: "audio-transcript-done", itemId: `handsfree-${i}`, responseId: `handsfree-${i}`, transcript: `Voice answer ${i}` });
+        emit({ type: "response-done", responseId: `handsfree-${i}`, status: "completed" });
+        await voicePage.getByText(`Voice answer ${i}`, { exact: true }).waitFor();
+      }
+      const stopsBeforeInterrupt = await voicePage.evaluate(() => window.voiceStats.playbackStops);
+      emit({ type: "audio-delta", itemId: "handsfree-1", responseId: "handsfree-1", delta: Buffer.alloc(24000 * 2 * 4).toString("base64") });
+      await voicePage.getByText("Minerva is speaking…", { exact: true }).waitFor();
+      emit({ type: "speech-started", audioStartMs: 3000 });
+      emit({ type: "response-done", responseId: "handsfree-1", status: "cancelled" });
+      await voicePage.waitForFunction(previous => window.voiceStats.playbackStops > previous, stopsBeforeInterrupt);
+      assert.ok(await vb("End voice mode").isVisible(), "interruption keeps voice mode open");
+      assert.equal(events.filter(e => e.type === "input-audio-commit").length, committedBefore, "hands-free relies on automatic turns");
+      await vb("Mute microphone").click();
+      await vb("Unmute microphone").waitFor();
+      assert.equal(await voicePage.evaluate(() => window.latestVoiceStream.getAudioTracks()[0].enabled), false);
+      await voicePage.getByText("Microphone muted", { exact: true }).waitFor();
+      await voicePage.screenshot({ path: artifacts + "/composer-voice.png" });
+      await voicePage.setViewportSize({ width: 390, height: 844 });
+      assert.equal(await voicePage.locator(".talk-panel").evaluate(el => el.scrollWidth <= el.clientWidth), true);
+      await voicePage.screenshot({ path: artifacts + "/composer-voice-mobile.png" });
+      await vb("Unmute microphone").click();
+      assert.equal(await voicePage.evaluate(() => window.latestVoiceStream.getAudioTracks()[0].enabled), true);
+      const tracksBeforeEnd = await voicePage.evaluate(() => window.voiceStats.stoppedTracks);
+      await vb("Back to typing").click();
+      assert.ok(await voicePage.evaluate(() => window.voiceStats.stoppedTracks) > tracksBeforeEnd);
+      assert.ok(await voicePage.getByLabel("Message Minerva").isEnabled());
+      await voicePage.screenshot({ path: artifacts + "/composer-typing.png" });
+      await vb("Start voice mode").click();
+      await voicePage.getByText("Listening…", { exact: true }).waitFor();
       await vb("Close panel").click();
       await voicePage.keyboard.up("Space");
       assert.equal(await voicePage.locator(".voice-control").count(), 0);
@@ -1297,6 +1345,14 @@ try {
       await vb("Talk to Minerva").click();
       assert.equal(await voicePage.locator(".talk-transcript section").count(), 0);
       assert.equal(await voicePage.evaluate(() => window.voiceStats.microphones), 0);
+    }
+    if (real) {
+      const repliesBefore = await voicePage.locator(".talk-message-assistant").count();
+      await vb("Start voice mode").click();
+      await voicePage.waitForFunction(count => document.querySelectorAll(".talk-message-assistant").length > count && document.querySelectorAll(".talk-message-assistant")[count].textContent.length > 20, repliesBefore, { timeout: 90000 });
+      await voicePage.screenshot({ path: artifacts + "/voice-mode-live.png" });
+      await writeFile(artifacts + "/voice-mode-live.json", JSON.stringify({ transcript: await voicePage.locator(".talk-transcript").innerText(), stats: await voicePage.evaluate(() => window.voiceStats) }, null, 2));
+      await vb("End voice mode").click();
     }
     await voicePage.close();
   }
