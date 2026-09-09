@@ -34,7 +34,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import type { AtlasFixture, Thought, Relationship } from "./domain";
 import type { AtlasSession, LayoutRecord } from "../workspaces/graph-domain";
-import { ArrowRight, Crosshair, CaretRight, X } from "@phosphor-icons/react";
+import { ArrowRight, ArrowClockwise, Crosshair, CaretRight, X } from "@phosphor-icons/react";
 import { relationshipsFor } from "./domain";
 import { mallFixture } from "./fixture";
 import { wanderSchema, weaveSchema, moveCardSchema, type ContextualMove, type GeneratedCard, type LiveFeature } from "./generation";
@@ -1148,10 +1148,10 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
         </details>
         </section>}
         {perspective === "Constellation" && !regroupIds && <section className="themes-status" aria-label="Theme grouping">
-          <span>{themeCache ? `${nodes.length} ideas · ${themeCache.groups.filter(g => g.memberIds.length).length} themes by Minerva` : "Group ideas into themes"}</span>
+          <span>{themeCache ? `${nodes.length} ideas · ${themeCache.groups.filter(g => g.memberIds.length).length} themes` : "Group ideas into themes"}</span>
           {themeBusy && <span role="status">Grouping themes…</span>}
           {themeError && <><span role="alert">{themeError}</span><button disabled={themeBusy} onClick={() => void groupThemes(themeRetryFull.current)}>Retry</button></>}
-          <button data-regroup-trigger disabled={themeBusy || !themeCache} onClick={() => { setPanel(null); setFocusedId(null); setRegroupIds(selected.length ? selected : nodes.map(n => n.id)); }}>Regroup{selected.length ? ` ${selected.length} selected` : " all"}</button>
+          <button data-regroup-trigger title={selected.length ? `Regroup ${selected.length} selected ideas` : "Regroup all ideas"} disabled={themeBusy || !themeCache} onClick={() => { setPanel(null); setFocusedId(null); setRegroupIds(selected.length ? selected : nodes.map(n => n.id)); }}><ArrowClockwise size={18} aria-hidden="true" />{themeBusy ? "Finding themes…" : "Regroup"}{!themeBusy && selected.length > 0 ? ` ${selected.length} selected` : ""}</button>
           {selected.length > 0 && <button onClick={() => setSelected([])}>Clear selection</button>}
           {regroupedIds.length > 0 && <><span role="status">Regrouped {regroupedIds.length} ideas</span><button onClick={() => void flow.fitView({ nodes: [...regroupedIds, ...themeCache!.groups.flatMap((g, i) => g.memberIds.some(id => regroupedIds.includes(id)) ? [`theme-${i}`] : [])].map(id => ({ id })), padding: .3, maxZoom: 1 })}>View regrouped ideas</button></>}
           {themeUndo && <button onClick={() => { setThemeCache(themeUndo.cache); setPositions(themeUndo.positions); void flow.setViewport(themeUndo.viewport); setThemeUndo(undefined); setRegroupedIds([]); }}>Undo regroup</button>}
