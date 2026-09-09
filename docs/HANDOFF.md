@@ -1,14 +1,24 @@
-# Remove card state labels
+# Light selection dock
 
-Branch: `fix/remove-card-state-labels`, integrated with main `221c23e`.
-Worktree: `/Users/brandyn.schult/code/minerva-wander-toolbar`.
-Change: remove Shared context, Independent starting idea, and Kept example from card surfaces, plus unused card-state CSS.
-Decision/evidence data and inspection details remain unchanged.
+Branch: `feat/light-selection-dock`.
+Worktree: `/Users/brandyn.schult/code/minerva-light-selection-dock`.
+Integrated with origin/main `a194627`; catalogue and relationship updates preserved.
 
-Validation: `npm run check` passed (lint, typecheck, tests, production build).
-Browser inspection confirms all six fixture cards render without these labels and close up the freed space.
-Production preview is running at http://127.0.0.1:3190/.
-Prefix npm commands with `npx --yes --package=node@24.20.0 --package=npm@12.0.2`.
-Start: `npm run build`, then `npm run start -- --port 3190`.
-User authorized commit, merge, and production deployment after required CI.
-Stable URL: https://minerva-eight.vercel.app/. Next role: owner review.
+## Outcome
+Root atlas selection toolbar matches the chosen light dock: parchment surface,
+bronze border/dividers, green Wander, labelled icons and inline Clear selection.
+Existing single/multiple selection eligibility, actions and loading behavior remain.
+Mobile uses two action columns; summary and cameo sit clear of its controls.
+Workspace toolbar styling remains separate. No backend or model changes.
+
+## Evidence
+`npm run check` passed lint, TypeScript, repository tests and production build.
+Focused browser replay passed one/two-card states, all four actions, mocked Weave
+loading/completion, clearing, and 390px layout; no browser page errors.
+Desktop in-app inspection and mobile screenshot comparison passed; `design-qa.md`.
+No paid calls. Full legacy replay was not rerun for this scoped toolbar change.
+
+## Startup and next role
+`npm run dev -- --port 3067` with the Node/npm launcher in AGENTS.md.
+Preview: http://127.0.0.1:3067/.
+Next: owner visual acceptance. No critic or further work queued.

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, GitFork, Copy, Compass, Shuffle } from "lucide-react";
 import {
   createContext,
   useContext,
@@ -1188,13 +1188,13 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           </div>}
         </div>
         {selected.length > 0 && !regroupIds && (
-          <div className="selection-bar">
-            <span>{selected.length} selected</span>
+          <div className={`selection-bar${session ? "" : " light-selection-dock"}`}>
+            <span className="selection-count">{selected.length} selected</span>
             {session ? <><button onClick={() => open("compare")}>Compare</button><button onClick={() => move(selected)}>Weave · preview</button></> : <>
-              <button className="wander-action" disabled={busy || selected.length !== 1} onClick={() => move(selected)} aria-busy={busy && live?.feature === "wander"}>{busy && live?.feature === "wander" && <span className="generation-spinner" aria-hidden="true" />}{busy && live?.feature === "wander" ? "Wandering…" : "Wander"}</button>
-              <button onClick={() => open("compare")}>Compare</button>
-              <button disabled={selected.length !== 1} onClick={() => open("expedition")}>Expedition</button>
-              <button disabled={busy || selected.length < 2} onClick={() => void generate("weave", selected.map((id) => byId.get(id)!))} aria-busy={busy && live?.feature === "weave"}>{busy && live?.feature === "weave" && <span className="generation-spinner" aria-hidden="true" />}{busy && live?.feature === "weave" ? "Weaving…" : "Weave"}</button>
+              <button className="wander-action" disabled={busy || selected.length !== 1} onClick={() => move(selected)} aria-busy={busy && live?.feature === "wander"}>{busy && live?.feature === "wander" ? <span className="generation-spinner" aria-hidden="true" /> : <GitFork size={22} aria-hidden="true" />}{busy && live?.feature === "wander" ? "Wandering…" : "Wander"}</button>
+              <button onClick={() => open("compare")}><Copy size={22} aria-hidden="true" />Compare</button>
+              <button disabled={selected.length !== 1} onClick={() => open("expedition")}><Compass size={24} aria-hidden="true" />Expedition</button>
+              <button disabled={busy || selected.length < 2} onClick={() => void generate("weave", selected.map((id) => byId.get(id)!))} aria-busy={busy && live?.feature === "weave"}>{busy && live?.feature === "weave" ? <span className="generation-spinner" aria-hidden="true" /> : <Shuffle size={22} aria-hidden="true" />}{busy && live?.feature === "weave" ? "Weaving…" : "Weave"}</button>
             </>}
             {session && selected.length === 2 && <details className="layout-menu"><summary>Connect selected</summary>
               <p>From {byId.get(selected[0])?.title} to {byId.get(selected[1])?.title}</p>
@@ -1212,7 +1212,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
               title="Clear selection"
               onClick={() => { setSelected([]); setFocusedId(null); if (panel === "moves") setPanel(null); }}
             >
-              ×
+              {session ? "×" : <X size={24} aria-hidden="true" />}
             </button>
           </div>
         )}
