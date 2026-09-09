@@ -17,12 +17,12 @@ backlog.
 | C05 | Branch development and reusable intent | not started | No application implementation |
 | C06 | Comparison and Weave | works locally | Root demo: two or more selected cards generate one live recombination draft with every parent edge and one-line contributions. A real three-parent Sonnet 5 call and browser error/retry, three-parent lineage and reload-reset checks passed. In memory only; no saved recombination. |
 | C07 | Three perspectives | not started | No application implementation |
-| C08 | Contextual creative moves | works locally | Prepared contextual previews remain. Root selection now offers live Wander for one source and Weave for two or more; calls use AI Gateway OIDC and feature tags. Local real calls and card error/retry checks passed. No contextual planner or other live moves. |
+| C08 | Contextual creative moves | works locally | Root Consider a move returns three live Sonnet 5 suggestions for one selected card (`feature:moves`); choosing one reuses Wander to create one card and a derivation labelled with its move title. Real planner response, mocked prepared fallback/card Retry, lineage and >=73% zoom/Select checks passed. In memory only. |
 | C09 | Creative instruments | works locally | A bounded two-alternative generation and assessment workflow is integrated. One brief-only live Gateway run produced two proposals, followed by inspect/keep/reload/export. Whole-source live execution remains unverified; broader instruments remain open. |
 | C10 | Wander | works locally | Root demo: one selected card generates two or three adjacent cards with derivation edges. Local real Sonnet 5 call returned three cards; browser checks cover generation, error/retry and reload reset. In memory only; no durable run or history. |
 | C11 | Navigable interpretation and feedback | not started | No application implementation |
 | C12 | Agent Drive | not started | No application implementation |
-| C13 | Typed and spoken collaboration | not started | No application implementation |
+| C13 | Typed and spoken collaboration | works locally | Root Talk to Minerva streams Sonnet 5 replies (`feature:talk`) with conversation and selected-card context. One real rendered reply plus mocked partial streaming, HTTP/stream Retry, follow-up context, dismiss and reload checks passed. Typed only; no voice, tools or chat-created cards. |
 | C14 | Outputs and reusable results | not started | No application implementation |
 | C15 | Living-atlas experience | works locally | Original paper/ink atlas, serif cards, screen-space overview targets, explicit dense aggregation, dismissible inspection/comparison. IB01-IB06 exercised locally. Fable approves the M1 candidate; owner accepts the fixture experience with documented orientation/interaction friction. Production capability remains pending. |
 

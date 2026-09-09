@@ -35,16 +35,18 @@ import type { AtlasFixture, Thought, Relationship } from "./domain";
 import type { AtlasSession, LayoutRecord } from "../workspaces/graph-domain";
 import { relationshipsFor } from "./domain";
 import { mallFixture } from "./fixture";
-import { wanderSchema, weaveSchema, type GeneratedCard, type LiveFeature } from "./generation";
+import { wanderSchema, weaveSchema, moveCardSchema, type ContextualMove, type GeneratedCard, type LiveFeature } from "./generation";
+import TalkPanel from "./talk-panel";
+import MovesPanel from "./moves-panel";
 import ExplorationPanel, { ProposalDecisions } from "../exploration/panel";
 
 type CardNode = Node<{ thought: Thought; members?: string[]; geometry?: { width: number; height: number; circular: boolean } }, "thought">;
 // Keep screen-sized overview markers separated at the farthest zoom-out.
 const MIN_ZOOM = 0.24;
 
-type Panel = "inspect" | "compare" | "moves" | "index" | "text" | "explore" | null;
+type Panel = "talk" | "inspect" | "compare" | "moves" | "index" | "text" | "explore" | null;
 const Interaction = createContext<{
-  live?: { sources: Thought[]; feature: LiveFeature; error?: string };
+  live?: { sources: Thought[]; feature: LiveFeature; move?: ContextualMove; error?: string };
   busy?: boolean;
   retry?: () => void;
   overview: boolean;
@@ -434,7 +436,7 @@ function Studio({ session }: { session?: AtlasSession }) {
   ];
   const [liveEdges, setLiveEdges] = useState<Relationship[]>([]);
   const relationships = [...fixture.relationships, ...liveEdges];
-  const [live, setLive] = useState<{ sources: Thought[]; feature: LiveFeature; error?: string }>();
+  const [live, setLive] = useState<{ sources: Thought[]; feature: LiveFeature; move?: ContextualMove; error?: string }>();
   const [busy, setBusy] = useState(false);
   const generating = useRef(false);
   const edges = relationships.map((edge) => ({
@@ -487,24 +489,23 @@ function Studio({ session }: { session?: AtlasSession }) {
       style: { stroke: "#28686a", strokeWidth: 2 / viewport.zoom },
     })),
   ];
-  async function generate(feature: LiveFeature, sources: Thought[]) {
+  async function generate(feature: LiveFeature, sources: Thought[], contextualMove?: ContextualMove) {
     if (session || generating.current || (feature === "wander" ? sources.length !== 1 : sources.length < 2)) return;
     generating.current = true;
     setBusy(true);
-    setLive({ feature, sources });
-    setPanel(null);
-    focus(sources[0].id);
+    setLive({ feature, sources, move: contextualMove });
+    if (!contextualMove) focus(sources[0].id);
     try {
       const response = await fetch(`/api/${feature}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(feature === "wander" ? sources[0] : sources),
+        body: JSON.stringify(feature === "wander" ? { ...sources[0], move: contextualMove } : sources),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || response.statusText);
       let cards: GeneratedCard[];
       let contributions: string[] = [];
-      if (feature === "wander") cards = wanderSchema.parse(result).cards;
+      if (feature === "wander") cards = (contextualMove ? moveCardSchema : wanderSchema).parse(result).cards;
       else {
         const parsed = weaveSchema(sources.length).parse(result);
         cards = [parsed.card];
@@ -534,17 +535,18 @@ function Studio({ session }: { session?: AtlasSession }) {
       setLiveEdges((current) => [...current, ...added.flatMap((node) => sources.map((source, index) => ({
         id: `${source.id}-${node.id}`, from: source.id, to: node.id,
         kind: feature === "wander" ? "derivation" as const : "recombination" as const,
-        label: feature === "wander" ? "Wander" : "Weave", sourceRevision: source.revision,
+        label: contextualMove?.title ?? (feature === "wander" ? "Wander" : "Weave"), sourceRevision: source.revision,
         contribution: feature === "weave" ? contributions[index] : undefined,
       })))]);
       setLive(undefined);
+      setPanel(null);
       setSelected(added.map((node) => node.id));
       requestAnimationFrame(() => requestAnimationFrame(() => {
-        void flow.fitView({ nodes: [...parentNodes, ...added], padding: 0.2, maxZoom: 1 });
+        void flow.fitView({ nodes: [...parentNodes, ...added], padding: 0.2, minZoom: 0.73, maxZoom: 1 });
       }));
     } catch (error) {
-      setLive({ feature, sources, error: error instanceof Error ? error.message : String(error) });
-      focus(sources[0].id);
+      setLive({ feature, sources, move: contextualMove, error: error instanceof Error ? error.message : String(error) });
+      if (!contextualMove) focus(sources[0].id);
     } finally {
       generating.current = false;
       setBusy(false);
@@ -603,6 +605,7 @@ function Studio({ session }: { session?: AtlasSession }) {
     );
   }
   function move(ids: string[]) {
+    if (!session) setSelected(ids);
     setMoveSources(ids);
     open("moves");
   }
@@ -848,7 +851,7 @@ function Studio({ session }: { session?: AtlasSession }) {
           value={{
             live,
             busy,
-            retry: () => { if (live) void generate(live.feature, live.sources); },
+            retry: () => { if (live) void generate(live.feature, live.sources, live.move); },
             overview,
             compact,
             zoom: viewport.zoom,
@@ -982,6 +985,7 @@ function Studio({ session }: { session?: AtlasSession }) {
             Thoughts <span>{nodes.length}</span>
           </button>
           <button onClick={() => open("text")}>Read as text</button>
+          {!session && <button onClick={() => open("talk")}>Talk to Minerva</button>}
           {!session && <span className="demo-note">Select 1 to Wander · 2+ to Weave · Reload resets</span>}
           {!session && <button disabled={busy} onClick={changeScene}>
             {dense ? "Mall demo" : "Denser study"}
@@ -1069,7 +1073,8 @@ function Studio({ session }: { session?: AtlasSession }) {
           </div>
         </div>
       </div>
-      {panel && (
+      {!session && <TalkPanel open={panel === "talk"} close={close} cards={selected.map((id) => ({ ...byId.get(id)!, relationships: relationshipsFor(id, relationships) }))} />}
+      {panel && panel !== "talk" && (
         <aside
           ref={panelRef}
           tabIndex={-1}
@@ -1080,7 +1085,7 @@ function Studio({ session }: { session?: AtlasSession }) {
             panel === "inspect"
               ? thought.title
               : panel === "moves"
-                ? "Prepared contextual moves"
+                ? "Contextual moves"
                 : panel === "index"
                   ? "Thought index"
                   : panel === "compare"
@@ -1099,7 +1104,7 @@ function Studio({ session }: { session?: AtlasSession }) {
               {panel === "inspect"
                 ? "Thought / source material"
                 : panel === "moves"
-                  ? "Prepared move / no model call"
+                  ? (session ? "Prepared move / no model call" : "Consider a move")
                   : panel === "text"
                     ? "Same material / text reference"
                     : panel === "index"
@@ -1340,7 +1345,12 @@ function Studio({ session }: { session?: AtlasSession }) {
               </button>
             </>
           )}
-          {panel === "moves" && (
+          {panel === "moves" && !session && selected.length === 1 && <MovesPanel
+            key={selected[0]} source={{ ...byId.get(selected[0])!, relationships: relationshipsFor(selected[0], relationships) }}
+            prepared={byId.get(selected[0])!.move} busy={busy} error={live?.move ? live.error : undefined}
+            choose={(move) => void generate("wander", [byId.get(selected[0])!], move)}
+            retryGeneration={() => { if (live) void generate(live.feature, live.sources, live.move); }} />}
+          {panel === "moves" && (session || selected.length !== 1) && (
             <>
               <h2>
                 {moveSources.length > 1
