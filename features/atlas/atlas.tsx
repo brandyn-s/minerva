@@ -181,7 +181,8 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
       {ui.overview ? (
         <TooltipButton
           aria-label={`Open ${thought.title}`}
-          title="Click to open; double-click to select; drag or use arrow keys to move"
+          title="Click to open · Double-click to select"
+          aria-description="Drag or use arrow keys to move"
           className={`overview-target card-grip nopan ${ui.scalable ? "scale-target" : ui.compact ? "compact-target" : ""}`}
           style={{ transform: `scale(${1 / ui.zoom})`, ...(ui.scalable ? { width: diameter, height: diameter, minHeight: diameter } : {}) }}
         >
