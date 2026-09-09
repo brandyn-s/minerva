@@ -3,6 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import type { TalkRequest } from "./generation";
 import VoiceButton from "./voice-button";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
+function MessageContent({ text }: { text: string }) {
+  return <div className="body-copy talk-markdown"><Markdown remarkPlugins={[remarkGfm]} skipHtml components={{ table: ({ children }) => <div className="talk-table" tabIndex={0} role="region" aria-label="Table"><table>{children}</table></div> }}>{text}</Markdown></div>;
+}
 
 export default function TalkPanel({ open, close, cards, selectedIds }: {
   open: boolean; close: () => void; cards: TalkRequest["cards"]; selectedIds: string[];
@@ -16,7 +22,9 @@ export default function TalkPanel({ open, close, cards, selectedIds }: {
   const pending = useRef<TalkRequest | null>(null);
   const running = useRef(false);
   const transcript = useRef<HTMLDivElement>(null);
-  useEffect(() => { if (transcript.current) transcript.current.scrollTop = transcript.current.scrollHeight; }, [messages, reply]);
+  const followReply = useRef(true);
+  const [showLatest, setShowLatest] = useState(false);
+  useEffect(() => { if (transcript.current && followReply.current) transcript.current.scrollTop = transcript.current.scrollHeight; }, [messages, reply]);
   const input = useRef<HTMLTextAreaElement>(null);
   useEffect(() => { if (open) input.current?.focus(); }, [open]);
 
@@ -25,6 +33,8 @@ export default function TalkPanel({ open, close, cards, selectedIds }: {
     const request = retry ? pending.current! : {
       messages: [...messages, { role: "user" as const, content: draft.trim() }], cards, selectedIds,
     };
+    followReply.current = true;
+    setShowLatest(false);
     pending.current = request;
     running.current = true;
     setMessages(request.messages);
@@ -66,25 +76,26 @@ export default function TalkPanel({ open, close, cards, selectedIds }: {
     <div className="panel-heading"><span className="instrument-label">Think together</span>
       <button aria-label="Close panel" onClick={close}>×</button></div>
     <h2>Talk to Minerva</h2>
-    <p className="small-note">Using all {cards.length} canvas cards{selectedIds.length ? `; ${selectedIds.length} selected for focus` : ""}. Conversation resets on reload.</p>
-    <div ref={transcript} className="talk-transcript" role="log" aria-live="polite">
-      {messages.map((message, index) => <section key={index}>
-        <h3>{message.role === "user" ? "You" : "Minerva"}</h3><p className="body-copy">{message.content}</p>
+    <div ref={transcript} className="talk-transcript" role="log" aria-live="polite" onScroll={(event) => { const el = event.currentTarget; followReply.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40; setShowLatest(!followReply.current); }}>
+      {messages.map((message, index) => <section key={index} className={`talk-message talk-message-${message.role}`}>
+        <h3>{message.role === "user" ? "You" : "Minerva"}</h3><MessageContent text={message.content} />
       </section>)}
-      {(reply || busy) && <section><h3>Minerva</h3><p className="body-copy">{reply || "Thinking…"}</p></section>}
+      {(reply || busy) && <section className="talk-message talk-message-assistant"><h3>Minerva</h3><MessageContent text={reply || "Thinking…"} /></section>}
     </div>
+    {showLatest && <button className="talk-latest" onClick={() => { followReply.current = true; setShowLatest(false); if (transcript.current) transcript.current.scrollTop = transcript.current.scrollHeight; }}>Latest message ↓</button>}
     {error && <div><p role="alert">{error}</p><button disabled={busy} onClick={() => void send(true)}>Retry</button></div>}
-    {open && <VoiceButton cards={cards} selectedIds={selectedIds} messages={messages} onMessages={setMessages}
-      onBusy={setVoiceBusy} disabled={busy || !!error} />}
     <form onSubmit={(event) => { event.preventDefault(); void send(); }}>
-      <label>Message Minerva<textarea ref={input} rows={4} value={draft} onChange={(event) => setDraft(event.target.value)}
+      <label>Message Minerva<textarea ref={input} rows={2} value={draft} onChange={(event) => setDraft(event.target.value)}
         onKeyDown={(event) => {
           if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing && event.keyCode !== 229) {
             event.preventDefault();
             event.currentTarget.form?.requestSubmit();
           }
         }} /></label>
-      <button disabled={busy || voiceBusy || !!error || !draft.trim()} type="submit">{busy ? "Replying…" : "Send"}</button>
+      <div className="talk-actions"><button disabled={busy || voiceBusy || !!error || !draft.trim()} type="submit">{busy ? "Replying…" : "Send"}</button>
+    {open && <VoiceButton cards={cards} selectedIds={selectedIds} messages={messages} onMessages={setMessages}
+      onBusy={setVoiceBusy} disabled={busy || !!error} />}
+      </div>
     </form>
   </aside>;
 }

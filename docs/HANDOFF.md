@@ -1,7 +1,7 @@
 # Atlas demo handoff
 Root `/` is the in-memory mall atlas with Wander, Weave, typed/spoken Talk and moves.
 This owner-directed batch ends after merge and stable deployment; one operator-started Fable review follows.
-- Worktree: `/Users/brandyn.schult/code/minerva-remove-denser`; branch: `feat/scalable-atlas-overview`.
+- Worktree: `/Users/brandyn.schult/code/minerva-remove-denser`; branch: `fix/talk-markdown-readability`.
 - Started from refreshed `origin/main` at `f989afa`; exact released SHA is in the operator response.
 - Stable target: https://minerva-eight.vercel.app/; hosted verification is in the operator response.
 - No persistence, admission/budget logic, new dependencies or workspace features were added.
@@ -9,6 +9,7 @@ Root overview: tinted circles, short collision-filtered labels, and distant dots
 Relatives are paged by category, six at a time; Trace highlights one branch. Node positions stay stable.
 Actual React Flow scale evidence: `/tmp/minerva-scale-runtime-results.json` (30/100/300 cards, desktop/mobile); browser evidence: `/tmp/minerva-scale-final-release`.
 
+Talk removes the canvas/reset note, renders CommonMark/GFM safely, uses a compact composer and clearer message typography, and preserves scroll position while reading older replies. Markdown browser evidence: `/tmp/minerva-talk-markdown`.
 ## Behavior
 
 Includes main through `31b4b8b`: loading circles/colors, full-canvas Talk context and Enter/Shift+Enter controls.

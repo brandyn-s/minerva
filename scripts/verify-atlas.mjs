@@ -1099,6 +1099,33 @@ try {
     }
     await voicePage.close();
   }
+  const markdownPage = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  const markdownReply = "## A clearer direction\n\nTry **repair and supper**, with *shared learning*.\n\n- Borrow tools\n- Share a meal\n\n> Start with one evening.\n\n[Reference](https://example.com) and `one evening`.\n\n```text\nrepair -> supper\n```\n\n| Idea | Benefit |\n| --- | --- |\n| Repair | Learning |\n\n<script>window.markdownUnsafe = true</script>\n\n[Unsafe](javascript:alert(1))\n\n" + "A readable paragraph with enough detail to test scrolling.\n\n".repeat(20);
+  await markdownPage.route("**/api/talk", route => route.fulfill({ contentType: "application/x-ndjson", body: JSON.stringify({ text: markdownReply }) + "\n" + JSON.stringify({ done: true }) + "\n" }));
+  await markdownPage.goto(base);
+  await markdownPage.getByRole("button", { name: "Talk to Minerva", exact: true }).click();
+  assert.equal(await markdownPage.getByText(/Using all .*canvas cards|Conversation resets on reload/).count(), 0);
+  await markdownPage.getByLabel("Message Minerva").fill("Make this **readable**.");
+  await markdownPage.getByLabel("Message Minerva").press("Enter");
+  await markdownPage.getByRole("heading", { name: "A clearer direction" }).waitFor();
+  const rendered = markdownPage.locator(".talk-message-assistant .talk-markdown");
+  assert.equal(await rendered.locator("strong").innerText(), "repair and supper");
+  assert.equal(await rendered.locator("ul li").count(), 2);
+  assert.equal(await rendered.locator("blockquote").innerText(), "Start with one evening.");
+  assert.equal(await rendered.locator("pre code").innerText(), "repair -> supper\n");
+  assert.equal(await rendered.locator("table th").count(), 2);
+  assert.equal(await rendered.getByRole("link", { name: "Reference", exact: true }).getAttribute("href"), "https://example.com");
+  assert.equal(await rendered.locator('a[href^="javascript:"]').count(), 0);
+  assert.equal(await markdownPage.evaluate(() => window.markdownUnsafe), undefined);
+  await markdownPage.locator(".talk-transcript").evaluate(el => { el.scrollTop = 0; });
+  await markdownPage.getByRole("button", { name: "Latest message ↓" }).waitFor();
+  await markdownPage.screenshot({ path: `${artifacts}/talk-markdown.png` });
+  await markdownPage.getByRole("button", { name: "Latest message ↓" }).click();
+  await markdownPage.setViewportSize({ width: 390, height: 844 });
+  await markdownPage.locator(".talk-transcript").evaluate(el => { el.scrollTop = 0; });
+  assert.equal(await markdownPage.locator(".talk-panel").evaluate(el => el.scrollWidth <= el.clientWidth), true, "Markdown keeps the narrow panel within its width");
+  await markdownPage.screenshot({ path: `${artifacts}/talk-markdown-mobile.png` });
+  await markdownPage.close();
   await verifyVoice();
   if (liveVoice) await verifyVoice(true);
 
