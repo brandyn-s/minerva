@@ -378,7 +378,7 @@ try {
     .getByRole("button", { name: "A shopfront for six weeks ←", exact: true })
     .click();
   assert.doesNotMatch(await dialog.innerText(), /Evidence: unknown/);
-  assert.match(await dialog.innerText(), /kept/);
+  assert.doesNotMatch(await dialog.innerText(), /\bkept\b/, "inspection omits the redundant kept label");
   await dialog
     .getByRole("button", { name: "A shared tool library →", exact: true })
     .click();
@@ -642,7 +642,7 @@ try {
   await page.locator(".selection-bar").getByRole("button", { name: "Wander", exact: true }).click();
   await page.getByRole("dialog").getByRole("alert").waitFor();
   assert.match(await page.getByRole("dialog").getByRole("alert").innerText(), /Moves test failure/);
-  assert.ok(await button("Try Explore the quiet hours →").isVisible(), "prepared move remains usable");
+  assert.ok(await button("Try Explore the quiet hours").isVisible(), "prepared move remains usable");
   const movesResponse = page.waitForResponse((r) => r.url().endsWith("/api/moves") && r.status() === 200, { timeout: 90000 });
   const failedMoveAttempts = moveAttempts;
   retryMoves = true;
@@ -661,7 +661,7 @@ try {
     if (moveCardAttempts === 1) await route.fulfill({ status: 500, json: { error: "Move card test failure" } });
     else await route.fulfill({ json: { cards: [card("Morning repair table")] } });
   });
-  await button(`Try ${chosenMove.title} →`).click();
+  await button(`Try ${chosenMove.title}`).click();
   await page.getByRole("dialog").getByRole("alert").waitFor();
   await button("Retry card").click();
   total++;
@@ -1506,7 +1506,7 @@ try {
   await selectCatalogue(mobile, "A food hall", true);
   await mobile.locator(".selection-bar").getByRole("button", { name: "Wander", exact: true }).tap();
   await mobile
-    .getByRole("button", { name: "Try Explore the quiet hours →", exact: true })
+    .getByRole("button", { name: "Try Explore the quiet hours", exact: true })
     .tap();
   await mobile.waitForFunction(() => document.querySelectorAll(".thought").length === 7);
   await mobile.waitForTimeout(350);
