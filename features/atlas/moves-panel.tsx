@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
+import { ArrowRight, LoaderCircle } from "lucide-react";
 import { movesSchema, type ContextualMove, type TalkRequest } from "./generation";
 
 export default function MovesPanel({ source, prepared, busy, error, choose, explore, retryGeneration }: {
   source: TalkRequest["cards"][number]; prepared: ContextualMove; busy: boolean;
   explore: () => void; error?: string; choose: (move: ContextualMove) => void; retryGeneration: () => void;
 }) {
+  const [showSuggestions, setShowSuggestions] = useState(true);
+  const suggestionsId = useId();
   const [moves, setMoves] = useState<ContextualMove[]>([]);
   const [loading, setLoading] = useState(true);
   const [failure, setFailure] = useState("");
@@ -30,20 +33,33 @@ export default function MovesPanel({ source, prepared, busy, error, choose, expl
     void load();
     return () => { active = false; controller.abort(); };
   }, [serialized, attempt]);
-  return <>
-    <h2>Where could {source.title} lead?</h2>
-    <p>Choose a suggested next step, or explore freely to generate several new directions.</p>
-    <button disabled={busy} onClick={explore}>Explore freely</button>
-    <h3>Suggested next steps</h3>
-    {loading && <p role="status">Finding next steps…</p>}
-    {failure && <><p role="alert">{failure}</p>
-      <button disabled={busy} onClick={() => { setFailure(""); setLoading(true); setAttempt((n) => n + 1); }}>Retry</button>
-      <p className="small-note">Prepared move available while live suggestions are unavailable.</p></>}
-    {(failure ? [prepared] : moves).map((move, index) => <section className="source-preview" key={index}>
-      <h3>{move.title}</h3><p>{move.question}</p><p>{move.preview}</p>
-      <button className="move-choice" disabled={busy || loading} onClick={() => choose(move)}>Try {move.title} →</button>
-    </section>)}
-    {busy && <p role="status">Developing this move…</p>}
+  return <div className="wander-content">
+    <div className="wander-source"><span>From</span><p>{source.title}</p></div>
+    <section className="wander-primary" aria-labelledby={`${suggestionsId}-title`}>
+      <h2 id={`${suggestionsId}-title`}>See where this could lead</h2>
+      <p>Generate several new directions from this idea.</p>
+      <button className="wander-explore" disabled={busy} onClick={explore}>Explore freely <ArrowRight size={20} aria-hidden="true" /></button>
+    </section>
+    <section className="wander-suggestions" aria-labelledby={`${suggestionsId}-heading`}>
+      <h3 id={`${suggestionsId}-heading`}>Or choose a suggested move</h3>
+      <div id={suggestionsId} hidden={!showSuggestions}>
+        <p>{loading ? "We’re finding a few thoughtful next steps related to this idea." : "Choose a next step to explore this idea further."}</p>
+        {loading && <>
+          <p className="wander-loading" role="status"><LoaderCircle size={22} aria-hidden="true" /> Finding tailored next steps…</p>
+          <div className="wander-skeletons" aria-hidden="true">{[0, 1].map(index => <div className="wander-skeleton" key={index}><span /><div><span /><span /></div></div>)}</div>
+          <p className="wander-hint">You can explore freely while suggestions load.</p>
+        </>}
+        {failure && <><p role="alert">{failure}</p>
+          <button disabled={busy} onClick={() => { setFailure(""); setLoading(true); setAttempt(n => n + 1); }}>Retry</button>
+          <p className="small-note">Prepared move available while live suggestions are unavailable.</p></>}
+        {!loading && (failure ? [prepared] : moves).map((move, index) => <section className="wander-move" key={index}>
+          <h4>{move.title}</h4><p>{move.question}</p><p className="wander-hint">{move.preview}</p>
+          <button className="move-choice" disabled={busy} onClick={() => choose(move)}>Try {move.title} <ArrowRight size={16} aria-hidden="true" /></button>
+        </section>)}
+      </div>
+      <button className="wander-toggle" aria-expanded={showSuggestions} aria-controls={suggestionsId} onClick={() => setShowSuggestions(show => !show)}>{showSuggestions ? "Hide suggestions" : "Show suggestions"}</button>
+    </section>
+    {busy && <p className="wander-loading" role="status"><LoaderCircle size={22} aria-hidden="true" /> Developing new directions…</p>}
     {error && <><p role="alert">{error}</p><button disabled={busy} onClick={retryGeneration}>Retry card</button></>}
-  </>;
+  </div>;
 }
