@@ -1,5 +1,5 @@
 # Root atlas: browser state and JSON backups
-Branch: `demo-browser-state-release`, started from `origin/main` at `09d0396`, rebased onto `2314038`.
+Branch: `demo-browser-state-release`, started from `origin/main` at `09d0396`, integrated with main through `f251ee0`.
 Worktree: `/Users/brandyn.schult/code/minerva-browser-state`.
 Release SHA and stable deployment evidence are in the operator handoff.
 Scope ends after merge and deployment to https://minerva-eight.vercel.app/; one operator-started Fable review follows.

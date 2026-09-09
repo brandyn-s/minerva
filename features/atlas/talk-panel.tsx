@@ -1,5 +1,7 @@
 "use client";
 
+import { ArrowUp, LoaderCircle } from "lucide-react";
+import TooltipButton from "./tooltip-button";
 import Image from "next/image";
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import type { TalkRequest } from "./generation";
@@ -27,7 +29,7 @@ export default function TalkPanel({ open, close, cards, selectedIds, messages, s
   const [showLatest, setShowLatest] = useState(false);
   useEffect(() => { if (transcript.current && followReply.current) transcript.current.scrollTop = transcript.current.scrollHeight; }, [messages, reply]);
   const input = useRef<HTMLTextAreaElement>(null);
-  useEffect(() => { if (open) input.current?.focus(); }, [open]);
+  useEffect(() => { if (open && !voiceBusy) input.current?.focus(); }, [open, voiceBusy]);
 
   async function send(retry = false) {
     if (running.current || voiceBusy || (!retry && (error || !draft.trim()))) return;
@@ -99,17 +101,18 @@ export default function TalkPanel({ open, close, cards, selectedIds, messages, s
     {showLatest && <button className="talk-latest" onClick={() => { followReply.current = true; setShowLatest(false); if (transcript.current) transcript.current.scrollTop = transcript.current.scrollHeight; }}>Latest message ↓</button>}
     {error && <div><p role="alert">{error}</p><button disabled={busy} onClick={() => void send(true)}>Retry</button></div>}
     <form onSubmit={(event) => { event.preventDefault(); void send(); }}>
-      <label>Message Minerva<textarea ref={input} rows={2} value={draft} onChange={(event) => setDraft(event.target.value)}
+      <div className="integrated-composer"><label className="composer-label">Message Minerva<textarea placeholder="Message Minerva…" disabled={voiceBusy} ref={input} rows={2} value={draft} onChange={(event) => setDraft(event.target.value)}
         onKeyDown={(event) => {
           if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing && event.keyCode !== 229) {
             event.preventDefault();
             event.currentTarget.form?.requestSubmit();
           }
         }} /></label>
-      <div className="talk-actions"><button disabled={busy || voiceBusy || !!error || !draft.trim()} type="submit">{busy ? "Replying…" : "Send"}</button>
+      <div className="talk-actions">
     {open && <VoiceButton cards={cards} selectedIds={selectedIds} messages={messages} onMessages={setMessages}
       onBusy={setVoiceBusy} disabled={busy || !!error} />}
-      </div>
+      <TooltipButton className="composer-icon composer-send" title="Send message" aria-label={busy ? "Replying…" : "Send"} disabled={busy || voiceBusy || !!error || !draft.trim()} type="submit">{busy ? <LoaderCircle className="composer-spinner" size={20} aria-hidden="true" /> : <ArrowUp size={22} aria-hidden="true" />}</TooltipButton>
+      </div></div>
     </form>
   </aside>;
 }
