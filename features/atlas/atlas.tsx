@@ -135,7 +135,7 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
     )[thought.id] || thought.id.replace("study-", "");
   return (
     <article
-      className={`thought ${thought.kind} ${ui.selected.includes(thought.id) ? "chosen" : ""}`}
+      className={`thought ${ui.overview ? "thought-overview" : ""} ${thought.kind} ${ui.selected.includes(thought.id) ? "chosen" : ""}`}
       onClick={openCard}
       onDoubleClick={focusCard}
     >
@@ -156,7 +156,6 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
           style={{ transform: `scale(${1 / ui.zoom})` }}
         >
           {ui.compact ? marker : thought.title}
-          {!ui.compact && <span>Click to open · double-click to focus</span>}
         </button>
       ) : (
         <>
