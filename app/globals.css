@@ -827,3 +827,23 @@ summary {
 .legend[hidden] { display: none; }
 .themes-status { top: auto; bottom: 16px; }
 @media (max-width: 600px) { .themes-status { top: auto; bottom: 12px; max-width: 260px; font-size: 13px; } }
+
+/* The Minerva cameo is the root canvas conversation entry point. */
+.minerva-launcher {
+  position: fixed; right: max(24px, env(safe-area-inset-right)); bottom: max(24px, env(safe-area-inset-bottom));
+  z-index: 15; width: 64px; height: 64px; min-width: 64px; padding: 0;
+  border: 0; border-radius: 50%; background: #f5eddb; cursor: pointer;
+  box-shadow: 0 4px 14px #273a3530; transition: transform 150ms ease, box-shadow 150ms ease;
+}
+.minerva-launcher img { display: block; width: 100%; height: 100%; border-radius: 50%; }
+.minerva-launcher:hover { transform: translateY(-2px); box-shadow: 0 6px 18px #273a3540; background: #f5eddb; }
+.minerva-launcher:focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; }
+.minerva-launcher-label {
+  position: absolute; right: 0; bottom: calc(100% + 12px); white-space: nowrap;
+  padding: 8px 12px; border-radius: 4px; background: #273a35; color: #f5eddb;
+  font: 14px/1.4 ui-monospace, monospace; pointer-events: none; opacity: 0;
+}
+.minerva-launcher:hover .minerva-launcher-label, .minerva-launcher:focus-visible .minerva-launcher-label { opacity: 1; }
+@media (max-width: 700px) {
+  .minerva-launcher.has-selection { bottom: max(104px, calc(env(safe-area-inset-bottom) + 104px)); }
+}
