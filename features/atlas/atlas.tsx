@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import { ChevronDown } from "lucide-react";
 import {
   createContext,
   useContext,
@@ -16,6 +16,7 @@ import {
   BaseEdge,
   getBezierPath,
   useInternalNode,
+  useNodesInitialized,
   type EdgeProps,
   ReactFlow,
   ReactFlowProvider,
@@ -33,16 +34,19 @@ import {
 import "@xyflow/react/dist/style.css";
 import type { AtlasFixture, Thought, Relationship } from "./domain";
 import type { AtlasSession, LayoutRecord } from "../workspaces/graph-domain";
+import { ArrowRight, Crosshair, CaretRight, X } from "@phosphor-icons/react";
 import { relationshipsFor } from "./domain";
 import { mallFixture } from "./fixture";
 import { wanderSchema, weaveSchema, moveCardSchema, type ContextualMove, type GeneratedCard, type LiveFeature } from "./generation";
 import { cardHash, validateThemes, type ThemeGroup } from "./themes";
+import { atlasSaveSchema, fixtureSave, restoreSave, writeSave, mergeAtlas, interruptSavedRuns, type AtlasSave } from "./local-state";
 import TalkPanel from "./talk-panel";
 import RegroupPanel from "./regroup-panel";
 import { applyRegroup } from "./regroup-layout";
 import DownloadButton from "./download-button";
 import MovesPanel from "./moves-panel";
 import ExpeditionPanel from "./expedition-panel";
+import TooltipButton from "./tooltip-button";
 import { overviewDiameter, overviewLabels, overviewName } from "./overview";
 import ExplorationPanel, { ProposalDecisions } from "../exploration/panel";
 
@@ -63,7 +67,6 @@ const Interaction = createContext<{
   selected: string[];
   inspect: (id: string) => void;
   select: (id: string) => void;
-  move: (id: string) => void;
   focus: (id: string) => void;
   resize?: (id: string, size: { x: number; y: number; width: number; height: number }) => void;
 }>({
@@ -73,7 +76,6 @@ const Interaction = createContext<{
   selected: [],
   inspect: () => {},
   select: () => {},
-  move: () => {},
   focus: () => {},
 });
 function ThoughtCard({ id, data }: NodeProps<CardNode>) {
@@ -121,16 +123,16 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
     if (pendingOpen.current) clearTimeout(pendingOpen.current);
     if (event.detail === 0) ui.inspect(thought.id);
     else if (event.detail === 1) {
-      // Wait briefly so a double-click can focus without an inspection overlay
+      // Wait briefly so a double-click can select without an inspection overlay
       // covering the card before its second click arrives.
       pendingOpen.current = setTimeout(() => ui.inspect(thought.id), 250);
     }
   }
-  function focusCard(event: ReactMouseEvent) {
+  function selectCard(event: ReactMouseEvent) {
     if (!isCardSurface(event)) return;
     if (pendingOpen.current) clearTimeout(pendingOpen.current);
     event.preventDefault();
-    ui.focus(thought.id);
+    ui.select(thought.id);
   }
   const updateNodeInternals = useUpdateNodeInternals();
   const lastGeometry = useRef({
@@ -172,7 +174,7 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
       aria-busy={loading}
       className={`thought ${loading ? "thought-generating" : ""} ${ui.overview ? "thought-overview" : ""} ${thought.kind} ${ui.selected.includes(thought.id) ? "chosen" : ""}`}
       onClick={openCard}
-      onDoubleClick={focusCard}
+      onDoubleClick={selectCard}
       style={ui.resize && !ui.overview ? { width: "100%", minHeight: "100%" } : undefined}
     >
       {ui.resize && !ui.overview && <NodeResizer minWidth={200} minHeight={120} maxWidth={1000} maxHeight={1600}
@@ -187,26 +189,34 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
         }}
       />
       {ui.overview ? (
-        <button
+        <TooltipButton
           aria-label={`Open ${thought.title}`}
-          title="Click to open; double-click to focus; drag or use arrow keys to move"
+          title="Click to open; double-click to select; drag or use arrow keys to move"
           className={`overview-target card-grip nopan ${ui.scalable ? "scale-target" : ui.compact ? "compact-target" : ""}`}
           style={{ transform: `scale(${1 / ui.zoom})`, ...(ui.scalable ? { width: diameter, height: diameter, minHeight: diameter } : {}) }}
         >
           {ui.scalable ? <><span className="overview-code">{diameter >= 30 ? marker : ""}</span>{ui.labels?.has(id) && <span className="overview-name">{overviewName(thought)}</span>}</> : ui.compact ? marker : thought.title}
-        </button>
+        </TooltipButton>
       ) : (
         <>
           <div className="card-top">
             <span>
               {thought.kind === "proposal" ? "Starting proposal" : thought.kind}
             </span>
-            <button
+            <TooltipButton
               className="card-grip"
               aria-label={`Move ${thought.title}`}
               title="Drag to move; arrow keys move the card"
             >
               ⠿
+            </TooltipButton>
+            <button
+              className="nodrag nopan select-card"
+              aria-pressed={ui.selected.includes(thought.id)}
+              aria-label={`Select ${thought.title}`}
+              onClick={() => ui.select(thought.id)}
+            >
+              {ui.selected.includes(thought.id) ? "✓" : "+"}
             </button>
           </div>
           <button className="card-title nodrag">{thought.title}</button>
@@ -219,32 +229,13 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
               </>}
             </div>
           )}
-          <div className="card-state">
-            {thought.decision === "unkept draft"
-              ? "○ Unkept draft"
-              : thought.decision === "kept"
+          {thought.decision !== "unkept draft" && <div className="card-state">
+            {thought.decision === "kept"
                 ? "● Kept example"
                 : thought.id === "brief"
                   ? "Shared context"
                   : "Independent starting idea"}
-            {thought.evidence === "unknown" && <span>Evidence unknown</span>}
-          </div>
-          <div className="card-actions">
-            <button
-              className="nodrag nopan"
-              onClick={() => ui.move(thought.id)}
-            >
-              Consider a move ↗
-            </button>
-            <button
-              className="nodrag nopan select-card"
-              aria-pressed={ui.selected.includes(thought.id)}
-              aria-label={`Select ${thought.title}`}
-              onClick={() => ui.select(thought.id)}
-            >
-              {ui.selected.includes(thought.id) ? "✓" : "+"}
-            </button>
-          </div>
+          </div>}
         </>
       )}
     </article>
@@ -314,10 +305,10 @@ function presentNodes(saved?: AtlasFixture): CardNode[] {
   }));
 }
 
-function Studio({ session }: { session?: AtlasSession }) {
+function Studio({ session, initial, restoreNotice = "", saveEnabled = true, replace }: { session?: AtlasSession; initial?: AtlasSave; restoreNotice?: string; saveEnabled?: boolean; replace?: (save: AtlasSave) => void }) {
   const [savedGraph, setSavedGraph] = useState(session?.initial);
-  const fixture = useMemo(() => savedGraph ?? mallFixture(), [savedGraph]);
-  const [nodes, setNodes] = useState<CardNode[]>(() => presentNodes(session?.initial).map((node) => session ? {
+  const fixture = useMemo(() => savedGraph ?? (initial ? { thoughts: initial.thoughts, relationships: initial.relationships, positions: initial.positions.Lineage } : mallFixture()), [savedGraph, initial]);
+  const [nodes, setNodes] = useState<CardNode[]>(() => presentNodes(session?.initial ?? (initial && { thoughts: initial.thoughts, relationships: initial.relationships, positions: initial.positions.Lineage })).map((node) => session ? {
     ...node, style: { ...node.style, width: session.initial.layouts[node.id].width, height: session.initial.layouts[node.id].height },
   } : node));
   const dirtyText = useRef(new Set<string>());
@@ -370,19 +361,19 @@ function Studio({ session }: { session?: AtlasSession }) {
     else { setLayoutUndo(history.slice(0, -1)); setLayoutRedo((h) => [...h, entry]); }
   }
   const stackingOrder = useRef(0);
-  const [focusedId, setFocusedId] = useState<string | null>(null);
+  const [focusedId, setFocusedId] = useState<string | null>(initial?.focusedId ?? null);
   const [connectionKind, setConnectionKind] = useState("parents");
   const [connectionPage, setConnectionPage] = useState(0);
   const [branchId, setBranchId] = useState<string | null>(null);
-  const [selected, setSelected] = useState<string[]>([]);
-  const [active, setActive] = useState("repair");
+  const [selected, setSelected] = useState<string[]>(initial?.selected ?? []);
+  const [active, setActive] = useState(initial?.active ?? "repair");
   const [panel, setPanel] = useState<Panel>(null);
   const [moveSources, setMoveSources] = useState<string[]>([]);
   const [preview, setPreview] = useState(false);
-  const [overview, setOverview] = useState(false);
-  const [viewport, setViewport] = useState<Viewport>({ x: 0, y: 0, zoom: 1 });
+  const [overview, setOverview] = useState((initial?.cameras[initial.perspective]?.zoom ?? 1) < .62);
+  const [viewport, setViewport] = useState<Viewport>(initial?.cameras[initial.perspective] ?? { x: 0, y: 0, zoom: 1 });
   const [query, setQuery] = useState("");
-  const [compact, setCompact] = useState(false);
+  const [compact, setCompact] = useState((initial?.cameras[initial.perspective]?.zoom ?? 1) < .45);
   const [pinching, setPinching] = useState(false);
   const field = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLElement>(null);
@@ -394,12 +385,12 @@ function Studio({ session }: { session?: AtlasSession }) {
   const [liveEdges, setLiveEdges] = useState<Relationship[]>([]);
   const relationships = [...fixture.relationships, ...liveEdges];
   type Perspective = "Lineage" | "Evolution" | "Constellation";
-  const [perspective, setPerspective] = useState<Perspective>("Lineage");
-  const perspectiveRef = useRef<Perspective>("Lineage");
+  const [perspective, setPerspective] = useState<Perspective>(initial?.perspective ?? "Lineage");
+  const perspectiveRef = useRef<Perspective>(initial?.perspective ?? "Lineage");
   const fitPerspective = useRef(false);
-  const cameras = useRef<Partial<Record<Perspective, Viewport>>>({});
-  const [positions, setPositions] = useState<Record<string, Record<string, { x: number; y: number }>>>({});
-  const [themeCache, setThemeCache] = useState<{ groups: ThemeGroup[]; hashes: Record<string, string>; time: string }>();
+  const [cameras, setCameras] = useState<Partial<Record<Perspective, Viewport>>>(initial?.cameras ?? {});
+  const [positions, setPositions] = useState<Record<string, Record<string, { x: number; y: number }>>>(initial?.positions ?? {});
+  const [themeCache, setThemeCache] = useState<{ groups: ThemeGroup[]; hashes: Record<string, string>; time: string } | undefined>(initial?.themeCache);
   const [regroupIds, setRegroupIds] = useState<string[] | null>(null);
   const [regroupedIds, setRegroupedIds] = useState<string[]>([]);
   const [themeUndo, setThemeUndo] = useState<{ cache: typeof themeCache; positions: typeof positions; viewport: Viewport }>();
@@ -428,7 +419,7 @@ function Studio({ session }: { session?: AtlasSession }) {
         if (previous) previous.memberIds.push(...group.memberIds);
         else groups.push(group);
       }
-      setThemeCache({ groups: groups.filter(g => g.memberIds.length), hashes, time: new Date().toLocaleTimeString() });
+      setThemeCache({ groups: groups.filter(g => g.memberIds.length), hashes, time: new Date().toLocaleString() });
       setPositions(current => ({ ...current, Constellation: {} }));
       if (perspectiveRef.current === "Constellation") fitPerspective.current = true;
     } catch (error) { setThemeError(error instanceof Error ? error.message : String(error)); }
@@ -437,10 +428,10 @@ function Studio({ session }: { session?: AtlasSession }) {
   function switchPerspective(next: Perspective) {
     if (next === perspective) return;
     setRegroupIds(null);
-    cameras.current[perspective] = flow.getViewport();
+    setCameras(current => ({ ...current, [perspective]: flow.getViewport() }));
     perspectiveRef.current = next;
     setPerspective(next);
-    if (cameras.current[next]) void flow.setViewport(cameras.current[next]!);
+    if (cameras[next]) void flow.setViewport(cameras[next]!);
     else fitPerspective.current = true;
     if (next === "Constellation") void groupThemes();
   }
@@ -470,26 +461,114 @@ function Studio({ session }: { session?: AtlasSession }) {
     return { ...n, position: perspective === "Lineage" ? position : positions[perspective]?.[n.id] ?? position, style: { ...n.style, pointerEvents: overview ? "none" : "all" } };
   });
   const themeNodes: CardNode[] = perspective === "Constellation" ? groups.map((g, i) => ({ hidden: !g.memberIds.length, id: `theme-${i}`, type: "theme", position: { x: i * 760, y: -70 }, width: 440, height: 140, measured: { width: 440, height: 140 }, style: { width: 440, height: 140 }, draggable: false, data: { thought: { ...thought, title: g.name, summary: g.reason } } })) : [];
+  const nodesInitialized = useNodesInitialized();
   useLayoutEffect(() => {
-    if (!fitPerspective.current || (perspective === "Constellation" && !themeCache)) return;
-    fitPerspective.current = false;
-    const all = [...renderedNodes, ...themeNodes];
-    const x = Math.min(...all.map(n => n.position.x)), y = Math.min(...all.map(n => n.position.y));
-    void flow.fitBounds({ x, y, width: Math.max(...all.map(n => n.position.x + 440)) - x, height: Math.max(...all.map(n => n.position.y + 300)) - y }, { padding: .2 });
+    if (!fitPerspective.current || !nodesInitialized || themeBusy || (perspective === "Constellation" && !themeCache)) return;
+    let frame = 0;
+    const fitMeasured = () => {
+      const all = [...renderedNodes, ...themeNodes].filter(n => !n.hidden);
+      // The renderer commits a newly grouped column after this parent layout
+      // effect. Wait for that commit and every node's measured dimensions.
+      if (all.some(n => !flow.getNode(n.id)?.measured?.height)) {
+        frame = requestAnimationFrame(fitMeasured); return;
+      }
+      fitPerspective.current = false;
+      const x = Math.min(...all.map(n => n.position.x)), y = Math.min(...all.map(n => n.position.y));
+      void flow.fitBounds({ x, y,
+        width: Math.max(...all.map(n => n.position.x + flow.getNode(n.id)!.measured!.width!)) - x,
+        height: Math.max(...all.map(n => n.position.y + flow.getNode(n.id)!.measured!.height!)) - y }, { padding: .2 });
+    };
+    frame = requestAnimationFrame(fitMeasured);
+    return () => cancelAnimationFrame(frame);
   });
+  const [messages, setMessages] = useState<AtlasSave["messages"]>(initial?.messages ?? []);
+  const [expeditions, setExpeditions] = useState<AtlasSave["expeditions"]>(initial?.expeditions ?? []);
+  const [activeExpedition, setActiveExpedition] = useState<number | null>(initial?.activeExpedition ?? null);
+  const [storageNotice, setStorageNotice] = useState(restoreNotice);
+  const storageMenu = useRef<HTMLDetailsElement>(null);
+  const importInput = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const dismiss = (event: PointerEvent) => {
+      if (storageMenu.current && !storageMenu.current.contains(event.target as HTMLElement)) storageMenu.current.open = false;
+    };
+    document.addEventListener("pointerdown", dismiss);
+    return () => document.removeEventListener("pointerdown", dismiss);
+  }, []);
+  const [importFile, setImportFile] = useState<AtlasSave>();
+  const [importBusy, setImportBusy] = useState(false);
+  const [importNotice, setImportNotice] = useState("");
+  const savingPaused = useRef(false);
+  const snapshot = useMemo<AtlasSave>(() => ({
+    version: 1, thoughts: nodes.map(n => n.data.thought), relationships,
+    positions: { Lineage: Object.fromEntries(nodes.map(n => [n.id, n.position])), Evolution: positions.Evolution ?? {}, Constellation: positions.Constellation ?? {} },
+    cameras: { ...cameras, [perspective]: viewport }, perspective, selected, active, focusedId,
+    themeCache, messages, expeditions, activeExpedition,
+  // Relationships derive from the fixture and live edges, which are stable dependencies.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [nodes, fixture, liveEdges, positions, cameras, perspective, viewport, selected, active, focusedId, themeCache, messages, expeditions, activeExpedition]);
+  const latestSave = useRef(snapshot);
+  useLayoutEffect(() => { latestSave.current = snapshot; }, [snapshot]);
+  useEffect(() => {
+    if (session || !saveEnabled) return;
+    const timer = setTimeout(() => {
+      if (!savingPaused.current) void writeSave(snapshot).catch(() => setStorageNotice("Changes could not be saved in this browser. Export a backup before leaving."));
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [snapshot, session, saveEnabled]);
+  useEffect(() => {
+    if (session || !saveEnabled) return;
+    const flush = () => { if (!savingPaused.current) void writeSave(latestSave.current).catch(() => {}); };
+    const hidden = () => { if (document.visibilityState === "hidden") flush(); };
+    window.addEventListener("pagehide", flush); document.addEventListener("visibilitychange", hidden);
+    return () => { window.removeEventListener("pagehide", flush); document.removeEventListener("visibilitychange", hidden); };
+  }, [session, saveEnabled]);
+  async function resetFixture() {
+    if (!window.confirm("Reset to fixture? This discards this browser's current atlas, Talk transcript and expeditions.")) return;
+    savingPaused.current = true;
+    try { await writeSave(null); replace?.(fixtureSave()); }
+    catch { savingPaused.current = false; setStorageNotice("The save could not be cleared. Reset was not applied."); }
+  }
+  function exportAtlas() {
+    let url: string | undefined;
+    const anchor = document.createElement("a");
+    try {
+      const save = atlasSaveSchema.parse(latestSave.current);
+      url = URL.createObjectURL(new Blob([JSON.stringify(save, null, 2)], { type: "application/json" }));
+      anchor.href = url; anchor.download = "minerva-atlas.json";
+      document.body.append(anchor); anchor.click(); setImportNotice("");
+    } catch (error) { setImportNotice(`Export failed: ${error instanceof Error ? error.message : String(error)}`); }
+    finally { anchor.remove(); if (url) setTimeout(() => URL.revokeObjectURL(url!), 1000); }
+  }
+  async function importAtlas(merge: boolean) {
+    if (!importFile || importBusy) return;
+    if (!merge && !window.confirm("Replace this atlas? This discards the current atlas and restores the backup.")) return;
+    setImportBusy(true);
+    try {
+      const current = latestSave.current;
+      const result = merge ? await mergeAtlas(current, importFile) : { save: importFile, added: importFile.thoughts.length, skipped: 0 };
+      if (merge && latestSave.current !== current) throw new Error("The atlas changed during import. Please try Merge again.");
+      savingPaused.current = true;
+      await writeSave(result.save);
+      replace?.(result.save);
+    } catch (error) { savingPaused.current = false; setImportNotice(`Import failed: ${error instanceof Error ? error.message : String(error)}`); }
+    finally { setImportBusy(false); }
+  }
   const [live, setLive] = useState<{ sources: Thought[]; feature: LiveFeature; move?: ContextualMove; error?: string }>();
   const [busy, setBusy] = useState(false);
   const generating = useRef(false);
   const focusedRelations = focusedId ? relationshipsFor(focusedId, relationships).filter(e => connectionKind === "associations" ? e.kind === "association" : connectionKind === "context" ? e.kind === "context" : e.kind !== "association" && e.kind !== "context" && e.direction === (connectionKind === "parents" ? "incoming" : "outgoing")) : [];
   const relationPage = focusedRelations.slice(connectionPage * 6, connectionPage * 6 + 6);
-  const highlighted = new Set((branchId ? relationPage.filter(e => e.id === branchId) : relationPage).map(e => e.id));
+  const highlighted = new Set(selected.length
+    ? relationships.filter(edge => selected.includes(edge.from) || selected.includes(edge.to)).map(edge => edge.id)
+    : (branchId ? relationPage.filter(e => e.id === branchId) : relationPage).map(e => e.id));
+  const highlighting = selected.length > 0 || focusedId !== null;
   const labels = overviewLabels(renderedNodes, viewport, [...(focusedId ? [focusedId] : []), ...selected]);
   const edges = relationships.filter(edge => perspective !== "Constellation" || (edge.kind === "association" && groupFor.has(edge.from) && groupFor.has(edge.to) && groupFor.get(edge.from) !== groupFor.get(edge.to))).map((edge) => ({
     id: edge.id,
     source: perspective === "Constellation" ? `theme-${groupFor.get(edge.from)}` : edge.from,
     target: perspective === "Constellation" ? `theme-${groupFor.get(edge.to)}` : edge.to,
     type: perspective === "Constellation" ? "default" : "floating",
-    label: overview || (!session && focusedId && !highlighted.has(edge.id)) ? undefined : edge.label,
+    label: overview || (!session && highlighting && !highlighted.has(edge.id)) ? undefined : edge.label,
     markerEnd:
       edge.kind === "association" || edge.kind === "context"
         ? undefined
@@ -502,7 +581,7 @@ function Studio({ session }: { session?: AtlasSession }) {
           },
     className: `thread ${edge.kind} ${panel === "inspect" && (edge.from === active || edge.to === active) ? "emphasized" : ""}`,
     style: {
-      opacity: perspective === "Constellation" ? 1 : session ? 1 : edge.kind === "association" && !highlighted.has(edge.id) ? .08 : focusedId ? (highlighted.has(edge.id) ? 1 : .12) : overview ? .7 : 1,
+      opacity: perspective === "Constellation" ? 1 : session ? 1 : edge.kind === "association" && !highlighted.has(edge.id) ? .08 : highlighting ? (highlighted.has(edge.id) ? 1 : .12) : overview ? .7 : 1,
       stroke:
         edge.kind === "association"
           ? "#755584"
@@ -634,11 +713,10 @@ function Studio({ session }: { session?: AtlasSession }) {
     open("inspect");
   }
   function select(id: string) {
-    if (!session) { setFocusedId(id); setConnectionPage(0); setBranchId(null); }
+    const next = selected.includes(id) ? selected.filter(item => item !== id) : [...selected, id];
+    if (!session) { setFocusedId(next.at(-1) ?? null); setConnectionPage(0); setBranchId(null); }
     bringForward(id);
-    setSelected((ids) =>
-      ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id],
-    );
+    setSelected(next);
   }
   function focus(id: string) {
     if (!session) { setFocusedId(id); setConnectionPage(0); setBranchId(null); }
@@ -849,15 +927,32 @@ function Studio({ session }: { session?: AtlasSession }) {
       </a>
       <header className="masthead">
         <div className="brand">
-          <Image src="/icon.svg" alt="" width={35} height={35} unoptimized />
+          <Image className="brand-owl" src="/images/owl-engraved.png" alt="" width={35} height={35} sizes="35px" />
           <span>Minerva</span>
-          <Link href="/workspaces">Workspaces</Link>
         </div>
         <div className="workspace-heading">
-          <span className="instrument-label">Studio / {perspective}</span>
+          <span className="instrument-label">{session ? `Studio / ${perspective}` : "Saved in this browser"}</span>
           <h1>{session ? "Saved idea atlas" : "The mall, reconsidered"}</h1>
         </div>
         {!session && <nav className="perspective-switch" aria-label="Atlas perspective">{(["Lineage", "Evolution", "Constellation"] as const).map(view => <button key={view} aria-pressed={perspective === view} onClick={() => switchPerspective(view)}>{view}</button>)}</nav>}
+      {!session && <details ref={storageMenu} className="atlas-menu" onKeyDown={event => {
+          if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); }
+        }}>
+        <summary>Menu <ChevronDown size={14} aria-hidden="true" /></summary>
+        <div className="atlas-menu-options" aria-label="Atlas storage">
+        <button onClick={() => { exportAtlas(); if (storageMenu.current) storageMenu.current.open = false; }}>Export atlas</button>
+        <button onClick={() => importInput.current?.click()}>Import atlas</button>
+        <input ref={importInput} hidden aria-label="Import atlas file" type="file" accept=".json,application/json" onChange={async e => {
+          const file = e.target.files?.[0]; e.target.value = ""; setImportFile(undefined); setImportNotice("");
+          if (!file) return;
+          try { setImportFile(interruptSavedRuns(atlasSaveSchema.parse(JSON.parse(await file.text())))); }
+          catch (error) { setImportNotice(`Invalid atlas file: ${error instanceof Error ? error.message : String(error)}`); }
+        }} />
+        <button onClick={() => void resetFixture()}>Reset to fixture</button>
+        {importFile && <span>{importFile.thoughts.length} cards ready. <button disabled={importBusy} onClick={() => void importAtlas(false)}>Replace</button> <button disabled={importBusy} onClick={() => void importAtlas(true)}>Merge</button> <button onClick={() => setImportFile(undefined)}>Cancel import</button></span>}
+        {importNotice && <p role="alert">{importNotice}</p>}
+        {storageNotice && <p role="status">{storageNotice}</p>}
+      </div></details>}
       </header>
       <div
         className="field"
@@ -900,7 +995,6 @@ function Studio({ session }: { session?: AtlasSession }) {
             selected,
             inspect,
             select,
-            move: (id) => move([id]),
             focus,
             resize: session ? (id, size) => { void saveLayout(id, size, size).catch(() => {}); } : undefined,
           }}
@@ -917,8 +1011,8 @@ function Studio({ session }: { session?: AtlasSession }) {
               setNodes((current) => applyNodeChanges(changes.filter(c => (!("id" in c) || !c.id.startsWith("theme-")) && (perspective === "Lineage" || c.type !== "position")).map(c => c.type === "replace" ? { ...c, item: { ...c.item, position: current.find(n => n.id === c.id)?.position ?? c.item.position } } : c), current));
             }}
             onNodeDragStop={(_, node) => { void saveLayout(node.id, node.position).catch(() => {}); }}
-            fitView={!savedGraph?.viewpoint.revision}
-            defaultViewport={session?.initial.viewpoint}
+            fitView={session ? !savedGraph?.viewpoint.revision : !initial?.cameras[initial.perspective]}
+            defaultViewport={session?.initial.viewpoint ?? initial?.cameras[initial.perspective]}
             fitViewOptions={{ padding: 0.18, maxZoom: 1 }}
             minZoom={session ? .24 : MIN_ZOOM}
             maxZoom={1.6}
@@ -1019,11 +1113,14 @@ function Studio({ session }: { session?: AtlasSession }) {
           id="atlas-tools"
           aria-label="Atlas controls"
         >
-          <button onClick={() => open("index")}>
-            Thoughts <span>{nodes.length}</span>
-          </button>
-          <button onClick={() => open("text")}>Read as text</button>
-          {!session && <button onClick={() => open("expedition")}>Expedition panel</button>}
+          <TooltipButton className="expedition-control thoughts-control" aria-label={`Thoughts ${nodes.length}`} title="Browse thoughts" aria-haspopup="dialog" aria-expanded={panel === "index"} onClick={() => open("index")}>
+            <Image className="thoughts-medallion" src="/images/thoughts-olive.png" width={44} height={44} alt="" />
+            <span className="thought-count" aria-hidden="true">{nodes.length}</span>
+          </TooltipButton>
+          <TooltipButton className="expedition-control" aria-label="Read as text" title="Read as text" aria-haspopup="dialog" aria-expanded={panel === "text"} onClick={() => open("text")}>
+            <Image className="scroll-medallion" src="/images/read-scroll.png" width={44} height={44} alt="" />
+          </TooltipButton>
+          {!session && <TooltipButton className="expedition-control" aria-label="Expedition panel" title="Open expedition panel" aria-haspopup="dialog" aria-expanded={panel === "expedition"} onClick={() => open("expedition")}><Image src="/images/expedition-compass.png" width={44} height={44} alt="" /></TooltipButton>}
 
           {session && <>
             <button onClick={() => { void session.command({ operation: "seed-mall" }).catch(() => {}); }} disabled={nodes.length > 0}>Load prepared mall</button>
@@ -1045,14 +1142,21 @@ function Studio({ session }: { session?: AtlasSession }) {
           </>}
         </nav>
         {!session && focusedId && <section className="focus-navigation" aria-label="Focused card connections">
-          <div className="focus-heading"><strong>{byId.get(focusedId)?.title}</strong><button aria-label="Close focused connections" onClick={() => setFocusedId(null)}>×</button></div>
-          <button onClick={() => focus(focusedId)}>Focus card</button>
+          <div className="focus-heading"><strong>{byId.get(focusedId)?.title}</strong><button aria-label="Close focused connections" onClick={() => setFocusedId(null)}><X size={20} aria-hidden="true" /></button></div>
+          <p className="focus-summary">{byId.get(focusedId)?.summary}</p>
+          <div className="focus-actions">
+            <button className="focus-open" onClick={() => inspect(focusedId)}>Open card <ArrowRight size={22} aria-hidden="true" /></button>
+            <button className="focus-center" onClick={() => focus(focusedId)}><Crosshair size={24} aria-hidden="true" />Center on canvas</button>
+          </div>
+          <details className="focus-connections" key={focusedId}>
+          <summary>Connections <CaretRight size={20} aria-hidden="true" /></summary>
           <label>Show connections <select value={connectionKind} onChange={e => { setConnectionKind(e.target.value); setConnectionPage(0); setBranchId(null); }}>
             <option value="parents">Parents</option><option value="children">Children</option><option value="associations">Associations</option><option value="context">Shared brief</option>
           </select></label>
-          <p className="small-note">{focusedRelations.length} connections · up to 6 shown at a time. Follow a link to bring that card into view.</p>
+          <p className="small-note">{focusedRelations.length ? `${focusedRelations.length} connection${focusedRelations.length === 1 ? "" : "s"}` : `No ${connectionKind === "context" ? "shared brief connections" : connectionKind}.`}</p>
           <ul>{relationPage.map(edge => <li key={edge.id}><button className="relative-link" onClick={() => focus(edge.otherId)}>{byId.get(edge.otherId)?.title} ↗</button><button aria-label={`Highlight only ${byId.get(edge.otherId)?.title}`} aria-pressed={branchId === edge.id} onClick={() => setBranchId(branchId === edge.id ? null : edge.id)}>Trace</button></li>)}</ul>
           {focusedRelations.length > 6 && <div><button disabled={!connectionPage} onClick={() => { setConnectionPage(p => p - 1); setBranchId(null); }}>Previous connections</button><button disabled={(connectionPage + 1) * 6 >= focusedRelations.length} onClick={() => { setConnectionPage(p => p + 1); setBranchId(null); }}>Next connections</button></div>}
+        </details>
         </section>}
         {perspective === "Constellation" && !regroupIds && <section className="themes-status" aria-label="Theme grouping">
           <span>{themeCache ? `${nodes.length} ideas · ${themeCache.groups.filter(g => g.memberIds.length).length} themes by Minerva` : "Group ideas into themes"}</span>
@@ -1100,9 +1204,9 @@ function Studio({ session }: { session?: AtlasSession }) {
         {selected.length > 0 && !regroupIds && (
           <div className="selection-bar">
             <span>{selected.length} selected</span>
-            <button onClick={() => open("compare")}>Compare</button>
-            {session ? <button onClick={() => move(selected)}>Weave · preview</button> : <>
-              <button disabled={busy || selected.length !== 1} onClick={() => void generate("wander", selected.map((id) => byId.get(id)!))} aria-busy={busy && live?.feature === "wander"}>{busy && live?.feature === "wander" && <span className="generation-spinner" aria-hidden="true" />}{busy && live?.feature === "wander" ? "Wandering…" : "Wander"}</button>
+            {session ? <><button onClick={() => open("compare")}>Compare</button><button onClick={() => move(selected)}>Weave · preview</button></> : <>
+              <button className="wander-action" disabled={busy || selected.length !== 1} onClick={() => move(selected)} aria-busy={busy && live?.feature === "wander"}>{busy && live?.feature === "wander" && <span className="generation-spinner" aria-hidden="true" />}{busy && live?.feature === "wander" ? "Wandering…" : "Wander"}</button>
+              <button onClick={() => open("compare")}>Compare</button>
               <button disabled={selected.length !== 1} onClick={() => open("expedition")}>Expedition</button>
               <button disabled={busy || selected.length < 2} onClick={() => void generate("weave", selected.map((id) => byId.get(id)!))} aria-busy={busy && live?.feature === "weave"}>{busy && live?.feature === "weave" && <span className="generation-spinner" aria-hidden="true" />}{busy && live?.feature === "weave" ? "Weaving…" : "Weave"}</button>
             </>}
@@ -1117,8 +1221,10 @@ function Studio({ session }: { session?: AtlasSession }) {
                 kind: relationshipKind, label: relationshipLabel, contribution: relationshipLabel }).catch(() => {}); }}>Save relationship</button>
             </details>}
             <button
+              className="selection-close"
               aria-label="Clear selection"
-              onClick={() => { setSelected([]); setFocusedId(null); }}
+              title="Clear selection"
+              onClick={() => { setSelected([]); setFocusedId(null); if (panel === "moves") setPanel(null); }}
             >
               ×
             </button>
@@ -1143,8 +1249,8 @@ function Studio({ session }: { session?: AtlasSession }) {
         <Image src="/images/minerva-engraved-cameo.png" alt="" width={64} height={64} sizes="64px" />
         <span className="minerva-launcher-label" aria-hidden="true">Talk to Minerva</span>
       </button>}
-      {!session && <TalkPanel open={panel === "talk"} close={close} selectedIds={selected} cards={nodes.map(({ id, data }) => ({ ...data.thought, relationships: relationshipsFor(id, relationships) }))} />}
-      {!session && <ExpeditionPanel open={panel === "expedition"} close={close} source={selected.length === 1 ? byId.get(selected[0]) : undefined}
+      {!session && <TalkPanel messages={messages} setMessages={setMessages} open={panel === "talk"} close={close} selectedIds={selected} cards={nodes.map(({ id, data }) => ({ ...data.thought, relationships: relationshipsFor(id, relationships) }))} />}
+      {!session && <ExpeditionPanel entries={expeditions} setEntries={setExpeditions} activeEntry={activeExpedition} setActiveEntry={setActiveExpedition} open={panel === "expedition"} close={close} source={selected.length === 1 ? byId.get(selected[0]) : undefined}
         cards={nodes.map(n => n.data.thought)} add={addExpeditionCard} focus={id => { focus(id); setPanel("expedition"); }} />}
       {panel && panel !== "talk" && panel !== "expedition" && (
         <aside
@@ -1157,7 +1263,7 @@ function Studio({ session }: { session?: AtlasSession }) {
             panel === "inspect"
               ? thought.title
               : panel === "moves"
-                ? "Contextual moves"
+                ? (session ? "Contextual moves" : "Wander")
                 : panel === "index"
                   ? "Thought index"
                   : panel === "compare"
@@ -1176,7 +1282,7 @@ function Studio({ session }: { session?: AtlasSession }) {
               {panel === "inspect"
                 ? "Thought / source material"
                 : panel === "moves"
-                  ? (session ? "Prepared move / no model call" : "Consider a move")
+                  ? (session ? "Prepared move / no model call" : "Wander")
                   : panel === "text"
                     ? "Same material / text reference"
                     : panel === "index"
@@ -1193,10 +1299,10 @@ function Studio({ session }: { session?: AtlasSession }) {
             <>
               <h2>{thought.title}</h2>
               {!session && <DownloadButton key={thought.id} card={thought} cards={nodes.map((node) => node.data.thought)} relationships={relationships} />}
-              <div className="status-line">
-                <span>{thought.decision}</span>
-                <span>Evidence: {thought.evidence}</span>
-              </div>
+              {(thought.decision !== "unkept draft" || thought.evidence !== "unknown") && <div className="status-line">
+                {thought.decision !== "unkept draft" && <span>{thought.decision}</span>}
+                {thought.evidence !== "unknown" && <span>Evidence: {thought.evidence}</span>}
+              </div>}
               <p className="body-copy">{thought.body}</p>
               {thought.generation && <details><summary>Generation context and mechanism</summary>
                 <p>{thought.generation.mechanism}</p>
@@ -1225,7 +1331,7 @@ function Studio({ session }: { session?: AtlasSession }) {
                     ? "Remove from selection"
                     : "Select for comparison"}
                 </button>
-                <button onClick={() => move([active])}>Consider a move</button>
+                <button disabled={!session && busy} onClick={() => move([active])}>{session ? "Consider a move" : "Wander"}</button>
                 <button onClick={() => focus(active)}>Focus on atlas ↗</button>
               </div>
               <h3>Relationships</h3>
@@ -1418,6 +1524,7 @@ function Studio({ session }: { session?: AtlasSession }) {
           {panel === "moves" && !session && selected.length === 1 && <MovesPanel
             key={selected[0]} source={{ ...byId.get(selected[0])!, relationships: relationshipsFor(selected[0], relationships) }}
             prepared={byId.get(selected[0])!.move} busy={busy} error={live?.move ? live.error : undefined}
+            explore={() => void generate("wander", [byId.get(selected[0])!])}
             choose={(move) => void generate("wander", [byId.get(selected[0])!], move)}
             retryGeneration={() => { if (live) void generate(live.feature, live.sources, live.move); }} />}
           {panel === "moves" && (session || selected.length !== 1) && (
@@ -1471,10 +1578,19 @@ function Studio({ session }: { session?: AtlasSession }) {
     </main>
   );
 }
+function LocalAtlas() {
+  const [loaded, setLoaded] = useState<{ save: AtlasSave; notice: string; key: number; saveEnabled: boolean }>();
+  useEffect(() => {
+    let cancelled = false;
+    void restoreSave().then(result => { if (!cancelled) setLoaded({ ...result, key: 0, saveEnabled: true }); }).catch(() => {
+      if (!cancelled) setLoaded({ save: fixtureSave(), notice: "The save could not be read. Browser storage is unavailable; the original save has not been changed.", key: 0, saveEnabled: false });
+    });
+    return () => { cancelled = true; };
+  }, []);
+  if (!loaded) return <main><p role="status">Loading this browser’s atlas…</p></main>;
+  return <ReactFlowProvider key={loaded.key}><Studio initial={loaded.save} restoreNotice={loaded.notice} saveEnabled={loaded.saveEnabled}
+    replace={save => setLoaded(current => ({ save, notice: "", saveEnabled: true, key: (current?.key ?? 0) + 1 }))} /></ReactFlowProvider>;
+}
 export default function Atlas({ session }: { session?: AtlasSession }) {
-  return (
-    <ReactFlowProvider>
-      <Studio session={session} />
-    </ReactFlowProvider>
-  );
+  return session ? <ReactFlowProvider><Studio session={session} /></ReactFlowProvider> : <LocalAtlas />;
 }

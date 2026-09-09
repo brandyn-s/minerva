@@ -2,7 +2,7 @@
 
 Branch: feat/regroup-selection
 Worktree: /Users/brandyn.schult/code/minerva-regroup-selection
-Base: 50fd2a0; changes uncommitted.
+Regroup implementation: a8c8dca; integrated with current origin/main.
 
 ## Outcome
 Constellation grouping controls move to the upper left, freeing the Minerva corner.
@@ -24,11 +24,13 @@ In-app browser with synthetic theme responses: preview, Apply, Undo, Cancel, Tal
 See design-qa.md for scope and visual evidence. No paid model calls.
 Live provider quality and dense-browser performance were not measured.
 Local provider configuration is linked from the existing main checkout.
+The merge preserves current Menu, selection, Talk, and local-save features.
+Local saves accept empty theme slots retained for stable group positions.
 
 ## Startup and next role
 npm run dev -- --port 4320
 Production: npm run start -- --port 4322
 Fixture-response review proxy: http://127.0.0.1:4323/ (temporary local test process).
 Live-endpoint application: http://127.0.0.1:4322/.
-Next role: owner review; no commit, push, merge, or deployment performed.
+Next role: owner review after the authorized production release.
 The original checkout had concurrent edits, so final checks use this isolated copy.
