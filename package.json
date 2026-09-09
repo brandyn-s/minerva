@@ -24,9 +24,11 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "node --test",
-    "check": "npm run lint && npm run typecheck && npm test && npm run build"
+    "check": "npm run lint && npm run typecheck && npm test && npm run build",
+    "test:browser": "node scripts/verify-atlas.mjs"
   },
   "dependencies": {
+    "@xyflow/react": "12.11.6",
     "next": "16.3.4",
     "react": "19.2.8",
     "react-dom": "19.2.8"
@@ -37,6 +39,7 @@
     "@types/react-dom": "19.2.7",
     "eslint": "9.39.5",
     "eslint-config-next": "16.3.4",
+    "playwright": "1.63.0",
     "typescript": "5.9.3"
   },
   "allowScripts": {

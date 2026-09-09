@@ -51,6 +51,13 @@ Dense scenes aggregate explicitly and provide accessible relationship lists.
 These lists expose outgoing descendants and associations as well as incoming
 parents; showing sources only leaves part of the graph undiscoverable.
 
+Click a card once to inspect at every zoom level without moving the camera;
+double-click to focus it. Keep a keyboard/touch-accessible explicit Focus action
+in inspection. Cards remain draggable at overview zoom, with a drag distinct
+from a click. Pointer activation, keyboard focus and explicit inspection bring
+the relevant card to the front. Focus and selection marks follow the visible
+card or circular marker, never its hidden layout bounds.
+
 Inspect in one activation; open/choose a contextual move in at most two;
 after selecting sources, Connect/Weave is directly available in one activation.
 Optional contribution editing is additional by choice. A generic menu is not
@@ -81,8 +88,8 @@ deliberate pointer activation.
 Evaluate controls in screen-space after zoom and Fit, on narrow and short
 desktop viewports as well as a large display. When detailed controls would be
 too small, offer a readable, touch-usable focus target (aim for at least 44 by
-44 CSS pixels on touch) that deliberately returns to working detail. Explain
-how to reveal actions; do not make them appear to have been removed. An overview
+44 CSS pixels on touch) that opens inspection in one activation. Double-click or the explicit Focus
+action returns to working detail. Explain how to reveal actions; do not make them appear to have been removed. An overview
 can aggregate content without pretending that tiny working controls are usable.
 
 Compare and inspect while retaining orientation to source material. The user

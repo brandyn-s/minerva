@@ -60,6 +60,28 @@ which services must remain running: closing the browser does not stop work, but
 stopping local services halts local execution. Recover saved checkpoints and
 reconcile interrupted work after restart.
 
+## M1 fixture verification
+
+The root route is the prepared mall atlas. It uses local in-memory data and no
+provider or database. Reload and scene switching restore the prepared data;
+text edits, card positions and selection are not saved. The Thoughts index,
+Read as text and Denser study controls expose the M1 review material.
+
+With the development server running, install the browser once and run the
+repeatable mouse/keyboard and simulated-touch journey checks:
+
+```sh
+npx --yes --package=node@24.20.0 --package=npm@12.0.2 npx playwright install chromium
+npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run test:browser
+```
+
+`MINERVA_URL` can select an isolated loopback port. `MINERVA_CHROMIUM` can select
+an existing Chromium executable, and `MINERVA_ARTIFACTS` selects screenshot output
+(default `/tmp/minerva-evidence`). Keep review evidence in ignored
+`evaluation-artifacts/m1/` if retaining it locally. `npm run check` runs lint,
+typecheck, domain/document/configuration tests and production build; browser
+verification is separate because it needs a running app and installed Chromium.
+
 ## Resuming an existing checkpoint
 
 Read AGENTS, the selected package, relevant capability rows and the short handoff.
