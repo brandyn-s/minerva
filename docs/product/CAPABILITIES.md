@@ -24,28 +24,28 @@ scores or imply that preparing demo data completes a capability.
 
 | ID | Capability | Status | Evidence / owning surface |
 |---|---|---|---|
-| C01 | Workspaces and durable state | not started | No application implementation |
-| C02 | Spatial canvas and view controls | partial | Pan/zoom, Fit, focus/search, pointer and keyboard card movement, persistent-in-session selection; [atlas presentation](../../features/atlas/atlas.tsx). IB01-IB04 and IB06 exercised locally with fixtures. Saved layouts, resize, layout undo and real persistence remain open. |
-| C03 | Visible relationships | partial | [Mall fixture](../../features/atlas/fixture.ts) distinguishes shared brief, derivation, two-parent recombination and a semantic association. Both directions and exact prepared source revisions are inspectable. Moving edges and IB05 exercised locally; real stored graph remains open. |
-| C04 | History, inheritance and genome | not started | No application implementation |
+| C01 | Workspaces and durable state | partial | Managed Postgres workspace lifecycle, revisions, receipts, recoverable deletion and versioned complete JSON export are integrated. Local browser persistence journey passed; execution-history duplication and permanent purge UI remain open. [Implementation](../../features/workspaces/postgres.ts). |
+| C02 | Spatial canvas and view controls | partial | Pan/zoom, Fit, focus/search, pointer and keyboard card movement, persistent-in-session selection; [atlas presentation](../../features/atlas/atlas.tsx). IB01-IB04 and IB06 exercised locally with fixtures. Saved layout/size/camera, resize and session-local layout undo are now integrated with Postgres; the complete M2 interaction matrix is not claimed. |
+| C03 | Visible relationships | partial | [Mall fixture](../../features/atlas/fixture.ts) distinguishes shared brief, derivation, two-parent recombination and a semantic association. Both directions and exact prepared source revisions are inspectable. Moving edges and IB05 exercised locally; the saved graph now includes exact revisions, a grandchild, revised source, semantic cycle and direct connections. Dense saved-graph folding/focus remains incomplete. |
+| C04 | History, inheritance and genome | partial | Immutable idea/source revisions and frozen manifests are stored and inspectable; rich genome/history workflows remain open. |
 | C05 | Branch development and reusable intent | not started | No application implementation |
 | C06 | Comparison and Weave | partial | Prepared contribution comparison retains selection/camera. Source-aware Weave preview is local text only; no generated draft or saved recombination. IB06 exercised; production capability remains open. |
 | C07 | Three perspectives | not started | No application implementation |
 | C08 | Contextual creative moves | partial | Card-specific prepared questions and previews for the brief and selected A/B/C proposals. No contextual model planner or execution. Mouse and simulated touch journeys exercised. |
-| C09 | Creative instruments | not started | No application implementation |
+| C09 | Creative instruments | partial | A bounded two-alternative generation and assessment workflow is integrated. One brief-only live Gateway run produced two proposals, followed by inspect/keep/reload/export. Whole-source live execution remains unverified; broader instruments remain open. |
 | C10 | Wander | not started | No application implementation |
 | C11 | Navigable interpretation and feedback | not started | No application implementation |
 | C12 | Agent Drive | not started | No application implementation |
 | C13 | Typed and spoken collaboration | not started | No application implementation |
 | C14 | Outputs and reusable results | not started | No application implementation |
-| C15 | Living-atlas experience | partial | Original paper/ink atlas, serif cards, screen-space overview targets, explicit dense aggregation, dismissible inspection/comparison. IB01-IB06 exercised locally. Owner accepts the M1 fixture experience with documented orientation/interaction friction; Fable review and production capability remain pending. |
+| C15 | Living-atlas experience | partial | Original paper/ink atlas, serif cards, screen-space overview targets, explicit dense aggregation, dismissible inspection/comparison. IB01-IB06 exercised locally. Fable approves the M1 candidate; owner accepts the fixture experience with documented orientation/interaction friction. Production capability remains pending. |
 
 ## Current milestone
 
 M1 package 2 is implemented and locally exercised. Package 3's experience proof
 is implemented and locally exercised; owner comparison is recorded below.
 The owner accepts the M1 fixture experience with the limitation recorded below;
-Fable review remains pending. The merged M1 application candidate is
+Fable technical review is approved. The merged M1 application candidate is
 `4e28dfbd85f6cdf349bba6fd2d180371492a327b`.
 
 The application-owned [domain](../../features/atlas/domain.ts) and
@@ -61,8 +61,8 @@ brief, not children of each other. The food/tool child explains both inherited
 contributions and changes. The repair draft is unkept with unknown evidence;
 the kept shopfront example also has unknown evidence. Keeping and certainty are
 distinct. Text edits are an ephemeral rehearsal; prepared source excerpts remain
-fixed, with no revision-history claim. No model calls, microphone or persistence
-is connected. Scene switching and reload restore prepared data.
+fixed, with no revision-history claim. In the root fixture, no model calls, microphone or persistence
+is connected. The separate saved application is described below. Scene switching and reload restore prepared data.
 
 ### Local verification
 
@@ -93,8 +93,16 @@ subjective orientation and creative usefulness remain human review questions.
 
 ## Review and acceptance
 
-M1 has owner experience acceptance with a documented limitation; no milestone
-has completed Fable review.
+M1 has owner experience acceptance with documented limitations and Fable
+technical approval at `4e28dfbd85f6cdf349bba6fd2d180371492a327b`.
+The owner supplied Fable's disposition on 2026-09-09: separate read-only clone,
+medium effort, port 3011, no blocking findings, 11 tests/build/browser replay
+passing. Keyboard activation relied on the repository replay; the reviewer's
+independent keyboard instrument was inconclusive. Physical touch, screen-reader
+behavior and measured layered contrast remain unverified. The owner accepted
+overlay occlusion and phone marker-only overview as-is and deferred hosted
+atlas verification. Single-click delay remains a non-blocking tradeoff. The
+grandchild, revised source and semantic cycle are M2 demonstration obligations.
 On 2026-09-09 the owner supplied the M1 text-versus-atlas comparison for the
 prepared repair/supper child and both parents at candidate
 `4e28dfbd85f6cdf349bba6fd2d180371492a327b`:
@@ -124,7 +132,8 @@ acceptance because it does not prevent identifying the parents, their
 contributions or the proposed recombination. Lineage exploration is less
 seamless, but the core M1 experience remains usable and interpretable.
 This acceptance covers the prepared M1 experience at the candidate above;
-it does not establish general creative efficacy or complete Fable review.
+it does not establish general creative efficacy. Fable's separate technical
+approval is recorded above.
 
 The owner previously reported four interaction problems in the prepared atlas: cards could
 not move at overview zoom, fixed stacking buried cards, a single overview click
@@ -144,22 +153,28 @@ accepted or behaviorally verified on that URL. The M6 demonstration window is cl
 
 ## Next outcome
 
-Operator supplies the Fable M1 findings or starts Fable 5.1 on a separate
-checkout of the exact committed candidate for the
-M1 review. Resolve confirmed review blockers before dependent M2 work.
-Owner experience acceptance is recorded above. M2 implementation is not
-authorized by this task.
+M2 is explicitly authorized, with the next review after package 10 before
+packages 11–12. Total incremental spending allowance is $5, including authorized
+previews on the existing Vercel project and required development database.
+Recoverable workspace deletion and complete versioned JSON export are agreed;
+backup/restore is excluded by the owner. Managed Postgres is selected.
+The saved MVP now integrates persistence, frozen context, Workflow/Gateway generation, assessment and explicit decisions. One browser live smoke run completed four calls for an estimated $0.0035978, kept a revision, reloaded and exported all run records. This was builder verification, not owner acceptance. Required checks pass (14 tests plus lint/typecheck/build). Neon Free is provisioned for development/preview and a $4 non-refreshing Gateway budget is active under the $5 total cap. Broader M2 fault/input checks are not claimed; the owner requested streamlined MVP verification. See [HANDOFF](../HANDOFF.md) for exact evidence, open scope and the committed candidate.
+
+Owner judgment on the live proposals (2026-09-09): both are useful enough to show
+that the working flow is becoming concrete, but they converge too heavily on
+the same mechanism. Alternative 2 varies scheduling rather than providing a
+meaningfully different participation model. This records qualified usefulness
+and a variation limitation for review, not full M2 acceptance.
 
 ### Overview follow-up
 
 The owner requested title-only overview cards and reported rectangular ghosting
 while zoomed out. A held-drag regression reproduced the detailed-card shadow on
-the hidden overview container. The overview correction removes the subtext
+the hidden overview container. The working-tree correction removes the subtext
 and restricts the drag shadow to full-detail cards. Mouse and simulated-touch
 held-drag checks verify transparent overview containers with no shadow/outline;
-IB01–IB06 still pass. These changes are published separately from candidate
-`4e28dfbd85f6cdf349bba6fd2d180371492a327b`; use the correction PR merge commit
-for the next review. The existing review checkout remains at the earlier candidate.
+IB01–IB06 still pass. These changes are not included in committed candidate
+`4e28dfbd85f6cdf349bba6fd2d180371492a327b` or the existing review checkout.
 
 ## Atlas readability refinement
 

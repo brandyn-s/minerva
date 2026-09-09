@@ -24,3 +24,6 @@ coverage/
 
 # Content-bearing evaluation evidence is never tracked
 evaluation-artifacts/
+/.swc
+/app/.well-known/workflow/
+/.workflow-data/

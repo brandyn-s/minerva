@@ -274,8 +274,8 @@ Implement the C01 lifecycle, brief/constraint revisions and independent layout
 writes. Define database interfaces against these actual operations using the
 selected Drizzle adapters and explicit SQL migrations in ARCHITECTURE.
 Implement atomic mutation/receipt storage and safe replay after a lost response.
-Resolve M2/4 deletion, retained-history, export and backup/restore policies before
-their behavior is implemented. Establish the export contract for current records
+Apply M2/4's managed Postgres, recoverable deletion and retained-history policy.
+Database backup/restore is excluded. Establish the export contract for current records
 and extend it with later feature records; old-system import remains excluded.
 Wire no-sign-in local access and Host/Origin/same-origin protections for configured
 serving hostnames. These carry into the package 32 Vercel demonstration.
@@ -284,7 +284,7 @@ Completion evidence:
 Exercise create/open/list/rename/duplicate/delete, brief and constraint edits,
 reload, duplicate reference integrity, stale writes, lost acknowledgement and
 unavailable configuration against isolated local data. Verify the export contract
-and backup/restore procedure for this state. Open without sign-in; reject unexpected
+for this state. Open without sign-in; reject unexpected
 Host/Origin and cross-origin mutations. Record C01 evidence and operating commands.
 Package complete when: the lifecycle, revision/receipt paths, export contract and
 request protections work against the isolated database, the listed cases pass
@@ -1193,7 +1193,7 @@ substitute a fabricated response.
 
 **Entry:** Implemented C01-C15 paths and evidence/findings from all previous milestones; no unacknowledged scope cuts.
 
-**Working demonstration:** Run the complete cross-view, voice, exploration, comparison and output journey locally and on the served Vercel URL with no sign-in; inject failures; recover and reload; inspect dense scenes and narrow layouts; verify service/data ownership, restore instructions and the teardown plan.
+**Working demonstration:** Run the complete cross-view, voice, exploration, comparison and output journey locally and on the served Vercel URL with no sign-in; inject failures; recover and reload; inspect dense scenes and narrow layouts; verify service/data ownership, application restart instructions and the teardown plan.
 
 **Exit and review:** Fable's release-candidate review, Astra's evidence-based resolution of material findings, user experience acceptance, local operation with configured services and hosted operation on the served Vercel URL all complete. Missing live provider evidence remains a gap; the demonstration window does not open on a candidate that fails hosted confirmation.
 
@@ -1291,7 +1291,7 @@ Explain any legitimate new-data migration separately.
 Completion evidence:
 Inspect actual dependency boundaries, shared transports/operations and independent
 content/layout/run writes. Exercise isolated infrastructure recovery: configuration,
-migrations, pooling, dispatch/reconciliation, diagnostics, backup/restore and
+migrations, pooling, dispatch/reconciliation, diagnostics and
 reproducible startup, including service restart and hosted storage ownership.
 Confirm code/asset provenance and dependency licenses. Record required checks
 and representative live/visual journeys, separating functional, visual,
@@ -1356,7 +1356,7 @@ Use the supplied exact candidate, isolated checkout/data and startup instruction
 under AGENTS.md's review rules.
 
 Required demonstration:
-Run the complete cross-view, voice, exploration, comparison and output journey locally and on the served Vercel URL with no sign-in; inject failures; recover and reload; inspect dense scenes and narrow layouts; verify service/data ownership, restore instructions and the teardown plan.
+Run the complete cross-view, voice, exploration, comparison and output journey locally and on the served Vercel URL with no sign-in; inject failures; recover and reload; inspect dense scenes and narrow layouts; verify service/data ownership, application restart instructions and the teardown plan.
 
 Review focus:
 Return READY FOR HOSTED RELEASE, CHANGES REQUIRED or BLOCKED for the candidate;
