@@ -1086,3 +1086,21 @@ summary {
 
 .focus-connections .small-note { margin: 8px 0 0; font-size: 12px; }
 .focus-actions svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+/* Regroup controls leave the conversation corner free. */
+.themes-status { inset: 12px auto auto 16px; max-width: calc(100% - 32px); display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 8px 12px; font-size: 13px; }
+.regroup-panel { position: absolute; inset: 0 auto 0 0; z-index: 12; width: min(440px, calc(100% - 88px)); background: #f7f4ec; border-right: 1px solid #c7baa0; padding: 24px; display: flex; flex-direction: column; color: #273a35; box-shadow: 4px 0 18px #273a3512; }
+.regroup-panel header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.regroup-panel h2 { margin: 0; font-size: 28px; }
+.regroup-panel h3 { font-size: 20px; }
+.regroup-content { flex: 1; overflow: auto; min-height: 0; }
+.regroup-content > ul { list-style: none; padding: 0; }
+.regroup-content > ul > li { display: flex; justify-content: space-between; gap: 16px; padding: 16px 0; border-bottom: 1px solid #d9cfbb; }
+.regroup-content li p { font-size: 14px; line-height: 1.5; }
+.regroup-content details { font-size: 14px; }
+.regroup-content summary { cursor: pointer; padding: 8px 0; }
+.regroup-note { border-top: 1px solid #d9cfbb; padding-top: 16px; font-size: 14px; line-height: 1.5; }
+.regroup-panel footer { display: flex; flex-wrap: wrap; gap: 12px; }
+.regroup-panel button { min-height: 44px; }
+.regroup-panel .primary { background: #213f3e; color: #fffaf0; }
+@media(max-width:600px) { .regroup-panel { padding: 16px; } .regroup-panel h2 { font-size: 23px; } }
