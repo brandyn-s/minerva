@@ -156,17 +156,6 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
   }, [id, ui.zoom, ui.overview, ui.compact, updateNodeInternals]);
   const diameter = ui.scalable ? overviewDiameter(ui.zoom) : ui.compact ? 48 : 170;
   const anchorY = ui.overview ? (ui.scalable ? diameter / 2 : ui.compact ? 24 : 35) / ui.zoom : undefined;
-  const marker =
-    (
-      {
-        brief: "Seed",
-        retail: "A",
-        food: "B",
-        tools: "C",
-        repair: "B+C",
-        rotation: "A.1",
-      } as Record<string, string>
-    )[thought.id] || thought.title.split(/\s+/).slice(0, 2).map((s) => s[0]).join("");
   const loading = !!ui.busy && !!ui.live?.sources.some((source) => source.id === id);
   return (
     <article
@@ -195,7 +184,7 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
           className={`overview-target card-grip nopan ${ui.scalable ? "scale-target" : ui.compact ? "compact-target" : ""}`}
           style={{ transform: `scale(${1 / ui.zoom})`, ...(ui.scalable ? { width: diameter, height: diameter, minHeight: diameter } : {}) }}
         >
-          {ui.scalable ? <><span className="overview-code">{diameter >= 30 ? marker : ""}</span>{ui.labels?.has(id) && <span className="overview-name">{overviewName(thought)}</span>}</> : ui.compact ? marker : thought.title}
+          {ui.scalable ? ui.labels?.has(id) && <span className="overview-name">{overviewName(thought)}</span> : ui.compact ? null : thought.title}
         </TooltipButton>
       ) : (
         <>

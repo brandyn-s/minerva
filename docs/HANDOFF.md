@@ -1,36 +1,20 @@
-# Selected regroup preview
+# Plain overview nodes
 
-Branch: feat/regroup-selection
-Worktree: /Users/brandyn.schult/code/minerva-regroup-selection
-Regroup implementation: a8c8dca; integrated with current origin/main.
+Release branch: `fix/plain-overview-nodes`, based on main `a205446`.
+Worktree: `/Users/brandyn.schult/code/minerva-wander-toolbar`.
+Scope: remove Seed, A/B/C, compound ancestry codes, and generated initials from overview nodes.
 
-## Outcome
-Constellation grouping controls move to the upper left, freeing the Minerva corner.
-Regroup selected (or all when nothing is selected) opens a left preview panel.
-The existing themes endpoint receives only the chosen cards. Apply changes the
-selected memberships; unaffected cards and theme slots retain their positions.
-Cancel, request cancellation, retry, stale-source protection, and Undo are included.
-Apply announces completion; View regrouped ideas includes affected theme headings.
-Undo restores the camera as well as membership and layout. Full regroup replaces
-old slots; selected regroup reuses emptied slots without moving other ideas.
-Talk opens through the existing launcher. Preview and card review lists scroll.
-No new persistence or provider implementation is introduced.
+## Behavior
+Overview circles retain their colors, external titles, selection, drag, and connection behavior.
+Existing zoom-dependent title visibility is preserved.
+Compact markers are plain; accessible full titles remain on their controls.
+No generation, data, lineage, or backend changes. Latest main Regroup functionality is preserved.
 
-## Evidence
-npm run check: lint, types, unit tests, production build.
-120-node unit coverage verifies 22 selected and 98 untouched memberships/positions,
-full regroup compaction, and empty-slot reuse.
-In-app browser with synthetic theme responses: preview, Apply, Undo, Cancel, Talk.
-See design-qa.md for scope and visual evidence. No paid model calls.
-Live provider quality and dense-browser performance were not measured.
-Local provider configuration is linked from the existing main checkout.
-The merge preserves current Menu, selection, Talk, and local-save features.
-Local saves accept empty theme slots retained for stable group positions.
-
-## Startup and next role
-npm run dev -- --port 4320
-Production: npm run start -- --port 4322
-Fixture-response review proxy: http://127.0.0.1:4323/ (temporary local test process).
-Live-endpoint application: http://127.0.0.1:4322/.
-Next role: owner review after the authorized production release.
-The original checkout had concurrent edits, so final checks use this isolated copy.
+## Validation and release
+Run `npm run check` and the existing browser replay; its overview assertion now expects only the title.
+User authorized commit, merge, and deploy after validation and required GitHub CI.
+Stable URL: https://minerva-eight.vercel.app/.
+Prefix commands with `npx --yes --package=node@24.20.0 --package=npm@12.0.2`.
+Local start: `npm run build`, then `npm run start -- --port 3189`.
+Replay: `MINERVA_URL=http://127.0.0.1:3189 npm run test:browser`.
+Next role: owner inspects the deployed result.

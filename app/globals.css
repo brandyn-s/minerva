@@ -751,7 +751,6 @@ summary {
 
 /* Root atlas: semantic overview, with names outside the marker. */
 .overview-target.scale-target { position: relative; border: 2px solid var(--thought-accent); border-radius: 50%; padding: 0; min-width: 0; display: grid; place-items: center; text-align: center; font: 13px ui-monospace, monospace; }
-.overview-code { pointer-events: none; }
 .overview-name { position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%); width: 160px; max-height: 38px; overflow: hidden; font: 15px/18px Georgia, serif; color: var(--ink); pointer-events: none; }
 .scalable-atlas .thought.proposal { --thought-surface: #edf2e9; }
 .scalable-atlas .thought.exploration { --thought-surface: #f0eaf3; }

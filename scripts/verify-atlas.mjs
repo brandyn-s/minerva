@@ -926,7 +926,7 @@ try {
   const backupDownload = page.waitForEvent("download").catch(() => null);
   try { await openAtlasMenu(); await button("Export atlas").click({ timeout: 5000 }); }
   catch (error) { await page.screenshot({ path: `${artifacts}/export-failure.png` }); throw error; }
-  assert.equal(await page.locator('.atlas-storage [role="alert"]').count(), 0, await page.locator('.atlas-storage').innerText());
+  assert.equal(await page.locator('.atlas-menu-options [role="alert"]').count(), 0, await page.locator('.atlas-menu-options').innerText());
   const backup = await backupDownload; assert.ok(backup, "JSON backup download starts"); assert.equal(backup.suggestedFilename(), "minerva-atlas.json");
   const backupBytes = await readFile(await backup.path()); const backupState = JSON.parse(backupBytes);
   await resetFixture(); assert.equal(await page.locator(".thought").count(), 6);
@@ -974,6 +974,7 @@ try {
     });
   }, corrupt);
   await page.goto(base); await page.locator(".thought").first().waitFor();
+  await openAtlasMenu();
   await page.getByText(/The save could not be read.*recovery copy/).waitFor();
   assert.equal(await page.locator(".thought").count(), 6);
   const recoveries = await page.evaluate(() => new Promise(resolve => {
@@ -1000,8 +1001,8 @@ try {
   const overviewCard = page.locator('[data-id="food"] .overview-target');
   assert.equal(
     await overviewCard.innerText(),
-    "B\nFood hall",
-    "overview shows an identifier and short label",
+    "Food hall",
+    "overview keeps the title without lineage notation",
   );
   const overviewRect = await overviewCard.boundingBox();
   const overviewCamera = await transform();
@@ -1352,6 +1353,7 @@ try {
   assert.ok(parseInt(await page.getByLabel("Zoom level").textContent(), 10) >= 100, "focus keeps one card readable");
   const navigation = page.getByRole("region", { name: "Focused card connections" });
   assert.equal(await navigation.locator(".relative-link").count(), 2, "both recombination parents are navigable");
+  await navigation.locator("summary").click();
   await navigation.getByRole("button", { name: /^Highlight only/ }).first().click();
   assert.equal(await page.locator(".react-flow__edge-path").evaluateAll(es => es.filter(e => Number(e.style.opacity) > .5).length), 1, "Trace emphasizes only one branch");
   await navigation.locator(".relative-link").first().click();
