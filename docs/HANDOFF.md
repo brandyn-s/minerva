@@ -23,7 +23,8 @@ Recovery copies have a list in the import area with Export and Discard; dev-mode
 No model routes, /workspaces, database or Workflow code changed. No dependencies added.
 
 ## Verification
-Verification pending for this candidate; final operator handoff supplies exact release SHA and hosted evidence.
+`npm run check` and complete mocked replays passed through `npm run dev` and `next start`.
+Final operator handoff supplies the exact release SHA and hosted verification.
 Browser artifacts: `/tmp/minerva-layout-dev` and `/tmp/minerva-layout-start`.
 Existing `scripts/verify-atlas.mjs` covers layout, transitive focus/folds, migration, merge counts and confirmations.
 All model responses in replay are mocked; no live model calls authorized or made.
