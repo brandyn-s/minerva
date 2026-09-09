@@ -392,7 +392,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
   type Perspective = "Lineage" | "Evolution" | "Constellation";
   const [perspective, setPerspective] = useState<Perspective>(initial?.perspective ?? "Lineage");
   const perspectiveRef = useRef<Perspective>(initial?.perspective ?? "Lineage");
-  const fitPerspective = useRef(false);
+  const fitPerspective = useRef(!session && !initial?.cameras[initial.perspective]);
   const [cameras, setCameras] = useState<Partial<Record<Perspective, Viewport>>>(initial?.cameras ?? {});
   const [positions, setPositions] = useState<Record<string, Record<string, { x: number; y: number }>>>(initial?.positions ?? {});
   const [sizes, setSizes] = useState<AtlasSave["sizes"]>(initial?.sizes ?? { Lineage: {}, Evolution: {}, Constellation: {} });
