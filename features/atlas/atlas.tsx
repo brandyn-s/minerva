@@ -1011,10 +1011,13 @@ function Studio({ session }: { session?: AtlasSession }) {
           id="atlas-tools"
           aria-label="Atlas controls"
         >
-          <button onClick={() => open("index")}>
-            Thoughts <span>{nodes.length}</span>
-          </button>
-          <button onClick={() => open("text")}>Read as text</button>
+          <TooltipButton className="expedition-control thoughts-control" aria-label={`Thoughts ${nodes.length}`} title="Browse thoughts" aria-haspopup="dialog" aria-expanded={panel === "index"} onClick={() => open("index")}>
+            <Image className="thoughts-medallion" src="/images/thoughts-olive.png" width={44} height={44} alt="" />
+            <span className="thought-count" aria-hidden="true">{nodes.length}</span>
+          </TooltipButton>
+          <TooltipButton className="expedition-control" aria-label="Read as text" title="Read as text" aria-haspopup="dialog" aria-expanded={panel === "text"} onClick={() => open("text")}>
+            <Image className="scroll-medallion" src="/images/read-scroll.png" width={44} height={44} alt="" />
+          </TooltipButton>
           {!session && <TooltipButton className="expedition-control" aria-label="Expedition panel" title="Open expedition panel" aria-haspopup="dialog" aria-expanded={panel === "expedition"} onClick={() => open("expedition")}><Image src="/images/expedition-compass.png" width={44} height={44} alt="" /></TooltipButton>}
 
           {session && <>
