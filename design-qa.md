@@ -31,3 +31,12 @@ Interactions verified in the in-app browser: select food hall, Open card opens i
 final result: passed
 
 Compact refinement: reduced title to 23px, summary to 16px, panel padding to 16px and action height to 36px. Expanded Repair preview visually checked after refinement; lint passed.
+
+# Contents and reader QA
+Source: /var/folders/qy/mxhht8_d30dd1bf61h8k525m0000gn/T/codex-clipboard-884865e3-dbbb-4972-86d3-b647d1ff11dd.png
+Screenshots: /tmp/minerva-reader-desktop.png and /tmp/minerva-reader-mobile.png.
+Reference 1491x1055 normalized to a 1080 CSS-pixel panel. Browser viewports 1280x720 and 390x844, 1x density. Food hall active, Details collapsed. Existing real body copy retained; mock prose not added.
+Full panel and reading column compared: sidebar highlight, serif title and text, Details, selection and action row, and previous/next footer preserve the supplied hierarchy. Mobile uses a horizontal contents strip.
+Fixed initial footer clipping with a constrained flex layout. Fixed mobile intrinsic grid overflow with minmax(0,1fr). Final captures show readable contents without page-width overflow. No actionable P0/P1/P2 findings.
+Browser verified contents switching, next navigation, Details expansion, selection, Open card, and Center on canvas. No paid model calls.
+final result: passed
