@@ -30,7 +30,7 @@ try {
     await button(feature === 'wander' ? 'Wander' : feature === 'weave' ? 'Weave' : 'Expedition').click();
     if (feature === 'wander') await button('Explore freely').click();
     if (feature === 'expedition') {
-      await page.getByLabel('Goal in one sentence').fill('Create a practical service');
+      await page.getByLabel('Where would you like to take this idea?').fill('Create a practical service');
       await button('Start expedition').click();
     }
     await started;
