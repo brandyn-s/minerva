@@ -1108,6 +1108,8 @@ try {
   await markdownPage.getByLabel("Message Minerva").fill("Make this **readable**.");
   await markdownPage.getByLabel("Message Minerva").press("Enter");
   await markdownPage.getByRole("heading", { name: "A clearer direction" }).waitFor();
+  assert.ok((await markdownPage.locator(".talk-message-assistant").innerText()).length < markdownReply.length / 2, "a buffered response appears progressively instead of all at once");
+  await markdownPage.getByRole("button", { name: "Replying…", exact: true }).waitFor({ state: "hidden" });
   const rendered = markdownPage.locator(".talk-message-assistant .talk-markdown");
   assert.equal(await rendered.locator("strong").innerText(), "repair and supper");
   assert.equal(await rendered.locator("ul li").count(), 2);
