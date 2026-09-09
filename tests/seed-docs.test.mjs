@@ -108,3 +108,13 @@ test("repository documentation links resolve without external workspace paths", 
     }
   }
 });
+
+test("Vercel installs and builds with the declared npm version", async () => {
+  const manifest = JSON.parse(await read("package.json"));
+  const config = JSON.parse(await read("vercel.json"));
+  const lock = JSON.parse(await read("package-lock.json"));
+  assert.equal(manifest.packageManager, `npm@${manifest.engines.npm}`);
+  assert.equal(config.installCommand, `npx --yes ${manifest.packageManager} ci`);
+  assert.equal(config.buildCommand, `npx --yes ${manifest.packageManager} run build`);
+  assert.deepEqual(lock.packages[""].engines, manifest.engines);
+});
