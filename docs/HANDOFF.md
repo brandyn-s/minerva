@@ -1,20 +1,14 @@
-# Plain overview nodes
+# Remove card state labels
 
-Release branch: `fix/plain-overview-nodes`, based on main `a205446`.
+Branch: `fix/remove-card-state-labels`, integrated with main `221c23e`.
 Worktree: `/Users/brandyn.schult/code/minerva-wander-toolbar`.
-Scope: remove Seed, A/B/C, compound ancestry codes, and generated initials from overview nodes.
+Change: remove Shared context, Independent starting idea, and Kept example from card surfaces, plus unused card-state CSS.
+Decision/evidence data and inspection details remain unchanged.
 
-## Behavior
-Overview circles retain their colors, external titles, selection, drag, and connection behavior.
-Existing zoom-dependent title visibility is preserved.
-Compact markers are plain; accessible full titles remain on their controls.
-No generation, data, lineage, or backend changes. Latest main Regroup functionality is preserved.
-
-## Validation and release
-Run `npm run check` and the existing browser replay; its overview assertion now expects only the title.
-User authorized commit, merge, and deploy after validation and required GitHub CI.
-Stable URL: https://minerva-eight.vercel.app/.
-Prefix commands with `npx --yes --package=node@24.20.0 --package=npm@12.0.2`.
-Local start: `npm run build`, then `npm run start -- --port 3189`.
-Replay: `MINERVA_URL=http://127.0.0.1:3189 npm run test:browser`.
-Next role: owner inspects the deployed result.
+Validation: `npm run check` passed (lint, typecheck, tests, production build).
+Browser inspection confirms all six fixture cards render without these labels and close up the freed space.
+Production preview is running at http://127.0.0.1:3190/.
+Prefix npm commands with `npx --yes --package=node@24.20.0 --package=npm@12.0.2`.
+Start: `npm run build`, then `npm run start -- --port 3190`.
+User authorized commit, merge, and production deployment after required CI.
+Stable URL: https://minerva-eight.vercel.app/. Next role: owner review.
