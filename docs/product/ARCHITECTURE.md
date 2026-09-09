@@ -175,10 +175,39 @@ application is an operator CLI, so a user-facing stop persists a stop intent tha
 the run observes and then aborts its own in-flight steps. Keep that path distinct
 from a suspended run needing operator recovery.
 
+Workflow selects a world for its storage and queuing. Local development uses the
+bundled local world automatically under the ordinary development server, with no
+extra command. That world separates its two halves: run data persists to a local
+`.workflow-data/` directory, while the step queue is in memory and does not
+survive a restart. So a restart loses queued steps, not run state, and local
+recovery reconciles a queue against records the world still holds rather than
+reconstructing those records. Ignore that directory rather than committing it.
+
+The local world also processes steps synchronously and runs as a single
+instance, so it cannot demonstrate concurrent step execution. Evidence for
+concurrent runs comes from a preview deployment; a local pass does not establish
+it. A Postgres-backed world exists as a selectable alternative if durable local
+runs are later required, which is a configuration choice rather than building a
+queue.
+
 Bound SDK retries, workflow retries, repair and replanning under one explicit
 attempt/time/spend policy. Transient failures, invalid output, revision conflict,
 repetition and quota denial have different responses. Preserve partial results
 and failed attempts. Never bypass a quota or invent successful fallback output.
+
+Quota denial is identifiable rather than inferred: the Gateway rejects an
+over-budget request with HTTP 402 and a stable quota type, and names the
+exceeded scope with its spend and limit. Authentication and billing-prerequisite
+failures arrive as their own statuses and types and are configuration faults,
+not transient ones. Match those explicitly and treat the remainder as transient,
+rather than reading any failure as retryable.
+
+Usage arrives in two phases. A generation identifier is available immediately,
+including inside the first chunk of a streamed response, while cost and token
+usage for that generation become available shortly afterward. Record the
+identifier with the attempt when it completes and reconcile usage against it
+later; a receipt written at completion time cannot carry a cost that does not
+exist yet.
 
 ## Concurrent interaction
 
@@ -247,11 +276,18 @@ teardown are recorded in the application handoff; the template holds no
 account-specific values.
 
 Every deployment authenticates to the AI Gateway with its Vercel OIDC token, the
-one credential lane, and the owner sets a project-scoped Gateway budget, the one
-scope that meters that lane; the Gateway rejects requests with HTTP 402 once
-that budget is exceeded. Spend Management is the backstop: it checks every few
+one credential lane, and the owner sets a project-scoped Gateway budget for it;
+the Gateway rejects requests with HTTP 402 once that budget is exceeded. Budgets
+stack rather than replace each other: a request must pass every budget in its
+lane, and a request authenticated by a deployment's OIDC token counts against
+both the project budget and the team budget. A team budget exhausted by other
+work therefore rejects this application even while its project budget has room,
+so the project budget bounds this project's spend without being the only scope
+that can stop it. The rejection names the exceeded scope, which is what the
+application reports. Spend Management is the backstop: it checks every few
 minutes and does not cover Marketplace databases. Do not add Gateway API keys or
-bring-your-own provider keys, which the project budget does not meter.
+bring-your-own provider keys, which move requests to a different budget lane
+that the project budget does not meter.
 Application admission keeps
 its own bounded attempt and spend allowances with headroom.
 
