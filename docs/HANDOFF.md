@@ -48,3 +48,9 @@ Use separate dev/build runs; after refreshing dependencies, discard stale ignore
 `MINERVA_LIVE=1` allows one themes call; `MINERVA_LIVE=1 MINERVA_VOICE_ONLY=1` remains the voice-only opt-in.
 Next role: operator-started Fable 5.1 at low effort, read-only, exact released candidate, C04/C07 and carry-overs.
 Use docs/setup.md's bounded review prompt; no additional paid calls or feature work are authorized by this handoff.
+
+## Minerva launcher
+Root Talk opens from the owner's selected engraved cameo at bottom-right (64px, 24px inset).
+Hover/focus shows its name; Enter opens and Escape restores focus. Mobile selection raises it above the action bar.
+Branch `feat/minerva-launcher`; worktree `/Users/brandyn.schult/code/minerva-remove-denser`; local production port 3035.
+`npm run check` and full mocked browser replay passed; screenshots `/tmp/minerva-cameo-local`; visual QA in `design-qa.md`.

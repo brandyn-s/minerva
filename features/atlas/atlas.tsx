@@ -1000,7 +1000,7 @@ function Studio({ session }: { session?: AtlasSession }) {
             Thoughts <span>{nodes.length}</span>
           </button>
           <button onClick={() => open("text")}>Read as text</button>
-          {!session && <button onClick={() => open("talk")}>Talk to Minerva</button>}
+
           {session && <>
             <button onClick={() => { void session.command({ operation: "seed-mall" }).catch(() => {}); }} disabled={nodes.length > 0}>Load prepared mall</button>
             <button onClick={() => { void session.command({ operation: "create-idea", ideaId: crypto.randomUUID(), title: "New idea", body: "Write your idea here." }).catch(() => {}); }}>New idea</button>
@@ -1100,6 +1100,10 @@ function Studio({ session }: { session?: AtlasSession }) {
           </div>
         </div>
       </div>
+      {!session && <button className={`minerva-launcher${selected.length ? " has-selection" : ""}`} aria-label="Talk to Minerva" aria-haspopup="dialog" aria-expanded={panel === "talk"} aria-controls="minerva-talk" onClick={() => open("talk")}>
+        <Image src="/images/minerva-engraved-cameo.png" alt="" width={64} height={64} sizes="64px" />
+        <span className="minerva-launcher-label" aria-hidden="true">Talk to Minerva</span>
+      </button>}
       {!session && <TalkPanel open={panel === "talk"} close={close} selectedIds={selected} cards={nodes.map(({ id, data }) => ({ ...data.thought, relationships: relationshipsFor(id, relationships) }))} />}
       {panel && panel !== "talk" && (
         <aside

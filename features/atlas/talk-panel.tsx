@@ -85,7 +85,7 @@ export default function TalkPanel({ open, close, cards, selectedIds }: {
     } finally { clearInterval(reveal); running.current = false; setBusy(false); }
   }
 
-  return <aside hidden={!open} className="detail-panel talk-panel" role="dialog" aria-label="Talk to Minerva"
+  return <aside id="minerva-talk" hidden={!open} className="detail-panel talk-panel" role="dialog" aria-label="Talk to Minerva"
     onKeyDown={(event) => { if (event.key === "Escape") { event.stopPropagation(); close(); } }}>
     <div className="panel-heading"><span className="instrument-label">Think together</span>
       <button aria-label="Close panel" onClick={close}>×</button></div>
