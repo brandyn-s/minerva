@@ -201,26 +201,18 @@ h1 {
   display: block;
   color: #854632;
 }
-.card-actions {
-  display: flex;
-  border-top: 1px solid var(--line);
-}
-.card-actions button {
-  background: transparent;
-  border: 0;
-  text-align: left;
-  flex: 1;
-  padding-left: 18px;
-}
-.card-actions .select-card {
-  flex: 0 0 46px;
-  border-left: 1px solid var(--line);
-  font-size: 20px;
+.card-top > span { margin-right: auto; }
+.card-top .select-card {
+  flex: 0 0 36px;
+  min-height: 36px;
   padding: 0;
-  text-align: center;
+  margin-left: 4px;
+  font-size: 20px;
+  background: transparent;
 }
-.card-actions .select-card[aria-pressed="true"] {
+.card-top .select-card[aria-pressed="true"] {
   background: var(--ink);
+  color: var(--card);
 }
 .react-flow__handle {
   visibility: hidden;
@@ -969,4 +961,34 @@ summary {
 @media (max-width: 600px) {
   .atlas-storage { padding: 4px 10px; gap: 4px 10px; }
   .atlas-storage input { max-width: 145px; }
+}
+
+/* Wander owns exploration; dismissal sits outside the action row. */
+.selection-bar {
+  padding: 16px 48px 16px 16px;
+  max-width: calc(100% - 24px);
+  flex-wrap: wrap;
+  justify-content: center;
+  width: max-content;
+}
+.selection-bar .wander-action {
+  background: var(--card);
+  color: var(--ink);
+  font-weight: 700;
+}
+.selection-bar .wander-action:hover:not(:disabled) { background: #e4d8bc; }
+.selection-bar .selection-close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  font-size: 16px;
+  line-height: 1;
+}
+.selection-bar .selection-close:hover { background: #ffffff12; }
+@media (max-width: 600px) {
+  .selection-bar { padding: 12px 40px 12px 10px; gap: 5px; }
 }

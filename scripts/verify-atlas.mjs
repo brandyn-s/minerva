@@ -263,8 +263,7 @@ try {
   await button("Repair, then stay for supper").click();
   await page.getByRole("dialog").waitFor();
   const dialog = page.getByRole("dialog");
-  assert.match(await dialog.innerText(), /unkept draft/);
-  assert.match(await dialog.innerText(), /Evidence: unknown/);
+  assert.equal(await dialog.locator(".status-line").count(), 0, "default draft and unknown evidence labels stay hidden");
   assert.equal(await dialog.locator(".relationship-list li").count(), 2);
   await dialog
     .getByRole("button", { name: "A food hall ←", exact: true })
@@ -282,7 +281,7 @@ try {
   await dialog
     .getByRole("button", { name: "A shopfront for six weeks ←", exact: true })
     .click();
-  assert.match(await dialog.innerText(), /Evidence: unknown/);
+  assert.doesNotMatch(await dialog.innerText(), /Evidence: unknown/);
   assert.match(await dialog.innerText(), /kept/);
   await dialog
     .getByRole("button", { name: "A shared tool library →", exact: true })
@@ -311,6 +310,12 @@ try {
   assert.equal(await transform(), selectedCamera);
   assert.equal(await page.locator(".thought.chosen").count(), 2);
   await button("Clear selection").click();
+
+  await page.route("**/api/moves", route => route.fulfill({ json: { moves: [
+    { title: "Try a workshop", question: "Who could learn here?", preview: "Host a repair workshop." },
+    { title: "Share tools", question: "What could circulate?", preview: "Lend tools locally." },
+    { title: "Invite neighbors", question: "Who could join?", preview: "Run an open evening." },
+  ] } }));
 
   // Wander and Weave: injected failure on the source card, retry and lineage.
   // MINERVA_LIVE=1 opts into two expedition steps and one reading; voice requires VOICE_ONLY too.
@@ -342,6 +347,21 @@ try {
       await selectFromIndex("Independent retail shops");
       assert.equal(await button("Weave").isEnabled(), true, "three parents can be woven");
     }
+    if (feature === "wander") {
+      assert.equal(await page.locator(".card-actions").count(), 0, "cards no longer repeat the move action");
+      assert.equal(await page.locator('[data-id="tools"] .card-top .select-card').getAttribute("aria-pressed"), "true");
+      for (const width of [1440, 390]) {
+        await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
+        const toolbar = page.locator(".selection-bar");
+        const bar = await toolbar.boundingBox();
+        const dismiss = await toolbar.getByRole("button", { name: "Clear selection", exact: true }).boundingBox();
+        assert.ok(bar.x >= 0 && bar.x + bar.width <= width, "toolbar fits viewport");
+        assert.ok(dismiss.width >= 44 && dismiss.height >= 44, "small X keeps a full click target");
+        assert.ok(Math.abs(dismiss.y - bar.y) < 2 && Math.abs(dismiss.x + dismiss.width - bar.x - bar.width) < 2, "X sits in top right");
+        await page.screenshot({ path: `${artifacts}/wander-toolbar-${width}.png` });
+      }
+      await page.setViewportSize({ width: 1440, height: 900 });
+    }
     const label = feature === "wander" ? "Wander" : "Weave";
     assert.equal(await button(feature === "wander" ? "Weave" : "Wander").isDisabled(), true);
     let attempts = 0;
@@ -360,6 +380,7 @@ try {
       else await route.fulfill({ json: mocked[feature] });
     });
     await button(label).click();
+    if (feature === "wander") await button("Explore freely").click();
     const progress = page.locator(".generation-progress");
     await progress.waitFor();
     assert.match(await progress.innerText(), feature === "wander" ? /Wander is generating new cards/ : /Weave is combining your cards/);
@@ -517,7 +538,7 @@ try {
     else await route.fulfill({ json: mockMoves });
   });
   await inspectFromIndex("A food hall");
-  await button("Consider a move").click();
+  await page.getByRole("dialog").getByRole("button", { name: "Wander", exact: true }).click();
   await page.getByRole("dialog").getByRole("alert").waitFor();
   assert.match(await page.getByRole("dialog").getByRole("alert").innerText(), /Moves test failure/);
   assert.ok(await button("Try Explore the quiet hours →").isVisible(), "prepared move remains usable");
@@ -818,7 +839,7 @@ try {
 
   // C01/C14: one versioned backup carries the complete browser atlas.
   await page.route("**/api/wander", route => route.fulfill({ json: mocked.wander }));
-  await selectFromIndex("A shared tool library"); await button("Wander").click();
+  await selectFromIndex("A shared tool library"); await button("Wander").click(); await button("Explore freely").click();
   await page.waitForFunction(() => document.querySelectorAll(".thought").length === 8);
   await inspectFromIndex("Repair apprenticeships");
   await page.getByText("Edit prepared text", { exact: true }).click();
@@ -1198,7 +1219,7 @@ try {
     .locator('[data-id="food"] .card-title')
     .boundingBox();
   const actionBox = await mobile
-    .locator('[data-id="food"] .card-actions button')
+    .locator('[data-id="food"] .card-top .select-card')
     .first()
     .boundingBox();
   const nodeBeforePinch = await mobile
@@ -1207,7 +1228,8 @@ try {
   const prePinch = await mobileTransform();
   const x = titleBox.x + 65;
   const y1 = titleBox.y + 10;
-  const y2 = actionBox.y + 15;
+  const y2 = actionBox.y + actionBox.height / 2;
+  const x2 = actionBox.x + actionBox.width / 2;
   await cdp.send("Input.dispatchTouchEvent", {
     type: "touchStart",
     touchPoints: [{ x, y: y1, id: 1 }],
@@ -1216,7 +1238,7 @@ try {
     type: "touchStart",
     touchPoints: [
       { x, y: y1, id: 1 },
-      { x: x + 30, y: y2, id: 2 },
+      { x: x2, y: y2, id: 2 },
     ],
   });
   for (let i = 1; i <= 5; i++)
@@ -1224,7 +1246,7 @@ try {
       type: "touchMove",
       touchPoints: [
         { x: x - i * 4, y: y1 - i * 4, id: 1 },
-        { x: x + 30 + i * 4, y: y2 + i * 4, id: 2 },
+        { x: x2 + i * 4, y: y2 + i * 4, id: 2 },
       ],
     });
   await cdp.send("Input.dispatchTouchEvent", {
@@ -1268,7 +1290,7 @@ try {
   await mobile.getByRole("dialog").waitFor();
   assert.equal(await mobile.getByRole("dialog").count(), 1);
   await mobile
-    .getByRole("button", { name: "Consider a move", exact: true })
+    .getByRole("dialog").getByRole("button", { name: "Wander", exact: true })
     .tap();
   await mobile
     .getByRole("button", { name: "Try Explore the quiet hours →", exact: true })
