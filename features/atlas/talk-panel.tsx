@@ -39,7 +39,19 @@ export default function TalkPanel({ open, close, cards, selectedIds }: {
     running.current = true;
     setMessages(request.messages);
     setDraft(""); setReply(""); setError(""); setBusy(true);
-    let text = "";
+    let text = "", visible = 0;
+    let drained: (() => void) | undefined;
+    // Pace browser updates independently of provider and network chunk sizes.
+    // Catch up faster after bursts so smoothing does not leave a long tail.
+    const reveal = setInterval(() => {
+      if (visible < text.length) {
+        visible = document.hidden ? text.length : Math.min(text.length, visible + Math.max(2, Math.ceil((text.length - visible) / 8)));
+        // Never split a UTF-16 surrogate pair while revealing emoji.
+        if (visible < text.length && /[\uD800-\uDBFF]/.test(text[visible - 1])) visible++;
+        setReply(text.slice(0, visible));
+      }
+      if (visible === text.length) drained?.();
+    }, 24);
     try {
       const response = await fetch("/api/talk", {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(request),
@@ -58,17 +70,19 @@ export default function TalkPanel({ open, close, cards, selectedIds }: {
             const event = JSON.parse(buffer.slice(0, end));
             buffer = buffer.slice(end + 1);
             if (event.error) throw new Error(event.error);
-            if (event.text) { text += event.text; setReply(text); }
+            if (event.text) { text += event.text; }
             if (event.done) done = true;
           }
         }
         if (!done || !text.trim()) throw new Error("The reply was interrupted. Please retry.");
       } finally { await reader.cancel(); }
+      if (visible < text.length) await new Promise<void>(resolve => { drained = resolve; });
       setMessages([...request.messages, { role: "assistant", content: text }]);
       setReply(""); pending.current = null;
     } catch (cause) {
+      setReply(text);
       setError(cause instanceof Error ? cause.message : String(cause));
-    } finally { running.current = false; setBusy(false); }
+    } finally { clearInterval(reveal); running.current = false; setBusy(false); }
   }
 
   return <aside hidden={!open} className="detail-panel talk-panel" role="dialog" aria-label="Talk to Minerva"
