@@ -128,22 +128,24 @@ h1 {
   width: 290px;
 }
 .thought {
+  --thought-accent: var(--teal);
+  --thought-surface: var(--card);
   width: 290px;
-  background: var(--card);
+  background: var(--thought-surface);
   border: 1px solid #aaa084;
-  border-top: 3px solid var(--teal);
+  border-top: 3px solid var(--thought-accent);
   border-radius: 4px;
   box-shadow: 0 4px 10px #273a3509;
 }
 .thought.brief {
-  border-top-color: var(--ink);
-  background: #e2d6b8;
+  --thought-accent: var(--ink);
+  --thought-surface: #e2d6b8;
 }
 .thought.recombination {
-  border-top-color: #a15442;
+  --thought-accent: #a15442;
 }
 .thought.exploration {
-  border-top-color: #755584;
+  --thought-accent: #755584;
 }
 .thought.chosen {
   outline: 3px solid var(--bronze);
@@ -325,8 +327,8 @@ h1 {
     15px/1.2 Georgia,
     serif;
   text-align: left;
-  background: var(--card);
-  border-left: 3px solid var(--teal);
+  background: var(--thought-surface);
+  border-left: 3px solid var(--thought-accent);
 }
 .thought.thought-overview {
   background: transparent;
@@ -626,6 +628,7 @@ summary {
   width: 48px;
   height: 48px;
   min-height: 48px;
+  border: 3px solid var(--thought-accent);
   border-radius: 50%;
   text-align: center;
   padding: 0;
@@ -726,6 +729,7 @@ summary {
 .generation-progress strong { display: block; font-size: 14px; }
 .generation-progress div > span { display: block; margin-top: 3px; font-size: 12px; }
 .generation-spinner {
+  display: inline-block;
   width: 18px;
   height: 18px;
   flex-shrink: 0;
@@ -735,3 +739,20 @@ summary {
   animation: generation-spin 1s linear infinite;
 }
 @keyframes generation-spin { to { transform: rotate(360deg); } }
+
+.generation-inline { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+.generation-inline .generation-spinner { border-color: #273a3533; border-top-color: var(--ink); }
+.selection-bar button[aria-busy="true"] { display: inline-flex; align-items: center; gap: 8px; opacity: 1; }
+.selection-bar .generation-spinner { padding: 0; }
+.generation-progress > .generation-spinner { width: 28px; height: 28px; border-width: 3px; }
+.thought-generating .overview-target::after {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border: 3px solid transparent;
+  border-top-color: var(--ink);
+  border-bottom-color: var(--ink);
+  border-radius: 50%;
+  animation: generation-spin 1s linear infinite;
+  pointer-events: none;
+}

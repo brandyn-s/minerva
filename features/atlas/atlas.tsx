@@ -157,10 +157,12 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
         rotation: "A.1",
       } as Record<string, string>
     )[thought.id] || thought.title.split(/\s+/).slice(0, 2).map((s) => s[0]).join("");
+  const loading = !!ui.busy && !!ui.live?.sources.some((source) => source.id === id);
   return (
     <article
       ref={surface}
-      className={`thought ${ui.overview ? "thought-overview" : ""} ${thought.kind} ${ui.selected.includes(thought.id) ? "chosen" : ""}`}
+      aria-busy={loading}
+      className={`thought ${loading ? "thought-generating" : ""} ${ui.overview ? "thought-overview" : ""} ${thought.kind} ${ui.selected.includes(thought.id) ? "chosen" : ""}`}
       onClick={openCard}
       onDoubleClick={focusCard}
       style={ui.resize && !ui.overview ? { width: "100%", minHeight: "100%" } : undefined}
@@ -203,7 +205,7 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
           <p className="card-summary">{thought.summary}</p>
           {ui.live?.sources.some((source) => source.id === id) && (
             <div className="generation-status nodrag nopan" aria-live="polite">
-              {ui.busy ? <p>{ui.live.feature === "wander" ? "Wandering…" : "Weaving…"}</p> : ui.live.error && <>
+              {ui.busy ? <p className="generation-inline"><span className="generation-spinner" aria-hidden="true" />{ui.live.feature === "wander" ? "Wandering…" : "Weaving…"}</p> : ui.live.error && <>
                 <p role="alert">{ui.live.error}</p>
                 <button onClick={ui.retry}>Retry {ui.live.feature === "wander" ? "Wander" : "Weave"}</button>
               </>}
@@ -937,8 +939,8 @@ function Studio({ session }: { session?: AtlasSession }) {
             <span>{selected.length} selected</span>
             <button onClick={() => open("compare")}>Compare</button>
             {session ? <button onClick={() => move(selected)}>Weave · preview</button> : <>
-              <button disabled={busy || selected.length !== 1} onClick={() => void generate("wander", selected.map((id) => byId.get(id)!))}>{busy && live?.feature === "wander" ? "Wandering…" : "Wander"}</button>
-              <button disabled={busy || selected.length < 2} onClick={() => void generate("weave", selected.map((id) => byId.get(id)!))}>{busy && live?.feature === "weave" ? "Weaving…" : "Weave"}</button>
+              <button disabled={busy || selected.length !== 1} onClick={() => void generate("wander", selected.map((id) => byId.get(id)!))} aria-busy={busy && live?.feature === "wander"}>{busy && live?.feature === "wander" && <span className="generation-spinner" aria-hidden="true" />}{busy && live?.feature === "wander" ? "Wandering…" : "Wander"}</button>
+              <button disabled={busy || selected.length < 2} onClick={() => void generate("weave", selected.map((id) => byId.get(id)!))} aria-busy={busy && live?.feature === "weave"}>{busy && live?.feature === "weave" && <span className="generation-spinner" aria-hidden="true" />}{busy && live?.feature === "weave" ? "Weaving…" : "Weave"}</button>
             </>}
             {session && selected.length === 2 && <details className="layout-menu"><summary>Connect selected</summary>
               <p>From {byId.get(selected[0])?.title} to {byId.get(selected[1])?.title}</p>

@@ -10,6 +10,8 @@ This owner-directed batch ends after merge and stable deployment; one operator-s
 
 ## Behavior
 
+Includes main through `0a84c4f`: loading circles/rings and card type colors across zoom levels.
+
 Talk's Hold to talk button accepts mouse/touch and held Space/Enter. Only a deliberate press requests
 microphone permission. Speech buffers in memory while connecting; release stops capture and sends it.
 Pressing again stops playback and replaces the prior session. Dismissal/cancellation cleans up capture.
