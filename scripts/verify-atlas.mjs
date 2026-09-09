@@ -1470,7 +1470,7 @@ try {
       await vb("Unmute microphone").click();
       assert.equal(await voicePage.evaluate(() => window.latestVoiceStream.getAudioTracks()[0].enabled), true);
       const tracksBeforeEnd = await voicePage.evaluate(() => window.voiceStats.stoppedTracks);
-      await vb("Back to typing").click();
+      await vb("End voice mode").click();
       assert.ok(await voicePage.evaluate(() => window.voiceStats.stoppedTracks) > tracksBeforeEnd);
       assert.ok(await voicePage.getByLabel("Message Minerva").isEnabled());
       await voicePage.screenshot({ path: artifacts + "/composer-typing.png" });
