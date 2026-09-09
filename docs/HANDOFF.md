@@ -36,3 +36,9 @@ Replay: `MINERVA_URL=http://127.0.0.1:3061 npm run test:browser` (3050 for dev).
 Next: operator-started Fable 5.1 at low effort, exact released candidate, read-only, C02/C03 and named carry-overs.
 Use docs/setup.md's bounded launch prompt, a separate checkout/port and fresh synthetic browser data.
 No paid model calls. No further batch is authorized; stop after this release.
+
+## Wander exploration-first pane
+Explore freely is the primary action, with source context and collapsible
+suggestions. Loading placeholders, fallback and retry are preserved.
+Implementation f1db13c; local checks and browser fixture checks passed.
+No paid provider calls; live generation quality was not retested.

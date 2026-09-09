@@ -1,28 +1,19 @@
-# Light selection dock
-
-Source: `/var/folders/qy/mxhht8_d30dd1bf61h8k525m0000gn/T/codex-clipboard-1f2a85b1-8e49-4869-80a0-a1c6303d95fc.png`.
-Implementation: `/tmp/minerva-light-dock-evidence/selection-dock-desktop.png` and `selection-dock-mobile.png`.
-Viewports: 1440×900 and 390×844 at 1× CSS density. Source presentation: 2048×683;
-its approximately 1738×188 toolbar was normalized to the actual 710×70 dock.
-States: one selected card on desktop; two selected cards on mobile.
-
-## Findings
-Full-view and focused dock comparison preserve ivory surface, bronze keyline,
-green primary Wander, monospace labelled icons, count/action divider and close divider.
-Library icons replace the mock's illustrative glyphs, without raster decoration.
-Labels remain readable; controls retain accessible names and 44px targets.
-Desktop matches the selected horizontal layout. Mobile uses a two-column action
-layout so labels remain visible and buttons fit without horizontal overflow.
-
-## Iteration
-First mobile replay found the cameo covering actions and summary covering Clear.
-Moved the cameo below the dock and raised the summary. New screenshot and actual
-click replay confirm all actions and Clear selection are unobstructed.
-
-## Verification
-Single/multiple selection, Compare, Expedition, Wander panel, mocked Weave loading
-and completion, and Clear selection passed. No browser page errors.
-In-app desktop visual inspection passed. No paid provider calls.
-No remaining actionable P0/P1/P2 findings.
+# Wander exploration-first pane
 
 final result: passed
+
+Target: user-attached codex-clipboard-fbc1376a-5267-453b-8242-ea788f7b5e6c.png.
+Compared the reference and /tmp/wander-loading.png together in the same inspection.
+The implementation retains the source hierarchy, green primary action, divider,
+suggestion loading spinner, skeleton rows, helper copy, and hide/show control.
+The pane uses the existing application's fonts and 600px side-panel width.
+At the available 1280x720 browser size the pane scrolls; the source is a pane-only
+image, so this is a component comparison rather than whole-screen pixel matching.
+No blocking visual issues found. No new raster assets were needed.
+
+In-app browser using synthetic responses: initial loading; enabled Explore freely;
+hide/show suggestions; malformed response fallback with prepared move; retry;
+three loaded moves; Explore freely invokes the existing generation flow and its
+error handling. No paid model calls. End-to-end successful model generation was
+not repeated for this presentation change. Existing choose/retry callbacks remain.
+Repository lint, typecheck, tests, and production build passed.
