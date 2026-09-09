@@ -15,6 +15,7 @@ import {
   BaseEdge,
   getBezierPath,
   useInternalNode,
+  useNodesInitialized,
   type EdgeProps,
   ReactFlow,
   ReactFlowProvider,
@@ -36,6 +37,7 @@ import { relationshipsFor } from "./domain";
 import { mallFixture } from "./fixture";
 import { wanderSchema, weaveSchema, moveCardSchema, type ContextualMove, type GeneratedCard, type LiveFeature } from "./generation";
 import { cardHash, validateThemes, type ThemeGroup } from "./themes";
+import { atlasSaveSchema, fixtureSave, restoreSave, writeSave, mergeAtlas, interruptSavedRuns, type AtlasSave } from "./local-state";
 import TalkPanel from "./talk-panel";
 import DownloadButton from "./download-button";
 import MovesPanel from "./moves-panel";
@@ -312,10 +314,10 @@ function presentNodes(saved?: AtlasFixture): CardNode[] {
   }));
 }
 
-function Studio({ session }: { session?: AtlasSession }) {
+function Studio({ session, initial, restoreNotice = "", saveEnabled = true, replace }: { session?: AtlasSession; initial?: AtlasSave; restoreNotice?: string; saveEnabled?: boolean; replace?: (save: AtlasSave) => void }) {
   const [savedGraph, setSavedGraph] = useState(session?.initial);
-  const fixture = useMemo(() => savedGraph ?? mallFixture(), [savedGraph]);
-  const [nodes, setNodes] = useState<CardNode[]>(() => presentNodes(session?.initial).map((node) => session ? {
+  const fixture = useMemo(() => savedGraph ?? (initial ? { thoughts: initial.thoughts, relationships: initial.relationships, positions: initial.positions.Lineage } : mallFixture()), [savedGraph, initial]);
+  const [nodes, setNodes] = useState<CardNode[]>(() => presentNodes(session?.initial ?? (initial && { thoughts: initial.thoughts, relationships: initial.relationships, positions: initial.positions.Lineage })).map((node) => session ? {
     ...node, style: { ...node.style, width: session.initial.layouts[node.id].width, height: session.initial.layouts[node.id].height },
   } : node));
   const dirtyText = useRef(new Set<string>());
@@ -368,19 +370,19 @@ function Studio({ session }: { session?: AtlasSession }) {
     else { setLayoutUndo(history.slice(0, -1)); setLayoutRedo((h) => [...h, entry]); }
   }
   const stackingOrder = useRef(0);
-  const [focusedId, setFocusedId] = useState<string | null>(null);
+  const [focusedId, setFocusedId] = useState<string | null>(initial?.focusedId ?? null);
   const [connectionKind, setConnectionKind] = useState("parents");
   const [connectionPage, setConnectionPage] = useState(0);
   const [branchId, setBranchId] = useState<string | null>(null);
-  const [selected, setSelected] = useState<string[]>([]);
-  const [active, setActive] = useState("repair");
+  const [selected, setSelected] = useState<string[]>(initial?.selected ?? []);
+  const [active, setActive] = useState(initial?.active ?? "repair");
   const [panel, setPanel] = useState<Panel>(null);
   const [moveSources, setMoveSources] = useState<string[]>([]);
   const [preview, setPreview] = useState(false);
-  const [overview, setOverview] = useState(false);
-  const [viewport, setViewport] = useState<Viewport>({ x: 0, y: 0, zoom: 1 });
+  const [overview, setOverview] = useState((initial?.cameras[initial.perspective]?.zoom ?? 1) < .62);
+  const [viewport, setViewport] = useState<Viewport>(initial?.cameras[initial.perspective] ?? { x: 0, y: 0, zoom: 1 });
   const [query, setQuery] = useState("");
-  const [compact, setCompact] = useState(false);
+  const [compact, setCompact] = useState((initial?.cameras[initial.perspective]?.zoom ?? 1) < .45);
   const [pinching, setPinching] = useState(false);
   const field = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLElement>(null);
@@ -392,12 +394,12 @@ function Studio({ session }: { session?: AtlasSession }) {
   const [liveEdges, setLiveEdges] = useState<Relationship[]>([]);
   const relationships = [...fixture.relationships, ...liveEdges];
   type Perspective = "Lineage" | "Evolution" | "Constellation";
-  const [perspective, setPerspective] = useState<Perspective>("Lineage");
-  const perspectiveRef = useRef<Perspective>("Lineage");
+  const [perspective, setPerspective] = useState<Perspective>(initial?.perspective ?? "Lineage");
+  const perspectiveRef = useRef<Perspective>(initial?.perspective ?? "Lineage");
   const fitPerspective = useRef(false);
-  const cameras = useRef<Partial<Record<Perspective, Viewport>>>({});
-  const [positions, setPositions] = useState<Record<string, Record<string, { x: number; y: number }>>>({});
-  const [themeCache, setThemeCache] = useState<{ groups: ThemeGroup[]; hashes: Record<string, string>; time: string }>();
+  const [cameras, setCameras] = useState<Partial<Record<Perspective, Viewport>>>(initial?.cameras ?? {});
+  const [positions, setPositions] = useState<Record<string, Record<string, { x: number; y: number }>>>(initial?.positions ?? {});
+  const [themeCache, setThemeCache] = useState<{ groups: ThemeGroup[]; hashes: Record<string, string>; time: string } | undefined>(initial?.themeCache);
   const [themeError, setThemeError] = useState("");
   const [themeBusy, setThemeBusy] = useState(false);
   const themePending = useRef(false);
@@ -423,7 +425,7 @@ function Studio({ session }: { session?: AtlasSession }) {
         if (previous) previous.memberIds.push(...group.memberIds);
         else groups.push(group);
       }
-      setThemeCache({ groups: groups.filter(g => g.memberIds.length), hashes, time: new Date().toLocaleTimeString() });
+      setThemeCache({ groups: groups.filter(g => g.memberIds.length), hashes, time: new Date().toLocaleString() });
       setPositions(current => ({ ...current, Constellation: {} }));
       if (perspectiveRef.current === "Constellation") fitPerspective.current = true;
     } catch (error) { setThemeError(error instanceof Error ? error.message : String(error)); }
@@ -431,10 +433,10 @@ function Studio({ session }: { session?: AtlasSession }) {
   }
   function switchPerspective(next: Perspective) {
     if (next === perspective) return;
-    cameras.current[perspective] = flow.getViewport();
+    setCameras(current => ({ ...current, [perspective]: flow.getViewport() }));
     perspectiveRef.current = next;
     setPerspective(next);
-    if (cameras.current[next]) void flow.setViewport(cameras.current[next]!);
+    if (cameras[next]) void flow.setViewport(cameras[next]!);
     else fitPerspective.current = true;
     if (next === "Constellation") void groupThemes();
   }
@@ -464,13 +466,89 @@ function Studio({ session }: { session?: AtlasSession }) {
     return { ...n, position: perspective === "Lineage" ? position : positions[perspective]?.[n.id] ?? position, style: { ...n.style, pointerEvents: overview ? "none" : "all" } };
   });
   const themeNodes: CardNode[] = perspective === "Constellation" ? groups.map((g, i) => ({ id: `theme-${i}`, type: "theme", position: { x: i * 760, y: -70 }, width: 440, height: 140, measured: { width: 440, height: 140 }, style: { width: 440, height: 140 }, draggable: false, data: { thought: { ...thought, title: g.name, summary: g.reason } } })) : [];
+  const nodesInitialized = useNodesInitialized();
   useLayoutEffect(() => {
-    if (!fitPerspective.current || (perspective === "Constellation" && !themeCache)) return;
-    fitPerspective.current = false;
-    const all = [...renderedNodes, ...themeNodes];
-    const x = Math.min(...all.map(n => n.position.x)), y = Math.min(...all.map(n => n.position.y));
-    void flow.fitBounds({ x, y, width: Math.max(...all.map(n => n.position.x + 440)) - x, height: Math.max(...all.map(n => n.position.y + 300)) - y }, { padding: .2 });
+    if (!fitPerspective.current || !nodesInitialized || themeBusy || (perspective === "Constellation" && !themeCache)) return;
+    let frame = 0;
+    const fitMeasured = () => {
+      const all = [...renderedNodes, ...themeNodes];
+      // The renderer commits a newly grouped column after this parent layout
+      // effect. Wait for that commit and every node's measured dimensions.
+      if (all.some(n => !flow.getNode(n.id)?.measured?.height)) {
+        frame = requestAnimationFrame(fitMeasured); return;
+      }
+      fitPerspective.current = false;
+      const x = Math.min(...all.map(n => n.position.x)), y = Math.min(...all.map(n => n.position.y));
+      void flow.fitBounds({ x, y,
+        width: Math.max(...all.map(n => n.position.x + flow.getNode(n.id)!.measured!.width!)) - x,
+        height: Math.max(...all.map(n => n.position.y + flow.getNode(n.id)!.measured!.height!)) - y }, { padding: .2 });
+    };
+    frame = requestAnimationFrame(fitMeasured);
+    return () => cancelAnimationFrame(frame);
   });
+  const [messages, setMessages] = useState<AtlasSave["messages"]>(initial?.messages ?? []);
+  const [expeditions, setExpeditions] = useState<AtlasSave["expeditions"]>(initial?.expeditions ?? []);
+  const [activeExpedition, setActiveExpedition] = useState<number | null>(initial?.activeExpedition ?? null);
+  const [storageNotice, setStorageNotice] = useState(restoreNotice);
+  const [importFile, setImportFile] = useState<AtlasSave>();
+  const [importBusy, setImportBusy] = useState(false);
+  const [importNotice, setImportNotice] = useState("");
+  const savingPaused = useRef(false);
+  const snapshot = useMemo<AtlasSave>(() => ({
+    version: 1, thoughts: nodes.map(n => n.data.thought), relationships,
+    positions: { Lineage: Object.fromEntries(nodes.map(n => [n.id, n.position])), Evolution: positions.Evolution ?? {}, Constellation: positions.Constellation ?? {} },
+    cameras: { ...cameras, [perspective]: viewport }, perspective, selected, active, focusedId,
+    themeCache, messages, expeditions, activeExpedition,
+  // Relationships derive from the fixture and live edges, which are stable dependencies.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [nodes, fixture, liveEdges, positions, cameras, perspective, viewport, selected, active, focusedId, themeCache, messages, expeditions, activeExpedition]);
+  const latestSave = useRef(snapshot);
+  useLayoutEffect(() => { latestSave.current = snapshot; }, [snapshot]);
+  useEffect(() => {
+    if (session || !saveEnabled) return;
+    const timer = setTimeout(() => {
+      if (!savingPaused.current) void writeSave(snapshot).catch(() => setStorageNotice("Changes could not be saved in this browser. Export a backup before leaving."));
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [snapshot, session, saveEnabled]);
+  useEffect(() => {
+    if (session || !saveEnabled) return;
+    const flush = () => { if (!savingPaused.current) void writeSave(latestSave.current).catch(() => {}); };
+    const hidden = () => { if (document.visibilityState === "hidden") flush(); };
+    window.addEventListener("pagehide", flush); document.addEventListener("visibilitychange", hidden);
+    return () => { window.removeEventListener("pagehide", flush); document.removeEventListener("visibilitychange", hidden); };
+  }, [session, saveEnabled]);
+  async function resetFixture() {
+    if (!window.confirm("Reset to fixture? This discards this browser's current atlas, Talk transcript and expeditions.")) return;
+    savingPaused.current = true;
+    try { await writeSave(null); replace?.(fixtureSave()); }
+    catch { savingPaused.current = false; setStorageNotice("The save could not be cleared. Reset was not applied."); }
+  }
+  function exportAtlas() {
+    let url: string | undefined;
+    const anchor = document.createElement("a");
+    try {
+      const save = atlasSaveSchema.parse(latestSave.current);
+      url = URL.createObjectURL(new Blob([JSON.stringify(save, null, 2)], { type: "application/json" }));
+      anchor.href = url; anchor.download = "minerva-atlas.json";
+      document.body.append(anchor); anchor.click(); setImportNotice("");
+    } catch (error) { setImportNotice(`Export failed: ${error instanceof Error ? error.message : String(error)}`); }
+    finally { anchor.remove(); if (url) setTimeout(() => URL.revokeObjectURL(url!), 1000); }
+  }
+  async function importAtlas(merge: boolean) {
+    if (!importFile || importBusy) return;
+    if (!merge && !window.confirm("Replace this atlas? This discards the current atlas and restores the backup.")) return;
+    setImportBusy(true);
+    try {
+      const current = latestSave.current;
+      const result = merge ? await mergeAtlas(current, importFile) : { save: importFile, added: importFile.thoughts.length, skipped: 0 };
+      if (merge && latestSave.current !== current) throw new Error("The atlas changed during import. Please try Merge again.");
+      savingPaused.current = true;
+      await writeSave(result.save);
+      replace?.(result.save);
+    } catch (error) { savingPaused.current = false; setImportNotice(`Import failed: ${error instanceof Error ? error.message : String(error)}`); }
+    finally { setImportBusy(false); }
+  }
   const [live, setLive] = useState<{ sources: Thought[]; feature: LiveFeature; move?: ContextualMove; error?: string }>();
   const [busy, setBusy] = useState(false);
   const generating = useRef(false);
@@ -848,11 +926,24 @@ function Studio({ session }: { session?: AtlasSession }) {
           <span>Minerva</span>
         </div>
         <div className="workspace-heading">
-          <span className="instrument-label">Studio / {perspective}</span>
+          <span className="instrument-label">{session ? `Studio / ${perspective}` : "Saved in this browser"}</span>
           <h1>{session ? "Saved idea atlas" : "The mall, reconsidered"}</h1>
         </div>
         {!session && <nav className="perspective-switch" aria-label="Atlas perspective">{(["Lineage", "Evolution", "Constellation"] as const).map(view => <button key={view} aria-pressed={perspective === view} onClick={() => switchPerspective(view)}>{view}</button>)}</nav>}
       </header>
+      {!session && <div className="atlas-storage" aria-label="Atlas storage">
+        <button onClick={exportAtlas}>Export atlas</button>
+        <label>Import atlas <input aria-label="Import atlas" type="file" accept=".json,application/json" onChange={async e => {
+          const file = e.target.files?.[0]; e.target.value = ""; setImportFile(undefined); setImportNotice("");
+          if (!file) return;
+          try { setImportFile(interruptSavedRuns(atlasSaveSchema.parse(JSON.parse(await file.text())))); }
+          catch (error) { setImportNotice(`Invalid atlas file: ${error instanceof Error ? error.message : String(error)}`); }
+        }} /></label>
+        <button onClick={() => void resetFixture()}>Reset to fixture</button>
+        {importFile && <span>{importFile.thoughts.length} cards ready. <button disabled={importBusy} onClick={() => void importAtlas(false)}>Replace</button> <button disabled={importBusy} onClick={() => void importAtlas(true)}>Merge</button> <button onClick={() => setImportFile(undefined)}>Cancel import</button></span>}
+        {importNotice && <p role="alert">{importNotice}</p>}
+        {storageNotice && <p role="status">{storageNotice}</p>}
+      </div>}
       <div
         className="field"
         ref={field}
@@ -911,8 +1002,8 @@ function Studio({ session }: { session?: AtlasSession }) {
               setNodes((current) => applyNodeChanges(changes.filter(c => (!("id" in c) || !c.id.startsWith("theme-")) && (perspective === "Lineage" || c.type !== "position")).map(c => c.type === "replace" ? { ...c, item: { ...c.item, position: current.find(n => n.id === c.id)?.position ?? c.item.position } } : c), current));
             }}
             onNodeDragStop={(_, node) => { void saveLayout(node.id, node.position).catch(() => {}); }}
-            fitView={!savedGraph?.viewpoint.revision}
-            defaultViewport={session?.initial.viewpoint}
+            fitView={session ? !savedGraph?.viewpoint.revision : !initial?.cameras[initial.perspective]}
+            defaultViewport={session?.initial.viewpoint ?? initial?.cameras[initial.perspective]}
             fitViewOptions={{ padding: 0.18, maxZoom: 1 }}
             minZoom={session ? .24 : MIN_ZOOM}
             maxZoom={1.6}
@@ -1126,8 +1217,8 @@ function Studio({ session }: { session?: AtlasSession }) {
         <Image src="/images/minerva-engraved-cameo.png" alt="" width={64} height={64} sizes="64px" />
         <span className="minerva-launcher-label" aria-hidden="true">Talk to Minerva</span>
       </button>}
-      {!session && <TalkPanel open={panel === "talk"} close={close} selectedIds={selected} cards={nodes.map(({ id, data }) => ({ ...data.thought, relationships: relationshipsFor(id, relationships) }))} />}
-      {!session && <ExpeditionPanel open={panel === "expedition"} close={close} source={selected.length === 1 ? byId.get(selected[0]) : undefined}
+      {!session && <TalkPanel messages={messages} setMessages={setMessages} open={panel === "talk"} close={close} selectedIds={selected} cards={nodes.map(({ id, data }) => ({ ...data.thought, relationships: relationshipsFor(id, relationships) }))} />}
+      {!session && <ExpeditionPanel entries={expeditions} setEntries={setExpeditions} activeEntry={activeExpedition} setActiveEntry={setActiveExpedition} open={panel === "expedition"} close={close} source={selected.length === 1 ? byId.get(selected[0]) : undefined}
         cards={nodes.map(n => n.data.thought)} add={addExpeditionCard} focus={id => { focus(id); setPanel("expedition"); }} />}
       {panel && panel !== "talk" && panel !== "expedition" && (
         <aside
@@ -1454,10 +1545,19 @@ function Studio({ session }: { session?: AtlasSession }) {
     </main>
   );
 }
+function LocalAtlas() {
+  const [loaded, setLoaded] = useState<{ save: AtlasSave; notice: string; key: number; saveEnabled: boolean }>();
+  useEffect(() => {
+    let cancelled = false;
+    void restoreSave().then(result => { if (!cancelled) setLoaded({ ...result, key: 0, saveEnabled: true }); }).catch(() => {
+      if (!cancelled) setLoaded({ save: fixtureSave(), notice: "The save could not be read. Browser storage is unavailable; the original save has not been changed.", key: 0, saveEnabled: false });
+    });
+    return () => { cancelled = true; };
+  }, []);
+  if (!loaded) return <main><p role="status">Loading this browser’s atlas…</p></main>;
+  return <ReactFlowProvider key={loaded.key}><Studio initial={loaded.save} restoreNotice={loaded.notice} saveEnabled={loaded.saveEnabled}
+    replace={save => setLoaded(current => ({ save, notice: "", saveEnabled: true, key: (current?.key ?? 0) + 1 }))} /></ReactFlowProvider>;
+}
 export default function Atlas({ session }: { session?: AtlasSession }) {
-  return (
-    <ReactFlowProvider>
-      <Studio session={session} />
-    </ReactFlowProvider>
-  );
+  return session ? <ReactFlowProvider><Studio session={session} /></ReactFlowProvider> : <LocalAtlas />;
 }

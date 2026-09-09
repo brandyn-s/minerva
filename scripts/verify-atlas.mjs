@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { execFileSync } from "node:child_process";
 import { chromium } from "playwright";
@@ -20,7 +20,7 @@ const voiceInput = "Suggest one practical use for an empty shopping mall. Reply 
 let voiceFile = process.env.MINERVA_VOICE_WAV;
 if (liveVoice && !voiceFile) {
   voiceFile = "/tmp/minerva-voice-input.wav";
-  execFileSync("/usr/bin/say", ["-o", "/tmp/minerva-voice-input.aiff", voiceInput]);
+  execFileSync("/usr/bin/say", ["-o", "/tmp/minerva-voice-input.aiff", voiceInput + " [[slnc 3000]]"]);
   execFileSync("/usr/bin/afconvert", ["-f", "WAVE", "-d", "LEI16@24000", "/tmp/minerva-voice-input.aiff", voiceFile]);
 }
 const browser = await chromium.launch({
@@ -31,7 +31,8 @@ const browser = await chromium.launch({
 const artifacts = process.env.MINERVA_ARTIFACTS || "/tmp/minerva-evidence";
 await mkdir(artifacts, { recursive: true });
 const errors = [];
-const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+const page = await context.newPage();
 page.on("pageerror", (e) => errors.push(e.message));
 const base = process.env.MINERVA_URL || "http://127.0.0.1:3000";
 // Exercise legacy card metadata against the real route, never a mocked response.
@@ -47,6 +48,19 @@ const button = (name) => page.getByRole("button", { name, exact: true });
 const transform = () =>
   page.locator(".react-flow__viewport").getAttribute("style");
 const settle = () => page.waitForTimeout(350);
+const resetFixture = async () => {
+  page.once("dialog", dialog => dialog.accept());
+  await button("Reset to fixture").click();
+  await page.waitForFunction(() => document.querySelectorAll(".thought").length === 6);
+  await settle();
+};
+const storedSave = () => page.evaluate(() => new Promise((resolve, reject) => {
+  const open = indexedDB.open("minerva-atlas", 1);
+  open.onsuccess = () => {
+    const db = open.result, request = db.transaction("saves").objectStore("saves").get("root-atlas");
+    request.onsuccess = () => { resolve(request.result); db.close(); }; request.onerror = () => reject(request.error);
+  }; open.onerror = () => reject(open.error);
+}));
 const cameraKey = async (key, target = page) => {
   await target.locator(".field").focus();
   await target.keyboard.press(key);
@@ -240,7 +254,7 @@ try {
     "index inspection should surface a covered card",
   );
   // Restore the original prepared positions before the existing source journeys.
-  await page.reload();
+  await resetFixture();
   await page.locator(".thought").first().waitFor();
   await settle();
   await fit();
@@ -298,7 +312,7 @@ try {
   assert.equal(await page.locator(".thought.chosen").count(), 2);
   await button("Clear selection").click();
 
-  // Wander and Weave: injected failure on the source card, retry, lineage and reload reset.
+  // Wander and Weave: injected failure on the source card, retry and lineage.
   // MINERVA_LIVE=1 opts into two expedition steps and one reading; voice requires VOICE_ONLY too.
   const live = process.env.MINERVA_LIVE_TALK_MOVES === "1";
   const evidence = { mode: live ? "live Gateway" : "mocked responses", url: base, model: "anthropic/claude-sonnet-5" };
@@ -612,12 +626,16 @@ try {
     cameras.set(view, await transform());
     if (view === "Lineage") assert.deepEqual(await page.locator(".react-flow__node:has(.thought)").evaluateAll(elements => elements.map(e => e.style.transform)), lineagePositions);
     if (view === "Constellation") {
-      const headingsInFrame = await page.locator(".theme-heading").evaluateAll(elements => elements.length > 0 && elements.every(e => {
+      const headingsInFrame = await page.locator(".react-flow__node").evaluateAll(elements => elements.length > 0 && elements.every(e => {
         const r = e.getBoundingClientRect(), field = document.querySelector(".react-flow").getBoundingClientRect();
         return r.left >= field.left && r.right <= field.right && r.top >= field.top && r.bottom <= field.bottom &&
           r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight;
       }));
-      assert.ok(headingsInFrame, "every theme heading must be in the viewport on first Constellation entry, without pressing Fit");
+      if (!headingsInFrame) {
+        await page.screenshot({ path: `${artifacts}/fit-failure.png` });
+        console.log(await page.locator(".react-flow__node").evaluateAll(elements => ({ field: document.querySelector(".react-flow").getBoundingClientRect().toJSON(), nodes: elements.map(e => ({ id: e.dataset.id, style: e.getAttribute("style"), rect: e.getBoundingClientRect().toJSON() })) })));
+      }
+      assert.ok(headingsInFrame, "the whole tall group column, including every card and heading, fits on first Constellation entry without Fit");
     }
     assert.deepEqual(await cardIds(), beforeIds);
     assert.deepEqual(await chosenIds(), beforeChosen);
@@ -649,22 +667,32 @@ try {
   page.off("request", track);
   await page.screenshot({ path: `${artifacts}/constellation.png` });
   await writeFile(`${artifacts}/perspectives.json`, JSON.stringify({ themeRequests, themeInputs, beforeIds, beforeChosen }, null, 2));
+  await settle();
+  await button("Evolution").click(); await inspectFromIndex("Morning repair table"); await button("Focus on atlas ↗").click(); await settle();
+  const evolutionCard = page.locator('.react-flow__node').filter({ has: page.getByRole("button", { name: "Morning repair table", exact: true }) });
+  await evolutionCard.locator(".card-grip").focus(); await page.keyboard.press("ArrowRight");
+  await button("Constellation").click(); await settle();
+  const groupedSave = await storedSave();
+  assert.ok(groupedSave.themeCache.time.includes(String(new Date().getFullYear())), "group timestamp includes the date");
+  assert.ok(Object.keys(groupedSave.positions.Evolution).length, "a moved Evolution position is saved");
+  await page.reload(); await page.locator(".thought").first().waitFor(); await settle();
+  const restoredGroups = await storedSave();
+  for (const field of ["themeCache", "positions", "cameras", "selected", "perspective"]) assert.deepEqual(restoredGroups[field], groupedSave[field], `${field} survives a Constellation reload`);
+  assert.equal(themeRequests, 4, "restoring grouping does not call the model");
   await page.unroute("**/api/themes");
   await writeFile(`${artifacts}/wander-weave.json`, JSON.stringify(evidence, null, 2));
-  await page.reload();
-  await page.locator(".thought").first().waitFor();
-  await settle();
+  await resetFixture();
   await fit();
-  assert.equal(await page.locator(".thought").count(), 6, "reload resets generated cards");
-  assert.equal(await page.locator(".react-flow__edge").count(), 7, "reload resets generated edges");
+  assert.equal(await page.locator(".thought").count(), 6, "reset restores fixture cards");
+  assert.equal(await page.locator(".react-flow__edge").count(), 7, "reset restores fixture edges");
   await button("Talk to Minerva").click();
-  assert.equal(await page.locator(".talk-transcript section").count(), 0, "reload clears conversation");
+  assert.equal(await page.locator(".talk-transcript section").count(), 0, "reset clears conversation");
   await close();
   await button("Read as text").click();
   assert.equal(await page.locator(".reference-list section").count(), 6);
   await close();
 
-  // C12/C11: in-memory expedition lifecycle and navigable interpretations.
+  // C12/C11: expedition lifecycle and navigable interpretations.
   const expeditionEvidence = [];
   const frozenGoal = "  Find a testable evening repair service for the mall.  ";
   const expPanel = page.getByRole("dialog", { name: "Expedition", exact: true });
@@ -677,7 +705,7 @@ try {
     coverage: { text: "No pricing, accessibility or weekend schedule was tried.", steps: [1, 2] },
   };
   for (const condition of ["budget", "claim", "stagnation", "stop", ...(process.env.MINERVA_LIVE === "1" ? ["live"] : [])]) {
-    await page.reload(); await page.locator(".thought").first().waitFor();
+    await resetFixture(); await page.locator(".thought").first().waitFor();
     await selectFromIndex("A shared tool library");
     const calls = [], outputs = [];
     let releaseStop;
@@ -722,6 +750,7 @@ try {
     assert.equal(await page.locator(".react-flow__edge").count(), 7 + count, "each step has one derivation edge");
     assert.equal(await page.locator(".expedition-goal").textContent(), goal, "frozen goal is unchanged at the end");
     const stopReason = await page.locator(".expedition-stop").innerText();
+    if (condition === "stop") assert.match(stopReason, /Step 2 was cancelled/);
     assert.match(stopReason, condition === "claim" ? /Model claims/ : condition === "stop" ? /Stopped by you/ : condition === "stagnation" ? /Stagnation/ : /Step budget reached|Model claims/);
     for (let i = 0; i < calls.length; i++) {
       assert.equal(calls[i].goal, goal);
@@ -785,7 +814,114 @@ try {
     await page.unroute("**/api/expedition");
   }
   await writeFile(`${artifacts}/expedition-replay.json`, JSON.stringify(expeditionEvidence, null, 2));
-  await page.reload(); await page.locator(".thought").first().waitFor(); await settle(); await fit();
+  await resetFixture(); await page.locator(".thought").first().waitFor(); await settle(); await fit();
+
+  // C01/C14: one versioned backup carries the complete browser atlas.
+  await page.route("**/api/wander", route => route.fulfill({ json: mocked.wander }));
+  await selectFromIndex("A shared tool library"); await button("Wander").click();
+  await page.waitForFunction(() => document.querySelectorAll(".thought").length === 8);
+  await inspectFromIndex("Repair apprenticeships");
+  await page.getByText("Edit prepared text", { exact: true }).click();
+  await page.getByRole("dialog").locator("details input").fill("Durable repair apprenticeships");
+  await close();
+  await inspectFromIndex("Durable repair apprenticeships"); await button("Focus on atlas ↗").click(); await settle();
+  const durableNode = page.locator('.react-flow__node').filter({ has: page.getByRole("button", { name: "Durable repair apprenticeships", exact: true }) });
+  const durableId = await durableNode.getAttribute("data-id");
+  const positionBefore = await durableNode.getAttribute("style");
+  await durableNode.locator(".card-grip").focus(); await page.keyboard.press("ArrowRight"); await page.keyboard.press("ArrowDown");
+  assert.notEqual(await durableNode.getAttribute("style"), positionBefore, "generated card moves");
+  await button("Clear selection").click(); await selectFromIndex("Durable repair apprenticeships");
+  await page.route("**/api/expedition", route => {
+    const input = route.request().postDataJSON();
+    return route.fulfill({ json: { card: card(`Durable expedition ${input.step}`), rationale: `Durable rationale ${input.step}`, reached: false, reason: "Continue exploring." } });
+  });
+  await page.route("**/api/reading", route => route.fulfill({ json: readingFixture }));
+  await button("Expedition").click(); await page.getByLabel("Goal in one sentence").fill("Preserve this expedition"); await button("Start expedition").click();
+  await page.locator(".expedition-stop").waitFor(); await button("What this expedition suggests").click();
+  await page.getByRole("button", { name: "Challenge group 1" }).click();
+  await button("New expedition").click();
+  await page.getByLabel("Expedition history").selectOption("0");
+  await page.getByRole("region", { name: "User notes" }).waitFor();
+  await close();
+  await page.route("**/api/talk", route => route.fulfill({ contentType: "application/x-ndjson", body: JSON.stringify({ text: "Durable mocked reply." }) + "\n" + JSON.stringify({ done: true }) + "\n" }));
+  await button("Talk to Minerva").click(); await page.getByRole("textbox", { name: "Message Minerva" }).fill("Remember this Talk turn.");
+  await button("Send").click(); await page.getByText("Durable mocked reply.", { exact: true }).waitFor(); await close();
+  await settle();
+  const beforeReload = await storedSave();
+  assert.equal(beforeReload.thoughts.length, 10);
+  assert.equal(beforeReload.messages.length, 2);
+  assert.ok(beforeReload.thoughts.find(c => c.id === durableId).provenance);
+  assert.equal(beforeReload.expeditions[0].notes.length, 1);
+  await page.reload(); await page.locator(".thought").first().waitFor(); await settle();
+  const restored = await storedSave();
+  for (const field of ["thoughts", "relationships", "positions", "selected", "messages", "expeditions", "activeExpedition", "cameras"]) assert.deepEqual(restored[field], beforeReload[field], `${field} survives reload`);
+  await button("Talk to Minerva").click(); await page.getByText("Durable mocked reply.", { exact: true }).waitFor(); await close();
+  await button("Expedition panel").click(); await page.getByRole("region", { name: "User notes" }).waitFor();
+  await page.getByRole("region", { name: "What this expedition suggests" }).waitFor();
+  assert.equal(await page.getByText(/Stale reading/).count(), 0, "restoring unchanged cards does not stale the reading"); await close();
+  const backupDownload = page.waitForEvent("download").catch(() => null);
+  try { await button("Export atlas").click({ timeout: 5000 }); }
+  catch (error) { await page.screenshot({ path: `${artifacts}/export-failure.png` }); throw error; }
+  assert.equal(await page.locator('.atlas-storage [role="alert"]').count(), 0, await page.locator('.atlas-storage').innerText());
+  const backup = await backupDownload; assert.ok(backup, "JSON backup download starts"); assert.equal(backup.suggestedFilename(), "minerva-atlas.json");
+  const backupBytes = await readFile(await backup.path()); const backupState = JSON.parse(backupBytes);
+  await resetFixture(); assert.equal(await page.locator(".thought").count(), 6);
+  const upload = async buffer => page.getByLabel("Import atlas", { exact: true }).setInputFiles({ name: "atlas.json", mimeType: "application/json", buffer });
+  await upload(backupBytes); page.once("dialog", d => d.accept()); await button("Replace").click();
+  await page.waitForFunction(() => document.querySelectorAll(".thought").length === 10); await settle();
+  const replacedSave = await storedSave();
+  for (const field of ["thoughts", "relationships", "positions", "cameras", "messages", "expeditions", "selected", "activeExpedition"]) assert.deepEqual(replacedSave[field], backupState[field], `Replace restores ${field}`);
+  await upload(backupBytes); await button("Merge").click(); await settle();
+  assert.equal(await page.locator(".thought").count(), 10, "Merge skips duplicate content hashes");
+  assert.deepEqual((await storedSave()).relationships, backupState.relationships, "Merge skips duplicate edges");
+  assert.deepEqual((await storedSave()).expeditions, backupState.expeditions, "Merge skips duplicate expedition history");
+  const uniqueImport = structuredClone(backupState);
+  const incomingCard = uniqueImport.thoughts.find(c => c.id === durableId);
+  incomingCard.title = "Imported distinct repair card";
+  await upload(Buffer.from(JSON.stringify(uniqueImport))); await button("Merge").click();
+  await page.waitForFunction(() => document.querySelectorAll(".thought").length === 11); await settle();
+  const mergedSave = await storedSave();
+  const importedCard = mergedSave.thoughts.find(c => c.title === "Imported distinct repair card");
+  assert.notEqual(importedCard.id, durableId, "Merge gives new content a new id");
+  assert.ok(mergedSave.relationships.some(e => e.from === importedCard.id || e.to === importedCard.id), "Merge remaps edge endpoints");
+  assert.deepEqual(mergedSave.messages, backupState.messages, "Merge keeps the local conversation");
+  const beforeBad = await storedSave();
+  await upload(Buffer.from(JSON.stringify({ ...backupState, relationships: [{ ...backupState.relationships[0], to: "missing-card" }] })));
+  await page.getByRole("alert").filter({ hasText: "Invalid atlas file" }).waitFor();
+  assert.deepEqual(await storedSave(), beforeBad, "invalid references change nothing");
+  const invalidId = structuredClone(backupState); invalidId.thoughts[0].id = 'broken"selector';
+  await upload(Buffer.from(JSON.stringify(invalidId))); await page.getByRole("alert").filter({ hasText: "Invalid atlas file" }).waitFor();
+  assert.deepEqual(await storedSave(), beforeBad, "invalid card ids change nothing");
+  await upload(Buffer.from('{"version": 1, nope'));
+  await page.getByRole("alert").filter({ hasText: "Invalid atlas file" }).waitFor();
+  assert.deepEqual(await storedSave(), beforeBad, "malformed JSON changes nothing");
+  // Corrupt only after closing the page so its pagehide flush cannot overwrite the test input.
+  const storagePage = await page.context().newPage(); await storagePage.goto(`${base}/icon.png`);
+  await page.goto("about:blank");
+  const corrupt = { version: 0, broken: "keep this original" };
+  await storagePage.evaluate(async broken => {
+    // Freeze this document's pending writes before corrupting via a separate transaction.
+    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve, reject) => {
+      const open = indexedDB.open("minerva-atlas", 1); open.onsuccess = () => {
+        const db = open.result, tx = db.transaction("saves", "readwrite"); tx.objectStore("saves").put(broken, "root-atlas");
+        tx.oncomplete = () => { db.close(); resolve(); }; tx.onerror = () => reject(tx.error);
+      };
+    });
+  }, corrupt);
+  await page.goto(base); await page.locator(".thought").first().waitFor();
+  await page.getByText(/The save could not be read.*recovery copy/).waitFor();
+  assert.equal(await page.locator(".thought").count(), 6);
+  const recoveries = await page.evaluate(() => new Promise(resolve => {
+    const open = indexedDB.open("minerva-atlas", 1); open.onsuccess = () => {
+      const db = open.result, store = db.transaction("saves").objectStore("saves"), req = store.getAll(), keys = store.getAllKeys();
+      keys.onsuccess = () => { resolve(keys.result.map((key, i) => ({ key, value: req.result[i] }))); db.close(); };
+    };
+  }));
+  assert.ok(recoveries.some(({ key, value }) => key.startsWith("root-atlas-recovery-") && JSON.stringify(value) === JSON.stringify(corrupt)), "broken save is preserved verbatim");
+  await storagePage.close();
+  await page.unroute("**/api/wander"); await page.unroute("**/api/expedition"); await page.unroute("**/api/reading"); await page.unroute("**/api/talk");
+  await resetFixture(); await fit();
 
   // IB04: short desktop overview preserves labels and connections; the index provides full-size navigation.
   await page.setViewportSize({ width: 1280, height: 600 });
@@ -1171,6 +1307,7 @@ try {
         window.voiceStats.microphones++;
         if (window.denyMicrophone) { window.denyMicrophone = false; throw new DOMException("Microphone denied", "NotAllowedError"); }
         const stream = await get(...args);
+        window.latestVoiceStream = stream;
         for (const track of stream.getTracks()) {
           const stop = track.stop.bind(track);
           track.stop = () => { window.voiceStats.stoppedTracks++; stop(); };
@@ -1186,8 +1323,15 @@ try {
         return source;
       };
     });
+    if (real && process.env.MINERVA_VOICE_TOKEN_URL) {
+      await voicePage.route("**/api/voice", async route => {
+        const response = await route.fetch({ url: process.env.MINERVA_VOICE_TOKEN_URL });
+        await route.fulfill({ response });
+      });
+    }
     let tokenCalls = 0;
     const events = [];
+    let voiceSocket;
     if (!real) {
       await voicePage.route("**/api/voice", async (route) => {
         tokenCalls++;
@@ -1196,6 +1340,7 @@ try {
           { json: { token: "mock-token", url: "wss://voice.test/realtime-model", tools: [] } });
       });
       await voicePage.routeWebSocket("wss://voice.test/realtime-model", (socket) => {
+        voiceSocket = socket;
         let closed = false;
         socket.onClose(() => { closed = true; });
         const send = (event) => { if (!closed) socket.send(JSON.stringify({ ...event, raw: {} })); };
@@ -1289,16 +1434,63 @@ try {
       await voicePage.getByText("A typed follow-up.", { exact: true }).waitFor();
       assert.ok(typedInput.messages.some((message) => message.content === "Could the mall host a repair library?"));
       assert.ok(typedInput.messages.some((message) => message.content === "Try a repair library with shared tools."));
-      await vb("Hold to talk").focus();
-      await voicePage.keyboard.down("Space");
-      await voicePage.getByText("Listening… release to send.", { exact: true }).waitFor();
+      await vb("Start voice mode").click();
+      await vb("End voice mode").waitFor();
+      await voicePage.getByText("Listening…", { exact: true }).waitFor();
+      assert.equal(events.filter(e => e.type === "session-update").at(-1).config.turnDetection.type, "server-vad");
+      const committedBefore = events.filter(e => e.type === "input-audio-commit").length;
+      const emit = event => voiceSocket.send(JSON.stringify({ ...event, raw: {} }));
+      for (let i = 0; i < 2; i++) {
+        emit({ type: "speech-started", audioStartMs: i * 1000 });
+        emit({ type: "audio-committed", itemId: `handsfree-user-${i}` });
+        emit({ type: "input-transcription-completed", itemId: `handsfree-user-${i}`, transcript: `Voice question ${i}` });
+        emit({ type: "speech-stopped", audioEndMs: i * 1000 + 500 });
+        emit({ type: "response-created", responseId: `handsfree-${i}` });
+        emit({ type: "audio-transcript-delta", itemId: `handsfree-${i}`, responseId: `handsfree-${i}`, delta: `Voice answer ${i}` });
+        emit({ type: "audio-transcript-done", itemId: `handsfree-${i}`, responseId: `handsfree-${i}`, transcript: `Voice answer ${i}` });
+        emit({ type: "response-done", responseId: `handsfree-${i}`, status: "completed" });
+        await voicePage.getByText(`Voice answer ${i}`, { exact: true }).waitFor();
+      }
+      const stopsBeforeInterrupt = await voicePage.evaluate(() => window.voiceStats.playbackStops);
+      emit({ type: "audio-delta", itemId: "handsfree-1", responseId: "handsfree-1", delta: Buffer.alloc(24000 * 2 * 4).toString("base64") });
+      await voicePage.getByText("Minerva is speaking…", { exact: true }).waitFor();
+      emit({ type: "speech-started", audioStartMs: 3000 });
+      emit({ type: "response-done", responseId: "handsfree-1", status: "cancelled" });
+      await voicePage.waitForFunction(previous => window.voiceStats.playbackStops > previous, stopsBeforeInterrupt);
+      assert.ok(await vb("End voice mode").isVisible(), "interruption keeps voice mode open");
+      assert.equal(events.filter(e => e.type === "input-audio-commit").length, committedBefore, "hands-free relies on automatic turns");
+      await vb("Mute microphone").click();
+      await vb("Unmute microphone").waitFor();
+      assert.equal(await voicePage.evaluate(() => window.latestVoiceStream.getAudioTracks()[0].enabled), false);
+      await voicePage.getByText("Microphone muted", { exact: true }).waitFor();
+      await voicePage.screenshot({ path: artifacts + "/composer-voice.png" });
+      await voicePage.setViewportSize({ width: 390, height: 844 });
+      assert.equal(await voicePage.locator(".talk-panel").evaluate(el => el.scrollWidth <= el.clientWidth), true);
+      await voicePage.screenshot({ path: artifacts + "/composer-voice-mobile.png" });
+      await vb("Unmute microphone").click();
+      assert.equal(await voicePage.evaluate(() => window.latestVoiceStream.getAudioTracks()[0].enabled), true);
+      const tracksBeforeEnd = await voicePage.evaluate(() => window.voiceStats.stoppedTracks);
+      await vb("Back to typing").click();
+      assert.ok(await voicePage.evaluate(() => window.voiceStats.stoppedTracks) > tracksBeforeEnd);
+      assert.ok(await voicePage.getByLabel("Message Minerva").isEnabled());
+      await voicePage.screenshot({ path: artifacts + "/composer-typing.png" });
+      await vb("Start voice mode").click();
+      await voicePage.getByText("Listening…", { exact: true }).waitFor();
       await vb("Close panel").click();
       await voicePage.keyboard.up("Space");
       assert.equal(await voicePage.locator(".voice-control").count(), 0);
       await voicePage.reload();
       await vb("Talk to Minerva").click();
-      assert.equal(await voicePage.locator(".talk-transcript section").count(), 0);
+      assert.ok(await voicePage.locator(".talk-transcript section").count() > 0, "voice transcript survives reload");
       assert.equal(await voicePage.evaluate(() => window.voiceStats.microphones), 0);
+    }
+    if (real) {
+      const repliesBefore = await voicePage.locator(".talk-message-assistant").count();
+      await vb("Start voice mode").click();
+      await voicePage.waitForFunction(count => document.querySelectorAll(".talk-message-assistant").length > count && document.querySelectorAll(".talk-message-assistant")[count].textContent.length > 20, repliesBefore, { timeout: 90000 });
+      await voicePage.screenshot({ path: artifacts + "/voice-mode-live.png" });
+      await writeFile(artifacts + "/voice-mode-live.json", JSON.stringify({ transcript: await voicePage.locator(".talk-transcript").innerText(), stats: await voicePage.evaluate(() => window.voiceStats) }, null, 2));
+      await vb("End voice mode").click();
     }
     await voicePage.close();
   }
@@ -1357,7 +1549,7 @@ try {
         browser: browser.version(),
         result:
           process.env.MINERVA_VOICE_ONLY === "1" ? "Focused voice replay passed" :
-          "IB01–IB06, Markdown outputs and voice passed with mouse/keyboard and simulated CDP touch; not a screen-reader or physical microphone review",
+          "C01/C14 browser persistence and backup, tall-group fit, cancelled step, IB01–IB06, Markdown outputs and voice passed with mouse/keyboard and simulated CDP touch; not a screen-reader or physical microphone review",
         demo: "6 cards / 7 edges",
         viewports: ["1440x900", "1280x600", "390x844"],
         artifacts,

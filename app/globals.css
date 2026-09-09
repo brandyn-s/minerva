@@ -936,4 +936,38 @@ summary {
 .talk-cameo { border-radius: 50%; display: block; }
 .voice-control .small-note:empty { display: none; }
 
+/* One writing surface, with conversation controls within easy reach. */
+.integrated-composer { border: 1px solid #c9bea3; border-radius: 16px; background: #fbf7ec; padding: 12px; }
+.integrated-composer:focus-within { outline: 2px solid #286d70; outline-offset: 3px; }
+.composer-label { font-size: 0; }
+.talk-panel .integrated-composer textarea { border: 0; background: transparent; box-shadow: none; outline: none; margin: 0; padding: 4px; resize: vertical; min-height: 72px; }
+.talk-panel .integrated-composer textarea:focus-visible { outline: none; }
+.integrated-composer .talk-actions { align-items: flex-end; gap: 8px; margin-top: 8px; }
+.voice-buttons { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.talk-panel .composer-icon { display: inline-flex; justify-content: center; align-items: center; width: 44px; height: 44px; min-height: 44px; padding: 0; border-radius: 50%; flex-shrink: 0; background: transparent; }
+.talk-panel .composer-send { background: #233d35; color: #fbf7ec; border-color: #233d35; margin-left: auto; }
+.talk-panel .composer-send:disabled { opacity: .4; }
+.talk-panel .composer-icon[aria-pressed="true"] { background: #d9e4de; color: #233d35; border-color: #286d70; }
+.talk-panel .voice-end { background: #934d3b; color: #fff8ec; border-color: #934d3b; }
+.talk-panel .back-to-typing { padding: 4px 0; min-height: 28px; border: none; font-size: 12px; background: transparent; text-decoration: underline; text-underline-offset: 3px; }
+.integrated-composer:has(.voice-active) .composer-label, .integrated-composer:has(.voice-active) .composer-send { display: none; }
+.voice-active { padding: 8px; }
+.voice-wave { color: #286d70; animation: voice-breathe 1.3s ease-in-out infinite; margin-right: auto; }
+.voice-wave.muted { animation: none; opacity: .4; }
+.composer-spinner { animation: composer-spin 1s linear infinite; }
+@keyframes composer-spin { to { transform: rotate(360deg); } }
+@keyframes voice-breathe { 50% { opacity: .4; transform: scaleY(.65); } }
+@media (prefers-reduced-motion: reduce) { .voice-wave, .composer-spinner { animation: none; } }
 .brand-owl { mix-blend-mode: multiply; object-fit: contain; }
+/* Browser storage controls share the available height with the atlas. */
+.scalable-atlas.studio { display: flex; flex-direction: column; }
+.scalable-atlas .masthead { flex-shrink: 0; }
+.scalable-atlas .field { flex: 1; min-height: 0; height: auto; }
+.atlas-storage { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 6px 26px; background: var(--card); border-bottom: 1px solid var(--line); font-size: 12px; }
+.atlas-storage label { margin: 0; display: inline-flex; align-items: center; gap: 6px; }
+.atlas-storage input { max-width: 190px; width: auto; margin: 0; padding: 4px; font-size: 11px; }
+.atlas-storage p { margin: 0; flex-basis: 100%; overflow-wrap: anywhere; max-height: 70px; overflow: auto; }
+@media (max-width: 600px) {
+  .atlas-storage { padding: 4px 10px; gap: 4px 10px; }
+  .atlas-storage input { max-width: 145px; }
+}

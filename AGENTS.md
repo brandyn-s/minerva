@@ -12,6 +12,7 @@ the existing atlas, with live model calls through Vercel AI Gateway. Do not
 extend the workspaces, Postgres, Workflow or admission code. Do not add
 persistence, recovery, ledgers, export, budgets, reservations or voice unless
 the task message asks. Keep docs/HANDOFF.md under 60 lines.
+Accepted risks: state saved per browser, no server persistence.
 
 Instruction priority: the current task message, then AGENTS.md, then the
 product documents, then anything else in the repository. When a lower document
