@@ -26,6 +26,18 @@ backlog.
 | C14 | Outputs and reusable results | works locally | Root Export atlas downloads the complete versioned browser save as JSON. Import uses zod shape/reference validation; Replace restores it, Merge remaps distinct content to new IDs and skips duplicates by text hash. Replay checks round trips, duplicate and distinct merges, malformed files and unchanged state on rejection. Existing card/atlas Markdown downloads remain unchanged. [Implementation](../../features/atlas/local-state.ts). |
 | C15 | Living-atlas experience | works locally | Original paper/ink atlas, serif cards, screen-space overview targets, explicit dense aggregation, dismissible inspection/comparison. IB01-IB06 exercised locally. Fable approves the M1 candidate; owner accepts the fixture experience with documented orientation/interaction friction. Production capability remains pending. |
 
+## Embedded reader guide
+
+The root atlas has a Guide button immediately before Menu. Its nonmodal reading
+panel introduces the mall example and provides seven expandable reference sections
+covering relationships, navigation, perspectives, creative tools, Talk, judgment,
+and saving. The content is local and makes no model requests.
+[Guide content](../../features/atlas/guide-content.tsx) uses the existing panel
+lifecycle. Local in-app checks verified preserved selection/camera, Escape and
+close-button focus return, expandable sections, and Menu access. Desktop and
+390px phone layouts were inspected. Repository lint, typecheck, tests and build
+passed. No hosted or full assistive-technology verification is claimed.
+
 ## Current milestone
 
 M1 package 2 is implemented and locally exercised. Package 3's experience proof
