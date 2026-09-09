@@ -847,5 +847,3 @@ summary {
 @media (max-width: 700px) {
   .minerva-launcher.has-selection { bottom: max(104px, calc(env(safe-area-inset-bottom) + 104px)); }
 }
-
-.brand-owl { mix-blend-mode: multiply; object-fit: contain; }
