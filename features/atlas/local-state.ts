@@ -22,8 +22,15 @@ export const expeditionRecordSchema = z.object({
   run: z.object({ goal: z.string(), budget: z.number().int().min(2).max(5), steps: z.array(expeditionStepSchema.extend({ id, step: z.number().int().min(1).max(5) })).max(5), stop: z.string().optional() }),
   reading: z.object({ result: readingSchema, cards: z.array(thought) }).optional(), notes: z.array(z.string()),
 });
-export const atlasSaveSchema = z.object({
-  version: z.literal(1), thoughts: z.array(thought).min(1), relationships: z.array(relationship),
+const size = z.object({ width: z.number().min(200).max(1000), height: z.number().min(120).max(1600) });
+const layout = z.object({ positions: z.record(id, point), sizes: z.record(id, size) });
+const change = z.object({ kind: z.enum(["move", "resize", "arrange"]), before: layout, after: layout });
+export function emptyHistory() { return { Lineage: { undo: [], redo: [] }, Evolution: { undo: [], redo: [] }, Constellation: { undo: [], redo: [] } }; }
+const saveV2 = z.object({
+  sizes: z.record(view, z.record(id, size)),
+  layoutHistory: z.record(view, z.object({ undo: z.array(change).max(50), redo: z.array(change).max(50) })),
+  folds: z.array(id),
+  version: z.literal(2), thoughts: z.array(thought).min(1), relationships: z.array(relationship),
   positions: z.record(view, z.record(id, point)), cameras: z.partialRecord(view, camera),
   perspective: view, selected: z.array(id), active: id, focusedId: id.nullable(),
   themeCache: z.object({ groups: z.array(themesSchema.shape.groups.element.extend({ memberIds: z.array(id) })), hashes: z.record(id, z.string()), time: z.string() }).optional(),
@@ -35,9 +42,13 @@ export const atlasSaveSchema = z.object({
   if (ids.size !== save.thoughts.length) fail("Duplicate card ids");
   if (new Set(save.relationships.map(e => e.id)).size !== save.relationships.length) fail("Duplicate edge ids");
   const refs = [...save.selected, save.active, ...(save.focusedId ? [save.focusedId] : []), ...save.relationships.flatMap(e => [e.from, e.to]),
-    ...Object.values(save.positions).flatMap(p => Object.keys(p)), ...Object.keys(save.themeCache?.hashes ?? {}), ...(save.themeCache?.groups.flatMap(g => g.memberIds) ?? [])];
+    ...Object.values(save.positions).flatMap(p => Object.keys(p)), ...save.folds,
+    ...Object.values(save.sizes).flatMap(p => Object.keys(p)),
+    ...Object.values(save.layoutHistory).flatMap(h => [...h.undo, ...h.redo].flatMap(c => [c.before, c.after].flatMap(l => [...Object.keys(l.positions), ...Object.keys(l.sizes)]))), ...Object.keys(save.themeCache?.hashes ?? {}), ...(save.themeCache?.groups.flatMap(g => g.memberIds) ?? [])];
   if (refs.some(ref => !ids.has(ref))) fail("Atlas references a missing card");
   if (save.thoughts.some(c => !save.positions.Lineage[c.id])) fail("Every card needs a Lineage position");
+  if (Object.values(save.layoutHistory).some(h => h.undo.length + h.redo.length > 50)) fail("Layout history exceeds 50 changes");
+  if (new Set(save.folds).size !== save.folds.length) fail("Duplicate folded cards");
   if (new Set(save.selected).size !== save.selected.length) fail("Duplicate selected cards");
   if (save.themeCache) {
     const groups = save.themeCache.groups, members = groups.flatMap(g => g.memberIds);
@@ -53,11 +64,17 @@ export const atlasSaveSchema = z.object({
     }
   }
 });
+export const atlasSaveSchema = z.preprocess(raw => {
+  if (raw && typeof raw === "object" && "version" in raw && raw.version === 1) {
+    return { ...raw, version: 2, sizes: { Lineage: {}, Evolution: {}, Constellation: {} }, layoutHistory: emptyHistory(), folds: [] };
+  }
+  return raw;
+}, saveV2);
 export type AtlasSave = z.infer<typeof atlasSaveSchema>;
 export type ExpeditionRecord = z.infer<typeof expeditionRecordSchema>;
 export function fixtureSave(): AtlasSave {
   const fixture = mallFixture();
-  return { version: 1, thoughts: fixture.thoughts, relationships: fixture.relationships, positions: { Lineage: fixture.positions, Evolution: {}, Constellation: {} }, cameras: {}, perspective: "Lineage", selected: [], active: "repair", focusedId: null, messages: [], expeditions: [], activeExpedition: null };
+  return { version: 2, sizes: { Lineage: {}, Evolution: {}, Constellation: {} }, layoutHistory: emptyHistory(), folds: [], thoughts: fixture.thoughts, relationships: fixture.relationships, positions: { Lineage: fixture.positions, Evolution: {}, Constellation: {} }, cameras: {}, perspective: "Lineage", selected: [], active: "repair", focusedId: null, messages: [], expeditions: [], activeExpedition: null };
 }
 export function interruptSavedRuns(save: AtlasSave): AtlasSave {
   return { ...save, expeditions: save.expeditions.map(entry => entry.run.stop ? entry : { ...entry, run: { ...entry.run, stop: `Step ${entry.run.steps.length + 1} was interrupted by leaving the atlas. Completed cards remain.` } }) };
@@ -90,7 +107,12 @@ async function commitSave(save: AtlasSave | null) {
     });
   } finally { db.close(); }
 }
-export async function restoreSave(): Promise<{ save: AtlasSave; notice: string }> {
+let restoring: Promise<{ save: AtlasSave; notice: string }> | undefined;
+export function restoreSave() {
+  restoring ??= restoreFromDatabase().finally(() => { restoring = undefined; });
+  return restoring;
+}
+async function restoreFromDatabase(): Promise<{ save: AtlasSave; notice: string }> {
   const db = await database();
   try {
     const raw = await new Promise<unknown>((resolve, reject) => {
@@ -125,6 +147,7 @@ export async function mergeAtlas(current: AtlasSave, incoming: AtlasSave) {
     for (const perspective of ["Lineage", "Evolution", "Constellation"] as const) {
       const position = incoming.positions[perspective][card.id];
       if (position) merged.positions[perspective][newId] = position;
+      if (incoming.sizes[perspective][card.id]) merged.sizes[perspective][newId] = incoming.sizes[perspective][card.id];
     }
   }
   const edgeContent = (e: AtlasSave["relationships"][number]) => JSON.stringify([e.from, e.to, e.kind, e.label, e.sourceRevision, e.contribution ?? ""]);
@@ -141,5 +164,27 @@ export async function mergeAtlas(current: AtlasSave, incoming: AtlasSave) {
       reading: entry.reading && { ...entry.reading, cards: entry.reading.cards.map(c => ({ ...c, id: ids.get(c.id)! })) } };
     if (!merged.expeditions.some(e => JSON.stringify(e) === JSON.stringify(next))) merged.expeditions.push(next);
   }
+  merged.layoutHistory = emptyHistory();
+  merged.folds = [...new Set([...merged.folds, ...incoming.folds.map(id => ids.get(id)!)])];
   return { save: atlasSaveSchema.parse(merged), added, skipped: incoming.thoughts.length - added };
+}
+
+export async function recoveryCopies(): Promise<{ key: string; value: unknown }[]> {
+  const db = await database();
+  try { return await new Promise((resolve, reject) => {
+    const request = db.transaction("saves").objectStore("saves").openCursor();
+    const copies: { key: string; value: unknown }[] = [];
+    request.onsuccess = () => { const cursor = request.result; if (!cursor) { resolve(copies); return; }
+      if (String(cursor.key).startsWith(RECOVERY_PREFIX)) copies.push({ key: String(cursor.key), value: cursor.value });
+      cursor.continue(); };
+    request.onerror = () => reject(request.error);
+  }); } finally { db.close(); }
+}
+export async function discardRecovery(key: string) {
+  if (!key.startsWith(RECOVERY_PREFIX)) throw new Error("Invalid recovery key");
+  const db = await database();
+  try { await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction("saves", "readwrite"); tx.objectStore("saves").delete(key);
+    tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error);
+  }); } finally { db.close(); }
 }

@@ -1,24 +1,44 @@
-# Wander exploration-first pane
+# Root atlas: layout controls and graph navigation
+Branch: `demo-layout-navigation`, from `origin/main` at `83844e4`, integrated through `16f39b7`.
+Worktree: `/Users/brandyn.schult/code/minerva-layout-navigation`.
+Scope ends after merge and deployment to https://minerva-eight.vercel.app/; one operator-started Fable review follows.
 
-Worktree: /Users/brandyn.schult/code/minerva-regroup-selection
-Branch: feat/wander-exploration-first
-Implementation: f1db13c, integrated with current main for authorized release.
+## Behavior
+Working-zoom cards have resize handles; positions and sizes are saved per card and perspective.
+Layout controls name the next action: Undo/Redo move, resize or arrange.
+Each perspective retains its last 50 layout changes across reloads, including its redo stack.
+Ctrl/Cmd+Z and Shift+Z work in the field; text controls retain their native editing shortcuts.
+Card text edits, generation, import and reset clear layout history and cannot be undone.
+Ancestors and descendants follow only derivation/recombination edges, transitively, with cycle protection.
+Focus highlights the chain and dims other cards/edges; links list the origin, then nearest to farthest relatives.
+A second press clears the focus; Clear chain also clears it while following links.
+Fold descendants hides the full descendant set and incident edges in every perspective, with a counted marker.
+Folded thoughts remain searchable, inspectable and selectable in Thoughts; the index names every folding ancestor and offers Unfold.
+Unfold restores the original positions. Folding is local, persisted and included in JSON export/import.
+Version 2 adds sizes, per-perspective layout history and folded roots; version 1 saves/files migrate with empty values.
+Merge remaps imported sizes/folds, clears history and reports added/skipped card counts in one line.
+Reset and Replace use in-page Confirm/Keep current atlas buttons in Menu.
+Current main header, Wander toolbar, compact card preview, regroup preview, text reader, plain overview nodes, association styling and thought catalogue are preserved.
+Recovery copies have a list in the import area with Export and Discard; dev-mode restore shares one pending read.
+No model routes, /workspaces, database or Workflow code changed. No dependencies added.
 
-## Outcome
-Wander separates source context from a concise exploration heading and makes
-Explore freely the primary action. Suggestions remain secondary, with a spinner,
-skeleton placeholders and an explanatory loading message. Hide/show preserves
-suggestions. Loaded moves, prepared fallback, retry and generation callbacks remain.
-The pane scrolls on short windows and supports reduced-motion preferences.
+## Verification
+`npm run check` and complete mocked replays passed through `npm run dev` and `next start`.
+Final operator handoff supplies the exact release SHA and hosted verification.
+Browser artifacts: `/tmp/minerva-layout-dev` and `/tmp/minerva-layout-start`.
+Existing `scripts/verify-atlas.mjs` covers layout, transitive focus/folds, migration, merge counts and confirmations.
+All model responses in replay are mocked; no live model calls authorized or made.
 
-## Evidence
-npm run check passed: lint, types, unit tests, production build.
-In-app browser: loading, hide/show, failure fallback, retry, loaded moves and free
-exploration error handling. Fixture responses only; no paid provider calls.
-Visual comparison: design-qa.md. Successful live generation was not retested.
+## Startup and next role
+Use `npx --yes --package=node@24.20.0 --package=npm@12.0.2` before npm commands.
+Dev: `npm run dev -- --port 3050`; production: `npm run build`, then `npm run start -- --port 3061`.
+Replay: `MINERVA_URL=http://127.0.0.1:3061 npm run test:browser` (3050 for dev).
+Next: operator-started Fable 5.1 at low effort, exact released candidate, read-only, C02/C03 and named carry-overs.
+Use docs/setup.md's bounded launch prompt, a separate checkout/port and fresh synthetic browser data.
+No paid model calls. No further batch is authorized; stop after this release.
 
-## Startup / next role
-npm run dev -- --port 4320
-Built app: http://127.0.0.1:4340/
-Temporary fixture-response preview: http://127.0.0.1:4341/
-Next role: owner review of the authorized production release.
+## Wander exploration-first pane
+Explore freely is the primary action, with source context and collapsible
+suggestions. Loading placeholders, fallback and retry are preserved.
+Implementation f1db13c; local checks and browser fixture checks passed.
+No paid provider calls; live generation quality was not retested.
