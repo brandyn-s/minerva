@@ -52,7 +52,7 @@ These lists expose outgoing descendants and associations as well as incoming
 parents; showing sources only leaves part of the graph undiscoverable.
 
 Click a card once to inspect at every zoom level without moving the camera;
-double-click to focus it. Keep a keyboard/touch-accessible explicit Focus action
+double-click to toggle its selection without moving the camera. Keep a keyboard/touch-accessible explicit Focus action
 in inspection. Cards remain draggable at overview zoom, with a drag distinct
 from a click. Pointer activation, keyboard focus and explicit inspection bring
 the relevant card to the front. Focus and selection marks follow the visible

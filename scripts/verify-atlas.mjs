@@ -873,17 +873,20 @@ try {
   await close();
   await page.locator('[data-id="food"] .overview-target').dblclick();
   await settle();
-  assert.notEqual(
+  assert.equal(
     await transform(),
     beforeOverviewOpen,
-    "double click focuses overview card",
+    "double click selects overview card without moving the camera",
   );
+  assert.ok(await page.locator('[data-id="food"] .thought.chosen').isVisible(), "double click selects the card");
   assert.equal(
     await page.getByRole("dialog").count(),
     0,
     "double click does not leave inspection open",
   );
-  await button("A food hall").focus();
+  await page.locator('[data-id="food"] .overview-target').dblclick();
+  assert.equal(await page.locator('[data-id="food"] .thought.chosen').count(), 0, "double click again deselects the card");
+  await page.locator('[data-id="food"] .overview-target').focus();
   await page.keyboard.press("Enter");
   assert.equal(await page.getByRole("dialog").count(), 1);
   await close();
