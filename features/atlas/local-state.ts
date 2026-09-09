@@ -26,7 +26,7 @@ export const atlasSaveSchema = z.object({
   version: z.literal(1), thoughts: z.array(thought).min(1), relationships: z.array(relationship),
   positions: z.record(view, z.record(id, point)), cameras: z.partialRecord(view, camera),
   perspective: view, selected: z.array(id), active: id, focusedId: id.nullable(),
-  themeCache: z.object({ groups: themesSchema.shape.groups, hashes: z.record(id, z.string()), time: z.string() }).optional(),
+  themeCache: z.object({ groups: z.array(themesSchema.shape.groups.element.extend({ memberIds: z.array(id) })), hashes: z.record(id, z.string()), time: z.string() }).optional(),
   messages: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string() })),
   expeditions: z.array(expeditionRecordSchema), activeExpedition: z.number().int().nonnegative().nullable(),
 }).superRefine((save, ctx) => {

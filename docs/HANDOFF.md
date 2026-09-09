@@ -1,6 +1,6 @@
 # Plain overview nodes
 
-Release branch: `fix/plain-overview-nodes`, based on main `fe57f75`.
+Release branch: `fix/plain-overview-nodes`, based on main `a205446`.
 Worktree: `/Users/brandyn.schult/code/minerva-wander-toolbar`.
 Scope: remove Seed, A/B/C, compound ancestry codes, and generated initials from overview nodes.
 
@@ -8,7 +8,7 @@ Scope: remove Seed, A/B/C, compound ancestry codes, and generated initials from 
 Overview circles retain their colors, external titles, selection, drag, and connection behavior.
 Existing zoom-dependent title visibility is preserved.
 Compact markers are plain; accessible full titles remain on their controls.
-No generation, data, lineage, or backend changes.
+No generation, data, lineage, or backend changes. Latest main Regroup functionality is preserved.
 
 ## Validation and release
 Run `npm run check` and the existing browser replay; its overview assertion now expects only the title.
