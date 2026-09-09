@@ -292,6 +292,8 @@ try {
   );
   await inspectFromIndex("Independent retail shops");
   await close();
+  const surfacedRetail = await retailNode.boundingBox();
+  Object.assign(overlap, { x: surfacedRetail.x + 100, y: surfacedRetail.y + 100 });
   assert.equal(
     await topCard(),
     "retail",

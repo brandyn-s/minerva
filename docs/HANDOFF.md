@@ -1,5 +1,5 @@
 # Root atlas: layout controls and graph navigation
-Branch: `demo-layout-navigation`, from `origin/main` at `83844e4`, integrated through `e3b9727`.
+Branch: `demo-layout-navigation`, from `origin/main` at `83844e4`, integrated through `221c23e`.
 Worktree: `/Users/brandyn.schult/code/minerva-layout-navigation`.
 Scope ends after merge and deployment to https://minerva-eight.vercel.app/; one operator-started Fable review follows.
 

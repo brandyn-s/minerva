@@ -1192,3 +1192,5 @@ summary {
 .catalogue-actions button { min-height: 34px; padding: 6px 10px; }
 
 .catalogue-fold { margin: 0 14px 10px 48px; font-size: 13px; }
+.relationship-label-toggle { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 8px 12px; font: 13px/1.5 ui-monospace, monospace; cursor: pointer; }
+.relationship-label-toggle input { width: 18px; height: 18px; margin: 0; accent-color: var(--teal); }
