@@ -1471,6 +1471,7 @@ try {
   await settle();
   assert.ok(parseInt(await page.getByLabel("Zoom level").textContent(), 10) >= 100, "focus keeps one card readable");
   const navigation = page.getByRole("region", { name: "Focused card connections" });
+  await navigation.locator(".focus-connections > summary").click();
   assert.equal(await navigation.locator(".relative-link").count(), 2, "both recombination parents are navigable");
   await navigation.getByRole("button", { name: /^Highlight only/ }).first().click();
   assert.equal(await page.locator(".react-flow__edge-path").evaluateAll(es => es.filter(e => Number(e.style.opacity) > .5).length), 1, "Trace emphasizes only one branch");
