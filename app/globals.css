@@ -1175,3 +1175,6 @@ summary {
 .catalogue-header > button svg, .catalogue-menu > summary svg { width: 18px; height: 18px; }
 .catalogue-menu > summary:hover { background: #e4d8bc; border-color: var(--bronze); }
 .catalogue-actions button { min-height: 34px; padding: 6px 10px; }
+
+.relationship-label-toggle { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 8px 12px; font: 13px/1.5 ui-monospace, monospace; cursor: pointer; }
+.relationship-label-toggle input { width: 18px; height: 18px; margin: 0; accent-color: var(--teal); }

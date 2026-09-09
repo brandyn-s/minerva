@@ -360,6 +360,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
   const [panel, setPanel] = useState<Panel>(null);
   const [moveSources, setMoveSources] = useState<string[]>([]);
   const [preview, setPreview] = useState(false);
+  const [showRelationshipLabels, setShowRelationshipLabels] = useState(false);
   const [overview, setOverview] = useState((initial?.cameras[initial.perspective]?.zoom ?? 1) < .62);
   const [viewport, setViewport] = useState<Viewport>(initial?.cameras[initial.perspective] ?? { x: 0, y: 0, zoom: 1 });
   const [compact, setCompact] = useState((initial?.cameras[initial.perspective]?.zoom ?? 1) < .45);
@@ -557,7 +558,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
     source: perspective === "Constellation" ? `theme-${groupFor.get(edge.from)}` : edge.from,
     target: perspective === "Constellation" ? `theme-${groupFor.get(edge.to)}` : edge.to,
     type: perspective === "Constellation" ? "default" : "floating",
-    label: overview || (!session && highlighting && !highlighted.has(edge.id)) ? undefined : edge.label,
+    label: !showRelationshipLabels || overview || (!session && highlighting && !highlighted.has(edge.id)) ? undefined : edge.label,
     markerEnd:
       edge.kind === "association" || edge.kind === "context"
         ? undefined
@@ -928,7 +929,8 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); }
         }}>
         <summary>Menu <ChevronDown size={14} aria-hidden="true" /></summary>
-        <div className="atlas-menu-options" aria-label="Atlas storage">
+        <div className="atlas-menu-options" aria-label="Atlas options">
+        <label className="relationship-label-toggle"><input type="checkbox" checked={showRelationshipLabels} onChange={event => setShowRelationshipLabels(event.target.checked)} /> Relationship labels</label>
         <button onClick={() => { exportAtlas(); if (storageMenu.current) storageMenu.current.open = false; }}>Export atlas</button>
         <button onClick={() => importInput.current?.click()}>Import atlas</button>
         <input ref={importInput} hidden aria-label="Import atlas file" type="file" accept=".json,application/json" onChange={async e => {
@@ -1112,6 +1114,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           {!session && <TooltipButton className="expedition-control" aria-label="Expedition panel" title="Open expedition panel" aria-haspopup="dialog" aria-expanded={panel === "expedition"} onClick={() => open("expedition")}><Image src="/images/expedition-compass.png" width={44} height={44} alt="" /></TooltipButton>}
 
           {session && <>
+            <label className="relationship-label-toggle"><input type="checkbox" checked={showRelationshipLabels} onChange={event => setShowRelationshipLabels(event.target.checked)} /> Relationship labels</label>
             <button onClick={() => { void session.command({ operation: "seed-mall" }).catch(() => {}); }} disabled={nodes.length > 0}>Load prepared mall</button>
             <button onClick={() => { void session.command({ operation: "create-idea", ideaId: crypto.randomUUID(), title: "New idea", body: "Write your idea here." }).catch(() => {}); }}>New idea</button>
             <button onClick={() => { void session.command({ operation: "set-viewpoint", expectedRevision: savedGraph!.viewpoint.revision, ...viewport }).catch(() => {}); }}>Save view</button>
