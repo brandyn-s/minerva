@@ -37,6 +37,14 @@ file and capability progress. Repository settings were read back and verified.
 CI must pass on the setup PR before merge; this is repository initialization,
 not an M1 experience review or product-capability demonstration.
 
+Runtime compatibility follow-up: Vercel's managed Node patches require a compatible
+range rather than the exact local pin. The application now declares `^24.15.0`
+and explicitly selects npm 12.0.2 for Vercel install/build commands. Local/CI
+remain pinned to Node 24.20.0. The old exact engine reproduced `EBADENGINE` on
+Node 24.15.0; the configured install and production build now pass on that version
+starting from npm 11.19.1. Hosted build/runtime confirmation is still pending the
+first authorized preview. See [setup](./setup.md#node-and-npm) for sources and settings.
+
 ## Startup and next outcome
 
 From the local worktree:

@@ -158,6 +158,25 @@ operator handoff at the stopping boundary defined in AGENTS.md.
 
 ## Vercel demonstration hosting
 
+### Node and npm
+
+Vercel supports Node 24 and manages minor/patch upgrades within that major.
+`package.json` therefore declares `^24.15.0`, the compatible Node 24 range for
+npm 12.0.2. `.node-version` and CI retain the exact local pin, Node 24.20.0.
+Keep `engine-strict=true`; the supported range allows hosted patch updates
+without accepting another major or a Node version too old for npm 12.
+
+`vercel.json` explicitly runs npm 12.0.2 for both lockfile installation and the
+build. The `packageManager` field alone does not guarantee that selection under
+Vercel's default autodetection. At the first authorized preview, confirm the
+actual Node/npm versions in build logs and exercise the served result.
+
+Sources: [Vercel Node versions](https://vercel.com/docs/functions/runtimes/node-js/node-js-versions),
+[npm override](https://vercel.com/kb/guide/how-do-i-use-the-latest-npm-version-for-my-vercel-deployment),
+and [npm 12.0.2 engine metadata](https://registry.npmjs.org/npm/12.0.2).
+
+### Deployment setup
+
 The release target is a public Vercel deployment for a bounded demonstration
 window, used by a small judge panel with no sign-in. Anyone with the URL can use
 it during the window; the window, the Vercel budget and the teardown are the
