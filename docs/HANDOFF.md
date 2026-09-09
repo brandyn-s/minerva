@@ -1,33 +1,36 @@
-# Root atlas: browser state and JSON backups
-Branch: `demo-browser-state-release`, started from `origin/main` at `09d0396`, integrated with main through `f251ee0`.
-Worktree: `/Users/brandyn.schult/code/minerva-browser-state`.
-Release SHA and stable deployment evidence are in the operator handoff.
+# Root atlas: layout controls and graph navigation
+Branch: `demo-layout-navigation`, from `origin/main` at `83844e4`.
+Worktree: `/Users/brandyn.schult/code/minerva-layout-navigation`.
 Scope ends after merge and deployment to https://minerva-eight.vercel.app/; one operator-started Fable review follows.
 
 ## Behavior
-Root atlas state is saved per browser in IndexedDB, with a 200 ms debounce and a page-hide flush.
-Version 1 includes cards/provenance/text, every edge, perspective positions/cameras, selection, grouping cache, Talk and expedition histories/readings/notes.
-Reload restores a valid save; a missing save starts the six-card fixture. Interrupted expeditions retain completed work without resuming model calls.
-Reset to fixture confirms before discarding current state. Invalid saves are preserved under `root-atlas-recovery-*` before the fixture loads with a notice.
-IndexedDB database: `minerva-atlas`; object store: `saves`; active key: `root-atlas`.
-Export atlas downloads `minerva-atlas.json` in the same integer-versioned shape.
-Import validates the complete shape and references with zod before offering Replace or Merge.
-Replace restores the backup. Merge hashes title/summary/body, gives distinct cards and edges new IDs, remaps references and skips duplicates.
-Merge keeps local cameras, grouping and Talk, and retains imported expedition history. Markdown downloads are unchanged.
-Constellation fits after measured nodes commit, including the whole tall column. Group timestamps include the date. Toolbar tooltips open below controls so they cannot cover Export.
-Stop says which in-flight step was cancelled. New expedition keeps prior runs available in Expedition history.
-No new dependencies, server persistence, identity, admission or budget logic. No database, /workspaces or Workflow changes.
+Working-zoom cards have resize handles; positions and sizes are saved per card and perspective.
+Layout controls name the next action: Undo/Redo move, resize or arrange.
+Each perspective retains its last 50 layout changes across reloads, including its redo stack.
+Ctrl/Cmd+Z and Shift+Z work in the field; text controls retain their native editing shortcuts.
+Card text edits, generation, import and reset clear layout history and cannot be undone.
+Ancestors and descendants follow only derivation/recombination edges, transitively, with cycle protection.
+Focus highlights the chain and dims other cards/edges; links list the origin, then nearest to farthest relatives.
+A second press clears the focus; Clear chain also clears it while following links.
+Fold descendants hides the full descendant set and incident edges in every perspective, with a counted marker.
+Folded thoughts remain searchable, inspectable and selectable in Thoughts; the index names every folding ancestor and offers Unfold.
+Unfold restores the original positions. Folding is local, persisted and included in JSON export/import.
+Version 2 adds sizes, per-perspective layout history and folded roots; version 1 saves/files migrate with empty values.
+Merge remaps imported sizes/folds, clears history and reports added/skipped card counts in one line.
+Reset and Replace use in-page Confirm/Keep current atlas buttons.
+Recovery copies have a list in the import area with Export and Discard; dev-mode restore shares one pending read.
+No model routes, /workspaces, database or Workflow code changed. No dependencies added.
 
 ## Verification
-Full mocked dev replay passed: persistence, export/Replace/Merge, invalid files, recovery, tall-column fit and cancelled-step text.
-The existing replay also covers Markdown, desktop/mobile interaction and simulated voice; no live model calls were made for this batch.
-Artifacts: `/tmp/minerva-browser-state-dev` and `/tmp/minerva-browser-state-start`.
-`npm run check` and the complete mocked replay passed through both `npm run dev` and `next start`.
+Verification pending for this candidate; final operator handoff supplies exact release SHA and hosted evidence.
+Browser artifacts: `/tmp/minerva-layout-dev` and `/tmp/minerva-layout-start`.
+Existing `scripts/verify-atlas.mjs` covers layout, transitive focus/folds, migration, merge counts and confirmations.
+All model responses in replay are mocked; no live model calls authorized or made.
 
 ## Startup and next role
 Use `npx --yes --package=node@24.20.0 --package=npm@12.0.2` before npm commands.
-Dev: `npm run dev -- --port 3048`; production: `npm run build`, then `npm run start -- --port 3049`.
-Replay: `MINERVA_URL=http://127.0.0.1:3049 npm run test:browser` (3048 for dev).
-Next: operator-started Fable 5.1 at low effort, exact released candidate, read-only, C01/C14 plus named carry-overs.
-Use the bounded launch prompt in docs/setup.md; fresh browser data and a separate port. No paid calls are authorized for this review.
-Stop after this release; no further batch is authorized.
+Dev: `npm run dev -- --port 3050`; production: `npm run build`, then `npm run start -- --port 3061`.
+Replay: `MINERVA_URL=http://127.0.0.1:3061 npm run test:browser` (3050 for dev).
+Next: operator-started Fable 5.1 at low effort, exact released candidate, read-only, C02/C03 and named carry-overs.
+Use docs/setup.md's bounded launch prompt, a separate checkout/port and fresh synthetic browser data.
+No paid model calls. No further batch is authorized; stop after this release.

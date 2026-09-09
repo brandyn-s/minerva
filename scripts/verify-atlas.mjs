@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { execFileSync } from "node:child_process";
@@ -49,8 +50,8 @@ const transform = () =>
   page.locator(".react-flow__viewport").getAttribute("style");
 const settle = () => page.waitForTimeout(350);
 const resetFixture = async () => {
-  page.once("dialog", dialog => dialog.accept());
   await button("Reset to fixture").click();
+  await button("Confirm Reset").click();
   await page.waitForFunction(() => document.querySelectorAll(".thought").length === 6);
   await settle();
 };
@@ -263,8 +264,8 @@ try {
   await button("Repair, then stay for supper").click();
   await page.getByRole("dialog").waitFor();
   const dialog = page.getByRole("dialog");
-  assert.match(await dialog.innerText(), /unkept draft/);
-  assert.match(await dialog.innerText(), /Evidence: unknown/);
+  assert.doesNotMatch(await dialog.locator(".status-line").allTextContents().then(lines => lines.join(" ")), /unkept draft/);
+  assert.doesNotMatch(await dialog.innerText(), /Evidence: unknown/);
   assert.equal(await dialog.locator(".relationship-list li").count(), 2);
   await dialog
     .getByRole("button", { name: "A food hall ←", exact: true })
@@ -282,7 +283,7 @@ try {
   await dialog
     .getByRole("button", { name: "A shopfront for six weeks ←", exact: true })
     .click();
-  assert.match(await dialog.innerText(), /Evidence: unknown/);
+  assert.doesNotMatch(await dialog.innerText(), /Evidence: unknown/);
   assert.match(await dialog.innerText(), /kept/);
   await dialog
     .getByRole("button", { name: "A shared tool library →", exact: true })
@@ -423,6 +424,13 @@ try {
       assert.equal(await links.count(), feature === "wander" ? 1 : 3);
       assert.match(await links.first().innerText(), feature === "wander" ? /incoming \/ derivation/i : /incoming \/ recombination/i);
       if (feature === "weave") {
+        await inspection.getByRole("button", { name: "Show ancestors", exact: true }).click();
+        const wovenId = (await storedSave()).thoughts.find(c => c.title === result.title).id;
+        assert.deepEqual((await page.locator(".react-flow__node.chain-highlighted").evaluateAll(nodes => nodes.map(n => n.dataset.id))).sort(), [wovenId, "food", "tools", "retail"].sort());
+        assert.deepEqual(await inspection.getByRole("list", { name: "ancestors chain" }).getByRole("button").allTextContents(), [result.title, "A food hall", "A shared tool library", "Independent retail shops"]);
+        assert.equal(await page.locator(".react-flow__node.chain-dimmed").count(), total - 4);
+        await inspection.getByRole("button", { name: "Show ancestors", exact: true }).click();
+        assert.equal(await page.locator(".chain-highlighted").count(), 0);
         assert.equal(evidence.weaveInput.length, 3);
         assert.equal(output.contributions.length, 3);
         for (const contribution of output.contributions) assert.ok((await links.allInnerTexts()).join(" ").includes(contribution));
@@ -867,12 +875,13 @@ try {
   const backupBytes = await readFile(await backup.path()); const backupState = JSON.parse(backupBytes);
   await resetFixture(); assert.equal(await page.locator(".thought").count(), 6);
   const upload = async buffer => page.getByLabel("Import atlas", { exact: true }).setInputFiles({ name: "atlas.json", mimeType: "application/json", buffer });
-  await upload(backupBytes); page.once("dialog", d => d.accept()); await button("Replace").click();
+  await upload(backupBytes); await button("Replace").click(); await button("Confirm Replace").click();
   await page.waitForFunction(() => document.querySelectorAll(".thought").length === 10); await settle();
   const replacedSave = await storedSave();
   for (const field of ["thoughts", "relationships", "positions", "cameras", "messages", "expeditions", "selected", "activeExpedition"]) assert.deepEqual(replacedSave[field], backupState[field], `Replace restores ${field}`);
   await upload(backupBytes); await button("Merge").click(); await settle();
   assert.equal(await page.locator(".thought").count(), 10, "Merge skips duplicate content hashes");
+  await page.getByText("Merge complete: 0 added, 10 skipped.", { exact: true }).waitFor();
   assert.deepEqual((await storedSave()).relationships, backupState.relationships, "Merge skips duplicate edges");
   assert.deepEqual((await storedSave()).expeditions, backupState.expeditions, "Merge skips duplicate expedition history");
   const uniqueImport = structuredClone(backupState);
@@ -880,6 +889,7 @@ try {
   incomingCard.title = "Imported distinct repair card";
   await upload(Buffer.from(JSON.stringify(uniqueImport))); await button("Merge").click();
   await page.waitForFunction(() => document.querySelectorAll(".thought").length === 11); await settle();
+  await page.getByText("Merge complete: 1 added, 9 skipped.", { exact: true }).waitFor();
   const mergedSave = await storedSave();
   const importedCard = mergedSave.thoughts.find(c => c.title === "Imported distinct repair card");
   assert.notEqual(importedCard.id, durableId, "Merge gives new content a new id");
@@ -920,6 +930,120 @@ try {
   }));
   assert.ok(recoveries.some(({ key, value }) => key.startsWith("root-atlas-recovery-") && JSON.stringify(value) === JSON.stringify(corrupt)), "broken save is preserved verbatim");
   await storagePage.close();
+  await page.getByText(/^Recovery copies \(/).click();
+  const recoveryList = page.locator(".atlas-storage details");
+  const recoveryDownload = page.waitForEvent("download"); await recoveryList.getByRole("button", { name: "Export", exact: true }).first().click();
+  assert.deepEqual(JSON.parse(await readFile(await (await recoveryDownload).path())), corrupt);
+  while (await recoveryList.getByRole("button", { name: "Discard", exact: true }).count()) { await recoveryList.getByRole("button", { name: "Discard", exact: true }).first().click(); await settle(); }
+  assert.equal(await recoveryList.count(), 0);
+
+  // C02/C03: layout-only history, version migration and transitive folding.
+  await settle();
+  const fixtureV1 = structuredClone(await storedSave()); fixtureV1.version = 1;
+  delete fixtureV1.sizes; delete fixtureV1.layoutHistory; delete fixtureV1.folds;
+  await upload(Buffer.from(JSON.stringify(fixtureV1)));
+  await button("Replace").click(); await button("Keep current atlas").click();
+  assert.equal(await button("Confirm Replace").count(), 0);
+  await button("Replace").click(); await button("Confirm Replace").click(); await settle();
+  const migrated = await storedSave(); assert.equal(migrated.version, 2);
+  assert.deepEqual(migrated.sizes, { Lineage: {}, Evolution: {}, Constellation: {} });
+  assert.deepEqual(migrated.folds, []); assert.equal(migrated.layoutHistory.Lineage.undo.length, 0);
+  await button("Reset to fixture").click(); await button("Keep current atlas").click();
+  assert.deepEqual((await storedSave()).thoughts, migrated.thoughts);
+  await inspectFromIndex("Repair, then stay for supper"); await button("Focus on atlas ↗").click(); await settle();
+  // Close connections so it cannot cover the resize handle.
+  await button("Close focused connections").click();
+  const repairNode = page.locator('.react-flow__node[data-id="repair"]');
+  const beforeResize = await storedSave();
+  const edgeBeforeResize = await page.locator('[data-id="food-repair"] path.react-flow__edge-path').getAttribute("d");
+  const handle = repairNode.locator(".react-flow__resize-control.bottom.right.handle");
+  const handleBounds = await handle.boundingBox(); assert.ok(handleBounds);
+  await page.mouse.move(handleBounds.x + handleBounds.width / 2, handleBounds.y + handleBounds.height / 2);
+  await page.mouse.down(); await page.mouse.move(handleBounds.x + 95, handleBounds.y + 75, { steps: 12 }); await page.mouse.up(); await settle();
+  const resized = await storedSave(); assert.ok(resized.sizes.Lineage.repair.width > 350);
+  assert.notEqual(await page.locator('[data-id="food-repair"] path.react-flow__edge-path').getAttribute("d"), edgeBeforeResize);
+  await assertAttached();
+  await page.locator(".layout-menu summary").click(); assert.equal(await button("Undo resize").isEnabled(), true);
+  await button("Undo resize").click(); await settle(); assert.deepEqual((await storedSave()).sizes, beforeResize.sizes);
+  assert.equal(await button("Redo resize").isEnabled(), true); await button("Redo resize").click(); await settle();
+  assert.deepEqual((await storedSave()).sizes, resized.sizes);
+  await page.reload(); await page.locator(".thought").first().waitFor(); await settle();
+  assert.deepEqual((await storedSave()).sizes, resized.sizes); await assertAttached();
+  await page.locator(".layout-menu summary").click(); assert.equal(await button("Undo resize").isEnabled(), true);
+  await page.screenshot({ path: `${artifacts}/resized-card.png` });
+  const lineageHistory = (await storedSave()).layoutHistory.Lineage;
+  await button("Evolution").click(); await settle();
+  assert.equal(await button("Undo layout").isDisabled(), true);
+  assert.equal(await repairNode.evaluate(n => n.offsetWidth), 290);
+  await button("Arrange grid").click(); await settle(); assert.equal(await button("Undo arrange").isEnabled(), true);
+  const arranged = (await storedSave()).positions.Evolution;
+  await button("Undo arrange").click(); await settle(); assert.notDeepEqual((await storedSave()).positions.Evolution, arranged);
+  assert.equal(await button("Redo arrange").isEnabled(), true); await button("Redo arrange").click(); await settle();
+  assert.deepEqual((await storedSave()).positions.Evolution, arranged);
+  await button("Lineage").click(); await settle();
+  assert.deepEqual((await storedSave()).layoutHistory.Lineage, lineageHistory);
+  assert.deepEqual((await storedSave()).sizes.Lineage, resized.sizes.Lineage);
+  const beforeMove = (await storedSave()).positions.Lineage.repair;
+  await repairNode.locator(".card-grip").focus(); await page.keyboard.press("ArrowRight"); await settle();
+  assert.deepEqual((await storedSave()).positions.Lineage.repair, { ...beforeMove, x: beforeMove.x + 25 });
+  assert.equal(await button("Undo move").isEnabled(), true);
+  await cameraKey("Control+z"); await settle(); assert.deepEqual((await storedSave()).positions.Lineage.repair, beforeMove);
+  assert.equal(await button("Redo move").isEnabled(), true);
+  await cameraKey("Control+Shift+z"); await settle(); assert.equal((await storedSave()).positions.Lineage.repair.x, beforeMove.x + 25);
+  await repairNode.locator(".card-grip").focus();
+  for (let i = 0; i < 55; i++) await page.keyboard.press("ArrowRight");
+  await settle(); assert.equal((await storedSave()).layoutHistory.Lineage.undo.length, 50);
+  await page.reload(); await page.locator(".thought").first().waitFor(); await settle();
+  assert.equal((await storedSave()).layoutHistory.Lineage.undo.length, 50);
+  await inspectFromIndex("Repair, then stay for supper"); await page.getByText("Edit prepared text", { exact: true }).click();
+  await page.getByRole("dialog").locator("details input").fill("Edited layout card"); await settle();
+  assert.ok(Object.values((await storedSave()).layoutHistory).every(h => !h.undo.length && !h.redo.length));
+  await close();
+
+  // A three-descendant chain plus context and association distractions.
+  const foldedFixture = structuredClone(migrated);
+  foldedFixture.relationships = [
+    { ...foldedFixture.relationships.find(e => e.id === "food-repair") },
+    { ...foldedFixture.relationships.find(e => e.id === "tools-repair") },
+    { ...foldedFixture.relationships[0], id: "repair-rotation", from: "repair", to: "rotation", kind: "derivation" },
+    { ...foldedFixture.relationships[0], id: "rotation-retail", from: "rotation", to: "retail", kind: "derivation" },
+    { ...foldedFixture.relationships[0], id: "food-brief-context", from: "food", to: "brief", kind: "context" },
+    { ...foldedFixture.relationships[0], id: "food-tools-association", from: "food", to: "tools", kind: "association" },
+  ];
+  // Precomputed themes keep this navigation-only case entirely offline.
+  foldedFixture.themeCache = { groups: [{ name: "Prepared", reason: "Navigation fixture", memberIds: foldedFixture.thoughts.map(c => c.id) }], hashes: Object.fromEntries(foldedFixture.thoughts.map(c => [c.id, createHash("sha256").update(JSON.stringify([c.title, c.body])).digest("hex")])), time: "9/9/2026, 12:00:00 PM" };
+  await upload(Buffer.from(JSON.stringify(foldedFixture))); await button("Replace").click(); await button("Confirm Replace").click(); await settle();
+  let navigationCalls = 0;
+  await page.route("**/api/**", route => { navigationCalls++; return route.abort(); });
+  await inspectFromIndex("A food hall");
+  await page.getByRole("dialog").getByRole("button", { name: "Show descendants", exact: true }).click();
+  assert.deepEqual((await page.locator(".react-flow__node.chain-highlighted").evaluateAll(nodes => nodes.map(n => n.dataset.id))).sort(), ["food", "repair", "rotation", "retail"].sort());
+  assert.deepEqual(await page.getByRole("list", { name: "descendants chain" }).getByRole("button").allTextContents(), ["A food hall", "Repair, then stay for supper", "A shopfront for six weeks", "Independent retail shops"]);
+  await page.getByRole("dialog").getByRole("button", { name: "Show descendants", exact: true }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Fold descendants", exact: true }).click(); await close(); await settle();
+  const foldedPositions = (await storedSave()).positions;
+  const assertFolded = async () => {
+    assert.equal(await page.locator('.react-flow__node[data-id="food"] .fold-marker').textContent(), "+3 folded");
+    for (const id of ["repair", "rotation", "retail"]) assert.equal(await page.locator(`.react-flow__node[data-id="${id}"]`).count(), 0);
+    for (const id of ["food-repair", "tools-repair", "repair-rotation", "rotation-retail"]) assert.equal(await page.locator(`.react-flow__edge[data-id="${id}"]`).count(), 0);
+  };
+  await assertFolded();
+  await page.screenshot({ path: `${artifacts}/folded-chain.png` });
+  await page.reload(); await page.locator(".thought").first().waitFor(); await settle(); await assertFolded();
+  const foldDownload = page.waitForEvent("download"); await button("Export atlas").click();
+  const foldBytes = await readFile(await (await foldDownload).path()); assert.deepEqual(JSON.parse(foldBytes).folds, ["food"]);
+  await resetFixture(); await upload(foldBytes); await button("Replace").click(); await button("Confirm Replace").click(); await settle(); await assertFolded();
+  for (const perspective of ["Evolution", "Constellation", "Lineage"]) { await button(perspective).click(); await settle(); await assertFolded(); }
+  await page.getByRole("button", { name: /^Thoughts / }).click();
+  await page.getByLabel("Find a thought").fill("Repair, then stay for supper");
+  const foldedRow = page.locator(".reference-list section"); assert.match(await foldedRow.innerText(), /folded under A food hall/);
+  await foldedRow.getByRole("button", { name: "Select", exact: true }).click();
+  assert.equal(await foldedRow.getByRole("button", { name: "Selected ✓", exact: true }).count(), 1);
+  await foldedRow.getByRole("button", { name: "Unfold", exact: true }).click(); await close(); await settle();
+  assert.equal(await page.locator(".thought").count(), 6); assert.deepEqual((await storedSave()).positions, foldedPositions);
+  assert.equal(navigationCalls, 0, "focus, fold, unfold and navigation make no model calls");
+  await page.unroute("**/api/**");
+
   await page.unroute("**/api/wander"); await page.unroute("**/api/expedition"); await page.unroute("**/api/reading"); await page.unroute("**/api/talk");
   await resetFixture(); await fit();
 
@@ -1549,7 +1673,7 @@ try {
         browser: browser.version(),
         result:
           process.env.MINERVA_VOICE_ONLY === "1" ? "Focused voice replay passed" :
-          "C01/C14 browser persistence and backup, tall-group fit, cancelled step, IB01–IB06, Markdown outputs and voice passed with mouse/keyboard and simulated CDP touch; not a screen-reader or physical microphone review",
+          "C02/C03 resize, layout history, transitive focus/folds and v1 migration; recovery, merge counts and in-page confirmations; C01/C14 persistence/backup, tall-group fit, cancelled step, IB01–IB06, Markdown and voice passed with mouse/keyboard and simulated CDP touch; not a screen-reader or physical microphone review",
         demo: "6 cards / 7 edges",
         viewports: ["1440x900", "1280x600", "390x844"],
         artifacts,
