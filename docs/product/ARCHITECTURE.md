@@ -106,11 +106,11 @@ Caching must not create a second authority. Restore/revisit creates a new
 revision referring to the source; it does not erase intervening history.
 
 Three framework defaults decide whether that holds, and the current
-configuration satisfies all three by accident rather than by decision. Record
-them so a later change is deliberate. Cache Components is off while the project
-declares no Next configuration, which leaves route handlers dynamic; enabling it
-makes a handler prerender unless it reads runtime data, so canonical reads would
-need explicit request-time access or they are built once and served stale.
+configuration satisfies all three by default rather than by decision. Record
+them so a later change is deliberate. Cache Components is off because the Next
+configuration does not enable it, which leaves route handlers dynamic; enabling
+it makes a handler prerender unless it reads runtime data, so canonical reads
+would need explicit request-time access or they are built once and served stale.
 Framework-level fetch caching defaults to fetching once during the build for a
 route that can be statically prerendered, so a canonical read reached that way
 is baked at build time rather than read per request. The platform's remote cache
