@@ -1,27 +1,24 @@
-# Embedded reader guide
+# Wander exploration-first pane
 
-Branch: `feat/embedded-guide`.
-Worktree: `/Users/brandyn.schult/code/minerva-embedded-guide`.
-Base: `7d5c699` (`origin/main` at task start).
+Worktree: /Users/brandyn.schult/code/minerva-regroup-selection
+Branch: feat/wander-exploration-first
+State: uncommitted implementation for owner review.
 
 ## Outcome
-Guide sits immediately before Menu at the top right of the root atlas.
-It opens a nonmodal panel with a worked mall example and seven expandable chapters.
-Content explains connections, navigation, views, tools, Talk scope, judgment and saving.
-Opening preserves selection and camera; Escape/Close returns focus to Guide.
-Header controls wrap at intermediate widths to remain visible.
-No backend changes or provider requests. Owner authorized commit, merge and deployment.
+Wander separates source context from a concise exploration heading and makes
+Explore freely the primary action. Suggestions remain secondary, with a spinner,
+skeleton placeholders and an explanatory loading message. Hide/show preserves
+suggestions. Loaded moves, prepared fallback, retry and generation callbacks remain.
+The pane scrolls on short windows and supports reduced-motion preferences.
 
 ## Evidence
-`npm run check` passed lint, typecheck, repository tests and production build.
-In-app checks covered selection/camera preservation, chapter expansion,
-Escape, close-button focus return, Menu access and Guide/Menu switching.
-Desktop and 390px mobile layouts were inspected; intermediate wrapping corrected.
-Full generation replay, physical touch and screen-reader testing were not run.
+npm run check passed: lint, types, unit tests, production build.
+In-app browser: loading, hide/show, failure fallback, retry, loaded moves and free
+exploration error handling. Fixture responses only; no paid provider calls.
+Visual comparison: design-qa.md. Successful live generation was not retested.
 
-## Startup and next role
-Production preview: http://127.0.0.1:3072/.
-From this worktree, use the Node/npm launcher in AGENTS.md:
-`npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run start -- --port 3072`
-Release target: https://minerva-eight.vercel.app/.
-Next role: owner reviews the deployed guide after release verification.
+## Startup / next role
+npm run dev -- --port 4320
+Built app: http://127.0.0.1:4340/
+Temporary fixture-response preview: http://127.0.0.1:4341/
+Next role: owner review. No commit, push, merge or deployment in this change.
