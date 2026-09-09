@@ -1135,3 +1135,6 @@ summary {
 @media(max-width:650px) { .text-reader .reader-layout { grid-template-rows: auto minmax(0, 1fr); } }
 .reader-layout, .reader-contents { min-width: 0; }
 @media(max-width:650px) { .text-reader .reader-layout { grid-template-columns: minmax(0, 1fr); } .reader-contents button { flex: 0 0 160px; } }
+
+.relationship-label-toggle { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 8px 12px; font: 13px/1.5 ui-monospace, monospace; cursor: pointer; }
+.relationship-label-toggle input { width: 18px; height: 18px; margin: 0; accent-color: var(--teal); }
