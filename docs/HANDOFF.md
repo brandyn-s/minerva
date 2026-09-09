@@ -5,17 +5,17 @@ This owner-directed demo supersedes the M2 packages and all earlier handoff plan
 No workspace, database, Workflow, request-policy or migration code was changed.
 No new voice, drive, perspectives, outputs, assessments, decisions, ledgers, export, duplication, history or quality controls.
 
-- Checkout: `/Users/brandyn.schult/code/minerva`; branch: `demo/weave-many`.
-- Base: `origin/main` at `4f6ec769aca61645f5a028bb070c532683bc5f34`.
+- Checkout: `/Users/brandyn.schult/code/minerva`; branch: `fix/wander-progress`.
+- Base: `origin/main` at `30467c1c5c87d1cd2f3d79ff085326f772816e14`.
 - Release target: https://minerva-eight.vercel.app/; exact released SHA and hosted evidence go in the operator response.
-- The original post-deployment Fable review is complete; this follow-up expands Weave selection.
+- The original post-deployment Fable review is complete; this follow-up makes generation progress visible across zoom and selection changes.
 
 ## Behavior and authentication
 
 Select one card → Wander → two or three adjacent cards with derivation edges.
 Select two or more cards → Weave → one recombination draft with an edge for every parent.
 Inspect the draft to read its full body and one-line contribution from each parent.
-Errors appear on source cards; Retry repeats that feature with the same source snapshot.
+An atlas-level spinner and status stay visible during generation, including overview and cleared selection. Errors appear on source cards; Retry repeats that feature with the same source snapshot.
 `POST /api/wander` and `POST /api/weave` each call AI SDK `generateObject` once.
 Both use plain `anthropic/claude-sonnet-5`, confirmed once with `gateway.getAvailableModels()` on 2026-09-09.
 Tags: `feature:wander`, `feature:weave`. SDK automatic retries are disabled.
@@ -26,7 +26,7 @@ The existing Gateway project budget is the only spend control for these features
 ## Verification and actual returned cards
 
 Local `npm run check` passes: lint, TypeScript, inherited tests and production build.
-Extended only `scripts/verify-atlas.mjs`: selection, card error/retry, counts, lineage, contributions and reload reset.
+Browser checks include delayed generation: status survives zoom, pan, cleared selection and narrow screens; clears on error/success and returns on retry.
 Three-parent browser error/retry, edges, contributions and reload checks passed; one real three-parent Weave call returned HTTP 200.
 Live evidence: `/tmp/minerva-weave-three-live.json`; original Wander: `/tmp/minerva-live-wander-weave/wander-weave.json`.
 Wander input: A shared tool library. HTTP 200 returned these three cards:
@@ -52,4 +52,4 @@ Parent 3: Independent retail supplies the small, distinct shops that sell the go
 `cd /Users/brandyn.schult/code/minerva` then `npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run dev`; open `/`.
 Browser check: `npm run test:browser`; `MINERVA_LIVE=1` opts into one paid call per feature.
 Generated content is speculative. Local mocked checks cover failures; they do not prove hosted fault recovery.
-No persistence or owner acceptance is claimed. The original Fable review is complete; stop after deploying this selection update.
+No persistence or owner acceptance is claimed. The original Fable review is complete; stop after deploying this progress indicator.

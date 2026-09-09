@@ -723,3 +723,32 @@ summary {
 .generation-status [role="alert"] { color: #923d29; }
 .demo-note { align-self: center; padding: 6px; font-size: 11px; }
 .selection-bar button:disabled { opacity: 0.45; cursor: default; }
+
+.generation-progress {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  z-index: 6;
+  max-width: calc(100% - 32px);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 5px;
+  background: var(--ink);
+  color: var(--card);
+  box-shadow: 0 4px 20px #273a3525;
+  pointer-events: none;
+}
+.generation-progress strong { display: block; font-size: 14px; }
+.generation-progress div > span { display: block; margin-top: 3px; font-size: 12px; }
+.generation-spinner {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border: 2px solid #ffffff55;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: generation-spin 1s linear infinite;
+}
+@keyframes generation-spin { to { transform: rotate(360deg); } }
