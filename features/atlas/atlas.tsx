@@ -1023,13 +1023,22 @@ function Studio({ session }: { session?: AtlasSession }) {
             Association
           </span>
         </div>
+        <div role="status" aria-live="polite" aria-atomic="true">
+          {busy && live && <div className="generation-progress">
+            <span className="generation-spinner" aria-hidden="true" />
+            <div>
+              <strong>{live.feature === "wander" ? "Wander is generating new cards…" : "Weave is combining your cards…"}</strong>
+              <span>You can keep exploring the atlas.</span>
+            </div>
+          </div>}
+        </div>
         {selected.length > 0 && (
           <div className="selection-bar">
             <span>{selected.length} selected</span>
             <button onClick={() => open("compare")}>Compare</button>
             {session ? <button onClick={() => move(selected)}>Weave · preview</button> : <>
-              <button disabled={busy || selected.length !== 1} onClick={() => void generate("wander", selected.map((id) => byId.get(id)!))}>Wander</button>
-              <button disabled={busy || selected.length < 2} onClick={() => void generate("weave", selected.map((id) => byId.get(id)!))}>Weave</button>
+              <button disabled={busy || selected.length !== 1} onClick={() => void generate("wander", selected.map((id) => byId.get(id)!))}>{busy && live?.feature === "wander" ? "Wandering…" : "Wander"}</button>
+              <button disabled={busy || selected.length < 2} onClick={() => void generate("weave", selected.map((id) => byId.get(id)!))}>{busy && live?.feature === "weave" ? "Weaving…" : "Weave"}</button>
             </>}
             {session && selected.length === 2 && <details className="layout-menu"><summary>Connect selected</summary>
               <p>From {byId.get(selected[0])?.title} to {byId.get(selected[1])?.title}</p>

@@ -18,6 +18,7 @@ Consider a move selects its source; exactly one selection requests three title/q
 `POST /api/moves` uses one `generateObject` call, the same model and tag `feature:moves`.
 A failed planner keeps the prepared move available and offers Retry. Choosing a move creates one card via `/api/wander` and the shared placement path.
 The derivation edge carries the move title; card-generation failures offer Retry in the panel.
+The atlas-level generation spinner from `90ce710` remains visible through overview, pan and cleared selection.
 Wander, Weave and contextual generation fit with `minZoom: 0.73`; overview thresholds are unchanged.
 Vercel OIDC authenticates Gateway calls; SDK automatic retries are disabled. No new dependencies.
 No voice, chat tools, chat-created cards, persistence, admission, budgets or workspace changes.
