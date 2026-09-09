@@ -178,7 +178,6 @@ export default function VoiceButton({ cards, selectedIds, messages, onMessages, 
       <AudioLines className={`voice-wave${muted ? " muted" : ""}`} aria-hidden="true" size={28} />
       <TooltipButton type="button" className="composer-icon" aria-label={muted ? "Unmute microphone" : "Mute microphone"} title={muted ? "Unmute microphone" : "Mute microphone"} aria-pressed={muted} onClick={toggleMute}>{muted ? <MicOff size={20} aria-hidden="true" /> : <Mic size={20} aria-hidden="true" />}</TooltipButton>
       <TooltipButton type="button" className="composer-icon voice-end" aria-label="End voice mode" title="End voice mode" onClick={end}><PhoneOff size={20} aria-hidden="true" /></TooltipButton>
-      <button className="back-to-typing" type="button" onClick={end}>Back to typing</button>
     </>}
     </div>
     <p id="voice-status" className="small-note" role="status">{status}</p>
