@@ -139,6 +139,9 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
     ui.select(thought.id);
   }
   const updateNodeInternals = useUpdateNodeInternals();
+  useEffect(() => {
+    if (data.geometry) updateNodeInternals(id);
+  }, [id, data.geometry, updateNodeInternals]);
   const lastGeometry = useRef({
     zoom: ui.zoom,
     overview: ui.overview,
