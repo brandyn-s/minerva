@@ -236,8 +236,11 @@ Record the window's dates, audience, budget and teardown owner in `docs/HANDOFF.
   separately. A preview build is evidence, not the release or a hosted journey.
 - **Models.** Text and realtime voice use Vercel AI Gateway. Authenticate the
   deployment with its Vercel OIDC token only; do not add a Gateway API key or a
-  bring-your-own provider key. Set the Gateway budget at project scope, the one
-  scope that meters OIDC requests and rejects with HTTP 402 when exceeded.
+  bring-your-own provider key. Set the Gateway budget at project scope; OIDC
+  requests are rejected with HTTP 402 once it is exceeded. Budgets stack, so
+  those requests also count against the team budget and a team budget exhausted
+  by other work rejects this project as well. Check the team budget's headroom
+  before the window opens, not only the project's.
   Realtime voice is a beta Gateway capability: the token route mints single-use
   short-lived client tokens after microphone permission is granted, and sessions
   are capped at 25 minutes. Voice models bill by connected session time rather
