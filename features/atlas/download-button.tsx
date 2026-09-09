@@ -1,5 +1,6 @@
 "use client";
 
+import { DownloadSimple } from "@phosphor-icons/react";
 import { useState } from "react";
 import { relationshipsFor, type Thought, type Relationship } from "./domain";
 
@@ -37,8 +38,8 @@ export default function DownloadButton({ cards, relationships, card }: {
       if (url) setTimeout(() => URL.revokeObjectURL(url!), 1000);
     }
   }
-  return <div>
+  return <div className="card-download">
     {error && <p role="alert">The download could not start. Please retry.</p>}
-    <button onClick={download}>{error ? "Retry" : card ? "Download" : "Download all cards"}</button>
+    <button onClick={download} title={card ? "Download this card as Markdown" : "Download all cards as Markdown"}><DownloadSimple size={18} aria-hidden="true" /><span>{error ? "Retry download" : card ? "Download" : "Download all cards"}</span><span className="download-format" aria-hidden="true">.md</span></button>
   </div>;
 }

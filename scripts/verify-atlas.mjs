@@ -669,7 +669,7 @@ try {
   await button("Download").click();
   await page.getByRole("dialog").getByRole("alert").waitFor();
   const downloadedCard = page.waitForEvent("download");
-  await button("Retry").click();
+  await button("Retry download").click();
   assert.equal((await downloadedCard).suggestedFilename(), "morning-repair-table.md");
   const cardMarkdown = await page.evaluate(() => window.downloads[0]);
   for (const value of ["# Morning repair table", "## Summary", "Morning repair table summary", "## Body",
