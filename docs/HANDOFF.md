@@ -1,34 +1,33 @@
-# Integrated composer
+# Root atlas: browser state and JSON backups
+Branch: `demo-browser-state-release`, started from `origin/main` at `09d0396`, integrated with main through `f251ee0`.
+Worktree: `/Users/brandyn.schult/code/minerva-browser-state`.
+Release SHA and stable deployment evidence are in the operator handoff.
+Scope ends after merge and deployment to https://minerva-eight.vercel.app/; one operator-started Fable review follows.
 
-Branch: `feat/integrated-composer`.
-Worktree: `/Users/brandyn.schult/code/minerva-integrated-composer`.
-Integrated with origin/main `2314038`; owl, toolbar medallions and header cleanup preserved.
+## Behavior
+Root atlas state is saved per browser in IndexedDB, with a 200 ms debounce and a page-hide flush.
+Version 1 includes cards/provenance/text, every edge, perspective positions/cameras, selection, grouping cache, Talk and expedition histories/readings/notes.
+Reload restores a valid save; a missing save starts the six-card fixture. Interrupted expeditions retain completed work without resuming model calls.
+Reset to fixture confirms before discarding current state. Invalid saves are preserved under `root-atlas-recovery-*` before the fixture loads with a notice.
+IndexedDB database: `minerva-atlas`; object store: `saves`; active key: `root-atlas`.
+Export atlas downloads `minerva-atlas.json` in the same integer-versioned shape.
+Import validates the complete shape and references with zod before offering Replace or Merge.
+Replace restores the backup. Merge hashes title/summary/body, gives distinct cards and edges new IDs, remaps references and skips duplicates.
+Merge keeps local cameras, grouping and Talk, and retains imported expedition history. Markdown downloads are unchanged.
+Constellation fits after measured nodes commit, including the whole tall column. Group timestamps include the date. Toolbar tooltips open below controls so they cannot cover Export.
+Stop says which in-flight step was cancelled. New expedition keeps prior runs available in Expedition history.
+No new dependencies, server persistence, identity, admission or budget logic. No database, /workspaces or Workflow changes.
 
-## Outcome
-Talk uses one integrated writing surface: hold-to-talk microphone and hands-free
-Voice mode on the left, Send arrow on the right. Icons have accessible names,
-shared hover/focus tooltips and 44px targets. Enter sends; Shift+Enter adds a line.
-Voice mode uses the existing Gateway realtime route and `openai/gpt-realtime-2`.
-Automatic speech detection continues across turns, with spoken interruption,
-shared transcripts, mute/unmute, End and Back to typing. Closing releases audio.
-The active composer shows Minerva, animated waveform and listening/speaking status.
-Typed Markdown, smooth streaming and canvas context remain. State resets on reload.
-No database, workspace, model credentials or server route changes.
-
-## Evidence
-`npm run check`: lint, TypeScript, 12 tests and production build passed.
-Browser fixture replay covers microphone denial, token failure, hold/release,
-late connection, queued-audio cancellation, transcript sharing and close cleanup.
-New fixture coverage exercises two automatic voice turns, interruption, microphone
-track mute/unmute, ending, return to typing and narrow layout. Full atlas replay passed.
-Real Gateway hold-to-talk and automatic Voice mode replies were received using
-synthetic spoken input and the existing production token endpoint. The automatic
-reply began “Use a section as a rotating six-” before the test ended the session.
-This verifies live connectivity/turn detection, not physical microphone quality.
-Desktop integrated composer was visually inspected in the in-app browser.
+## Verification
+Full mocked dev replay passed: persistence, export/Replace/Merge, invalid files, recovery, tall-column fit and cancelled-step text.
+The existing replay also covers Markdown, desktop/mobile interaction and simulated voice; no live model calls were made for this batch.
+Artifacts: `/tmp/minerva-browser-state-dev` and `/tmp/minerva-browser-state-start`.
+`npm run check` and the complete mocked replay passed through both `npm run dev` and `next start`.
 
 ## Startup and next role
-`npm run dev -- --port 3051` (Node/npm launcher in AGENTS.md).
-Local preview: http://127.0.0.1:3051/.
-Stable target: https://minerva-eight.vercel.app/.
-Next role: owner acceptance; no further feature work or critic review is queued.
+Use `npx --yes --package=node@24.20.0 --package=npm@12.0.2` before npm commands.
+Dev: `npm run dev -- --port 3048`; production: `npm run build`, then `npm run start -- --port 3049`.
+Replay: `MINERVA_URL=http://127.0.0.1:3049 npm run test:browser` (3048 for dev).
+Next: operator-started Fable 5.1 at low effort, exact released candidate, read-only, C01/C14 plus named carry-overs.
+Use the bounded launch prompt in docs/setup.md; fresh browser data and a separate port. No paid calls are authorized for this review.
+Stop after this release; no further batch is authorized.

@@ -20,7 +20,8 @@ export default function TooltipButton({ title, children, ...props }: ButtonHTMLA
     if (!open || !tip.current || !button.current) return;
     const anchor = button.current.getBoundingClientRect();
     const bubble = tip.current;
-    const above = anchor.top >= bubble.offsetHeight + 16;
+    // Toolbar hints open into the canvas, leaving the storage controls above reachable.
+    const above = !button.current.closest(".field-tools") && anchor.top >= bubble.offsetHeight + 16;
     const left = Math.max(8, Math.min(anchor.left + anchor.width / 2 - bubble.offsetWidth / 2, window.innerWidth - bubble.offsetWidth - 8));
     bubble.style.left = `${left}px`;
     bubble.style.top = `${above ? anchor.top - bubble.offsetHeight - 10 : anchor.bottom + 10}px`;

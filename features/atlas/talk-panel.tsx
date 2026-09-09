@@ -3,7 +3,7 @@
 import { ArrowUp, LoaderCircle } from "lucide-react";
 import TooltipButton from "./tooltip-button";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import type { TalkRequest } from "./generation";
 import VoiceButton from "./voice-button";
 import Markdown from "react-markdown";
@@ -13,10 +13,10 @@ function MessageContent({ text }: { text: string }) {
   return <div className="body-copy talk-markdown"><Markdown remarkPlugins={[remarkGfm]} skipHtml components={{ table: ({ children }) => <div className="talk-table" tabIndex={0} role="region" aria-label="Table"><table>{children}</table></div> }}>{text}</Markdown></div>;
 }
 
-export default function TalkPanel({ open, close, cards, selectedIds }: {
+export default function TalkPanel({ open, close, cards, selectedIds, messages, setMessages }: {
+  messages: TalkRequest["messages"]; setMessages: Dispatch<SetStateAction<TalkRequest["messages"]>>;
   open: boolean; close: () => void; cards: TalkRequest["cards"]; selectedIds: string[];
 }) {
-  const [messages, setMessages] = useState<TalkRequest["messages"]>([]);
   const [draft, setDraft] = useState("");
   const [reply, setReply] = useState("");
   const [error, setError] = useState("");

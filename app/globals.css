@@ -959,3 +959,15 @@ summary {
 @keyframes voice-breathe { 50% { opacity: .4; transform: scaleY(.65); } }
 @media (prefers-reduced-motion: reduce) { .voice-wave, .composer-spinner { animation: none; } }
 .brand-owl { mix-blend-mode: multiply; object-fit: contain; }
+/* Browser storage controls share the available height with the atlas. */
+.scalable-atlas.studio { display: flex; flex-direction: column; }
+.scalable-atlas .masthead { flex-shrink: 0; }
+.scalable-atlas .field { flex: 1; min-height: 0; height: auto; }
+.atlas-storage { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 6px 26px; background: var(--card); border-bottom: 1px solid var(--line); font-size: 12px; }
+.atlas-storage label { margin: 0; display: inline-flex; align-items: center; gap: 6px; }
+.atlas-storage input { max-width: 190px; width: auto; margin: 0; padding: 4px; font-size: 11px; }
+.atlas-storage p { margin: 0; flex-basis: 100%; overflow-wrap: anywhere; max-height: 70px; overflow: auto; }
+@media (max-width: 600px) {
+  .atlas-storage { padding: 4px 10px; gap: 4px 10px; }
+  .atlas-storage input { max-width: 145px; }
+}
