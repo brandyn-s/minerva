@@ -714,6 +714,7 @@ try {
       await button("Stop").click(); releaseStop(); await settle();
     }
     await page.locator(".expedition-stop").waitFor({ timeout: 180000 });
+    await settle(); // React Flow measures new cards before rendering their edges.
     const count = condition === "claim" || condition === "stop" ? 1 : condition === "stagnation" ? 3 : 2;
     assert.equal(calls.length, condition === "stop" ? 2 : count, "one request per step, no retries or extra steps");
     assert.equal(await page.locator(".expedition-steps > li").count(), count);

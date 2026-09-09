@@ -17,7 +17,7 @@ Full dev replay passed with MINERVA_LIVE=1: exactly two real expedition calls an
 Routes: `/api/expedition` and `/api/reading`; `generateObject`, `anthropic/claude-sonnet-5`, `feature:expedition` / `feature:reading`.
 Replay covers all four stops, frozen request/UI goal, frontier/previous cards, retained partial work, reading links, Challenge and stale/Re-read.
 It also asserts every theme heading is in the viewport on first Constellation entry, without Fit; existing desktop/mobile/voice replay passed.
-`npm run check`, next-start replay and stable-URL results are reported in the operator handoff.
+`npm run check` and the full mocked next-start replay passed; stable-URL verification is in the operator handoff.
 Full live requests/responses: `/tmp/minerva-expedition-live/expedition-live.json` and `reading-live.json`.
 
 ## Actual two-step expedition
