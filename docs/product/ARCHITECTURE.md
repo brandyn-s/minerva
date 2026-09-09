@@ -73,6 +73,16 @@ must be disabled against those endpoints; the failure is intermittent and
 silently drops work rather than failing the request, so assert the pairing at
 startup instead of relying on the connection string being right.
 
+The platform provides no migration step, so "an explicit command" means a
+deliberate operator action against a named database, not a build hook. Applying
+migrations from the build command couples schema change to deployment and makes
+a transient database connection fail the whole deploy, and it also runs on every
+preview build against whatever database that environment resolves to. Run
+migrations as their own command, confirm the target database first, and treat a
+deployment expecting new schema as ordered after that command rather than
+carrying it. Record with M2 / 4 which command applies migrations, who runs it,
+and how a failed partial migration is recovered.
+
 Postgres owns workspaces, brief/constraint revisions, ideas and immutable
 revisions, derivation edges, semantic links, proposals, reviews, decisions,
 command receipts, operation manifests, runs/steps and exploration observations.
