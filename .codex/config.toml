@@ -1,5 +1,5 @@
 model = "gpt-6-astra"
-model_reasoning_effort = "medium"
+model_reasoning_effort = "low"
 
 # Keep notes and searchable history across context windows instead of repeated
 # compaction summaries; long M2 and M6 sessions lose "why a fix failed" details
