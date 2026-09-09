@@ -63,7 +63,6 @@ const Interaction = createContext<{
   selected: string[];
   inspect: (id: string) => void;
   select: (id: string) => void;
-  move: (id: string) => void;
   focus: (id: string) => void;
   resize?: (id: string, size: { x: number; y: number; width: number; height: number }) => void;
 }>({
@@ -73,7 +72,6 @@ const Interaction = createContext<{
   selected: [],
   inspect: () => {},
   select: () => {},
-  move: () => {},
   focus: () => {},
 });
 function ThoughtCard({ id, data }: NodeProps<CardNode>) {
@@ -208,6 +206,14 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
             >
               ⠿
             </TooltipButton>
+            <button
+              className="nodrag nopan select-card"
+              aria-pressed={ui.selected.includes(thought.id)}
+              aria-label={`Select ${thought.title}`}
+              onClick={() => ui.select(thought.id)}
+            >
+              {ui.selected.includes(thought.id) ? "✓" : "+"}
+            </button>
           </div>
           <button className="card-title nodrag">{thought.title}</button>
           <p className="card-summary">{thought.summary}</p>
@@ -226,22 +232,6 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
                   ? "Shared context"
                   : "Independent starting idea"}
           </div>}
-          <div className="card-actions">
-            <button
-              className="nodrag nopan"
-              onClick={() => ui.move(thought.id)}
-            >
-              Consider a move ↗
-            </button>
-            <button
-              className="nodrag nopan select-card"
-              aria-pressed={ui.selected.includes(thought.id)}
-              aria-label={`Select ${thought.title}`}
-              onClick={() => ui.select(thought.id)}
-            >
-              {ui.selected.includes(thought.id) ? "✓" : "+"}
-            </button>
-          </div>
         </>
       )}
     </article>
@@ -982,7 +972,6 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
             selected,
             inspect,
             select,
-            move: (id) => move([id]),
             focus,
             resize: session ? (id, size) => { void saveLayout(id, size, size).catch(() => {}); } : undefined,
           }}
@@ -1171,9 +1160,9 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
         {selected.length > 0 && (
           <div className="selection-bar">
             <span>{selected.length} selected</span>
-            <button onClick={() => open("compare")}>Compare</button>
-            {session ? <button onClick={() => move(selected)}>Weave · preview</button> : <>
-              <button disabled={busy || selected.length !== 1} onClick={() => void generate("wander", selected.map((id) => byId.get(id)!))} aria-busy={busy && live?.feature === "wander"}>{busy && live?.feature === "wander" && <span className="generation-spinner" aria-hidden="true" />}{busy && live?.feature === "wander" ? "Wandering…" : "Wander"}</button>
+            {session ? <><button onClick={() => open("compare")}>Compare</button><button onClick={() => move(selected)}>Weave · preview</button></> : <>
+              <button className="wander-action" disabled={busy || selected.length !== 1} onClick={() => move(selected)} aria-busy={busy && live?.feature === "wander"}>{busy && live?.feature === "wander" && <span className="generation-spinner" aria-hidden="true" />}{busy && live?.feature === "wander" ? "Wandering…" : "Wander"}</button>
+              <button onClick={() => open("compare")}>Compare</button>
               <button disabled={selected.length !== 1} onClick={() => open("expedition")}>Expedition</button>
               <button disabled={busy || selected.length < 2} onClick={() => void generate("weave", selected.map((id) => byId.get(id)!))} aria-busy={busy && live?.feature === "weave"}>{busy && live?.feature === "weave" && <span className="generation-spinner" aria-hidden="true" />}{busy && live?.feature === "weave" ? "Weaving…" : "Weave"}</button>
             </>}
@@ -1188,8 +1177,10 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
                 kind: relationshipKind, label: relationshipLabel, contribution: relationshipLabel }).catch(() => {}); }}>Save relationship</button>
             </details>}
             <button
+              className="selection-close"
               aria-label="Clear selection"
-              onClick={() => { setSelected([]); setFocusedId(null); }}
+              title="Clear selection"
+              onClick={() => { setSelected([]); setFocusedId(null); if (panel === "moves") setPanel(null); }}
             >
               ×
             </button>
@@ -1228,7 +1219,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
             panel === "inspect"
               ? thought.title
               : panel === "moves"
-                ? "Contextual moves"
+                ? (session ? "Contextual moves" : "Wander")
                 : panel === "index"
                   ? "Thought index"
                   : panel === "compare"
@@ -1247,7 +1238,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
               {panel === "inspect"
                 ? "Thought / source material"
                 : panel === "moves"
-                  ? (session ? "Prepared move / no model call" : "Consider a move")
+                  ? (session ? "Prepared move / no model call" : "Wander")
                   : panel === "text"
                     ? "Same material / text reference"
                     : panel === "index"
@@ -1296,7 +1287,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
                     ? "Remove from selection"
                     : "Select for comparison"}
                 </button>
-                <button onClick={() => move([active])}>Consider a move</button>
+                <button disabled={!session && busy} onClick={() => move([active])}>{session ? "Consider a move" : "Wander"}</button>
                 <button onClick={() => focus(active)}>Focus on atlas ↗</button>
               </div>
               <h3>Relationships</h3>
@@ -1489,6 +1480,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           {panel === "moves" && !session && selected.length === 1 && <MovesPanel
             key={selected[0]} source={{ ...byId.get(selected[0])!, relationships: relationshipsFor(selected[0], relationships) }}
             prepared={byId.get(selected[0])!.move} busy={busy} error={live?.move ? live.error : undefined}
+            explore={() => void generate("wander", [byId.get(selected[0])!])}
             choose={(move) => void generate("wander", [byId.get(selected[0])!], move)}
             retryGeneration={() => { if (live) void generate(live.feature, live.sources, live.move); }} />}
           {panel === "moves" && (session || selected.length !== 1) && (

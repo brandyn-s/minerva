@@ -1,25 +1,32 @@
-# Expedition field guide
+# Wander toolbar consolidation
 
-Branch: `feat/expedition-field-guide`.
-Worktree: `/Users/brandyn.schult/code/minerva-expedition-field-guide`.
-Base: origin/main `7c80f0d`.
+Release branch: `feat/wander-toolbar`, based on main `7002d7a`.
+Worktree: `/Users/brandyn.schult/code/minerva-wander-toolbar`.
+Scope: requested Wander consolidation and compact selection-toolbar dismissal.
+Existing main features are preserved; unrelated edits in the original checkout are excluded.
 
-## Outcome
-Expedition setup matches the selected field-guide mockup: compass header,
-starting-card preview, multiline goal, 2–5 segmented steps and full-width Start.
-No-selection state explains what is required. Native radios support keyboard use.
-Existing generation, completion, stop, reading and stored history remain.
-No backend or model changes. Existing compass asset reused.
+## Behavior
+Wander opens suggested next steps for one selected card.
+Choosing a suggestion develops one card; Explore freely generates two or three directions.
+Wander is highlighted before Compare, Expedition, and Weave.
+Card footers are removed; selection is beside the drag handle.
+The top-right X keeps a 44px hit area and Clear selection label/tooltip.
+No backend, persistence, or model changes.
 
-## Evidence
-`npm run check` passed lint, TypeScript, repository tests and production build.
-Focused browser replay passed empty state, selected source, three generated steps,
-completion, New expedition and desktop/mobile layout with mocked provider responses.
-No browser page errors. In-app visual inspection passed; see `design-qa.md`.
-Full replay stopped before Expedition on an unrelated old “unkept draft” assertion.
-No paid model calls for this visual change.
+## Validation
+`npm run check` passed (lint, typecheck, tests, production build).
+Full mocked browser replay passed on the initial release candidate, including mobile gestures and Constellation fit.
+Latest main Expedition styling is preserved in this release.
+`node scripts/verify-wander.mjs` passed at 1399px and 390px with mocked responses and no page errors.
+Focused artifacts: `/tmp/wander-release-focused`; design QA: `design-qa.md`.
+Model responses were mocked; no live provider validation is claimed.
 
-## Startup and next role
-`npm run dev -- --port 3063` using the Node/npm launcher from AGENTS.md.
-Preview: http://127.0.0.1:3063/.
-Next role: owner visual acceptance; no critic or further feature work queued.
+## Release and startup
+User authorized commit, merge, and production deployment.
+GitHub CI must pass before merge; Git integration deploys main to Vercel.
+Stable URL: https://minerva-eight.vercel.app/.
+Local production preview: http://127.0.0.1:3188/.
+Prefix commands with `npx --yes --package=node@24.20.0 --package=npm@12.0.2`.
+Start: `npm run build`, then `npm run start -- --port 3188`.
+Focused replay: `MINERVA_URL=http://127.0.0.1:3188 node scripts/verify-wander.mjs`.
+Next role: owner inspects the deployed result; no additional work is implied.
