@@ -1066,3 +1066,23 @@ summary {
   .expedition-budget { margin-bottom: 16px; }
   .expedition-panel .expedition-start { min-height: 52px; }
 }
+
+/* Selected idea preview */
+.focus-navigation { width: 360px; max-width: calc(100% - 32px); padding: 16px; max-height: min(65vh, 560px); border-radius: 10px; }
+.focus-heading { align-items: flex-start; gap: 10px; }
+.focus-heading strong { font-size: 23px; line-height: 1.15; }
+.focus-heading button { display: grid; place-items: center; padding: 4px; min-width: 32px; min-height: 32px; border: 0; background: transparent; }
+.focus-summary { font-size: 16px; line-height: 1.4; margin: 12px 0 16px; }
+.focus-actions { display: flex; align-items: center; gap: 10px; }
+.focus-actions button { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; min-height: 36px; margin: 0; }
+.focus-actions .focus-open { flex: 1; background: var(--ink); color: var(--card); border: 1px solid var(--ink); border-radius: 6px; padding: 8px 12px; white-space: nowrap; }
+.focus-actions .focus-center { background: transparent; border: 0; padding: 8px 0; white-space: nowrap; }
+.focus-connections { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 10px; }
+.focus-connections summary { display: flex; justify-content: space-between; align-items: center; cursor: pointer; list-style: none; font-family: monospace; font-size: 14px; min-height: 28px; }
+.focus-connections summary::-webkit-details-marker { display: none; }
+.focus-connections[open] > summary svg { transform: rotate(90deg); }
+.focus-navigation button:focus-visible, .focus-connections summary:focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
+@media(max-width:600px) { .focus-navigation { width: 360px; padding: 16px; bottom: 230px; max-height: min(42vh, calc(100% - 240px)); } .focus-heading strong { font-size: 23px; } .focus-summary { font-size: 16px; margin: 12px 0 16px; } .focus-actions { flex-wrap: wrap; gap: 10px; } }
+
+.focus-connections .small-note { margin: 8px 0 0; font-size: 12px; }
+.focus-actions svg { width: 18px; height: 18px; flex-shrink: 0; }

@@ -34,6 +34,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import type { AtlasFixture, Thought, Relationship } from "./domain";
 import type { AtlasSession, LayoutRecord } from "../workspaces/graph-domain";
+import { ArrowRight, Crosshair, CaretRight, X } from "@phosphor-icons/react";
 import { relationshipsFor } from "./domain";
 import { mallFixture } from "./fixture";
 import { wanderSchema, weaveSchema, moveCardSchema, type ContextualMove, type GeneratedCard, type LiveFeature } from "./generation";
@@ -1134,14 +1135,21 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           </>}
         </nav>
         {!session && focusedId && <section className="focus-navigation" aria-label="Focused card connections">
-          <div className="focus-heading"><strong>{byId.get(focusedId)?.title}</strong><button aria-label="Close focused connections" onClick={() => setFocusedId(null)}>×</button></div>
-          <button onClick={() => focus(focusedId)}>Focus card</button>
+          <div className="focus-heading"><strong>{byId.get(focusedId)?.title}</strong><button aria-label="Close focused connections" onClick={() => setFocusedId(null)}><X size={20} aria-hidden="true" /></button></div>
+          <p className="focus-summary">{byId.get(focusedId)?.summary}</p>
+          <div className="focus-actions">
+            <button className="focus-open" onClick={() => inspect(focusedId)}>Open card <ArrowRight size={22} aria-hidden="true" /></button>
+            <button className="focus-center" onClick={() => focus(focusedId)}><Crosshair size={24} aria-hidden="true" />Center on canvas</button>
+          </div>
+          <details className="focus-connections" key={focusedId}>
+          <summary>Connections <CaretRight size={20} aria-hidden="true" /></summary>
           <label>Show connections <select value={connectionKind} onChange={e => { setConnectionKind(e.target.value); setConnectionPage(0); setBranchId(null); }}>
             <option value="parents">Parents</option><option value="children">Children</option><option value="associations">Associations</option><option value="context">Shared brief</option>
           </select></label>
-          <p className="small-note">{focusedRelations.length} connections · up to 6 shown at a time. Follow a link to bring that card into view.</p>
+          <p className="small-note">{focusedRelations.length ? `${focusedRelations.length} connection${focusedRelations.length === 1 ? "" : "s"}` : `No ${connectionKind === "context" ? "shared brief connections" : connectionKind}.`}</p>
           <ul>{relationPage.map(edge => <li key={edge.id}><button className="relative-link" onClick={() => focus(edge.otherId)}>{byId.get(edge.otherId)?.title} ↗</button><button aria-label={`Highlight only ${byId.get(edge.otherId)?.title}`} aria-pressed={branchId === edge.id} onClick={() => setBranchId(branchId === edge.id ? null : edge.id)}>Trace</button></li>)}</ul>
           {focusedRelations.length > 6 && <div><button disabled={!connectionPage} onClick={() => { setConnectionPage(p => p - 1); setBranchId(null); }}>Previous connections</button><button disabled={(connectionPage + 1) * 6 >= focusedRelations.length} onClick={() => { setConnectionPage(p => p + 1); setBranchId(null); }}>Next connections</button></div>}
+        </details>
         </section>}
         {perspective === "Constellation" && <section className="themes-status" aria-label="Theme grouping">
           <p>{themeCache ? `Grouped into themes by Minerva · grouped at ${themeCache.time}` : "Group cards into themes by Minerva"}</p>
