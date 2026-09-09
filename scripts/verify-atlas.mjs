@@ -766,7 +766,7 @@ try {
   assert.equal(await page.locator(".talk-transcript section").count(), 0, "reset clears conversation");
   await close();
   await button("Read as text").click();
-  assert.equal(await page.locator(".catalogue-entry").count(), 6);
+  assert.equal(await page.locator(".reader-contents button").count(), 6);
   await close();
 
   // C12/C11: expedition lifecycle and navigable interpretations.
