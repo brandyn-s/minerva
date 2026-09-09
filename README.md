@@ -8,8 +8,11 @@ An application under development for a single-user, browser-only
 ideas: visible inheritance, three views, contextual creative moves, Weave,
 Wander, Agent Drive, concurrent voice and usable outputs.
 
-**Implemented:** the Next.js shell, original identity and CI/document checks.
-**To build:** the fifteen capabilities in [SPEC](./docs/product/SPEC.md).
+**Implemented locally:** the M1 prepared atlas with pan/zoom, movable cards,
+source inspection, comparison selection and contextual previews. A text reference
+and denser scene support experience review. Changes reset on reload.
+**Still open:** persistence, generation, voice and the complete capabilities in
+[SPEC](./docs/product/SPEC.md). M1 review and owner acceptance are pending.
 Initialized from [minerva-template](https://github.com/brandyn-s/minerva-template)
 at `248665c116fb0655e2b70f732ca1b9bffb5b5dcb`. Package 1 establishes application
 identity and portable checks. See [the handoff](./docs/HANDOFF.md) for the next outcome.
@@ -27,7 +30,7 @@ npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run dev
 ```
 
 Open [localhost:3000](http://localhost:3000). Dev/start bind to loopback; the
-shell needs no cloud account, provider key or sign-in. Add database, model and
+prepared atlas needs no cloud account, provider key or sign-in. Add database, model and
 voice configuration when implementing those capabilities.
 
 The browser is the only client, not the only runtime. Keep the Next.js/TypeScript

@@ -5,10 +5,13 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Minerva - A living atlas of ideas",
-  description: "A starter for exploring ideas with Wander, recombining their contributions, and thinking aloud with Minerva.",
+  description:
+    "Explore a prepared living atlas of ideas and trace their contributions in Minerva.",
 };
 
-export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+export default function RootLayout({
+  children,
+}: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="en">
       <body>{children}</body>

@@ -2,90 +2,131 @@
 
 ## Current outcome
 
-M1 package 1 is complete: the application repository was initialized from the
-approved seed, repository settings and inherited checks were adapted, and the
-starter shell is now hosted on Vercel. Runtime compatibility was merged in
-[PR #3](https://github.com/brandyn-s/minerva/pull/3) at
-`0f8b1a16e1cd831774bcc09fcb61582a9c31a5de`.
+M1 packages 2–3 now have a connected local fixture atlas: inspect the mall brief
+and independent A/B/C proposals, trace the two-parent repair/supper draft, move
+cards with attached edges, pan/zoom, select distant contributions, compare them
+and consider prepared contextual moves. The root route includes the same data as
+a text reference and a denser 30-card scene with explicit overview groups.
+
+Package 2 is implemented and locally exercised. Package 3's implementation and
+local journey evidence are prepared; the complete owner-led comparison,
+Fable M1 review and owner experience acceptance remain pending.
+The next M2 milestone has not been authorized. No live services are simulated.
 
 - Repository: https://github.com/brandyn-s/minerva
-- Seed: https://github.com/brandyn-s/minerva-template at
-  `248665c116fb0655e2b70f732ca1b9bffb5b5dcb`.
-- Generated initial commit: `33f81109ea47ad83732f316e72f6adeb8ed7a352`;
-  its tree matches the seed: `e48604d23a6dfbcde2011f827767fdae8eb57cee`.
-- Local worktree: `/Users/brandyn.schult/code/minerva`.
-- Resume branch: current `main` after the handoff PR merges.
+- Absolute writable worktree: `/Users/brandyn.schult/code/minerva`.
+- Branch: `feat/m1-atlas`.
+- Base HEAD: `1e2ae9c92b597040578949c9ad0af8f2343e74b0`.
+- Publication: owner authorized commit and squash merge after the interaction
+  corrections. This handoff accompanies that PR; its merged commit is the exact
+  M1 review candidate. The operator response supplies the full SHA. Resume `main`
+  after merge, rather than the prior shell at the base HEAD above.
+- Seed provenance: `brandyn-s/minerva-template` at
+  `248665c116fb0655e2b70f732ca1b9bffb5b5dcb`; generated initial commit
+  `33f81109ea47ad83732f316e72f6adeb8ed7a352`.
 
-All C01-C15 capabilities remain not started. The representative brief is
-**What to do with a dead shopping mall**, with editable starting proposals
-A: independent retail shops, B: a food hall and C: a shared tool library.
-The demonstration data and tools that expand the seed or selected proposals
-are not implemented. Hosting the shell does not constitute M1 experience
-acceptance or open the M6 demonstration window.
+## Implementation and boundaries
 
-## Configuration and verification
+[Domain records](../features/atlas/domain.ts) are independent of React Flow and
+services. [Prepared data](../features/atlas/fixture.ts) uses those records;
+[presentation](../features/atlas/atlas.tsx) maps them to custom React Flow cards.
+The original owl and DESIGN palette are retained. Cards drag at overview zoom;
+single-click opens inspection at every zoom, and double-click focuses. Pointer,
+keyboard and inspection access bring the relevant card forward. Focus/selection
+highlights follow the visible card or circular marker instead of hidden bounds. No empty service scaffolding
+was added. React Flow and Playwright are pinned in package/lock files.
 
-Repository protection requires squash PRs, resolved review threads and the
-Verify repository check; force pushes and main deletion are blocked. Actions
-use read-only tokens and pinned GitHub-owned actions. Private vulnerability
-reporting is enabled. Portable documentation and configuration checks remain;
-the seed-only restriction test was removed for application development.
+The prepared demo has six thoughts and seven relationships. A/B/C share brief
+context without invented parentage. The repair/supper recombination explicitly
+inherits from food and tools. The shopfront example derives from retail and has
+a semantic association with tools. Decisions and evidence certainty are separate.
+The dense scene has 30 thoughts and 31 relationships; compact zoom groups its
+24 variations by source while the index exposes each record. Selection survives
+inspection/comparison, and deliberate navigation is the only panel action that
+changes the camera.
 
-Local development and CI pin Node 24.20.0 and npm 12.0.2. The application engine
-range is `^24.15.0` so Vercel can manage Node 24 patch updates. `vercel.json`
-explicitly selects npm 12.0.2 for installation and build. See
-[setup](./setup.md#node-and-npm) for the compatibility rationale.
+Fixture text edits, layout and selection reset on reload or scene change. Edited
+text does not revise the frozen prepared excerpts. Prepared moves preview source
+contributions; they do not generate a card, assess feasibility or save a result.
+Persistence, models, voice, production Weave and contextual planning remain open.
+See [CAPABILITIES](./product/CAPABILITIES.md) for partial capability evidence.
 
-Validation: lint, typecheck, all eight tests and the production build passed
-locally; PR #3's required CI passed. The configured install/build also passed
-under the minimum supported Node 24.15.0 with bootstrap npm 11.19.1.
+## Verification
 
-## Hosted checkpoint
+Local lint, typecheck, all 11 domain/document/configuration tests and production
+build pass. The browser journey script covers IB01–IB06, card/edge movement,
+source navigation, selection/camera retention, overview groups and text reference.
+Reference setup agreed by owner: primarily laptop/desktop with or without external
+monitors; Chromium 153.0.8010.36 on macOS Apple Silicon, 1440×900 and 1280×600 mouse/
+keyboard, plus 390×844 Chromium CDP simulated touch. Programmatic activation is
+explicitly simulated; no physical-device or screen-reader review was performed.
+Local screenshots live in ignored `evaluation-artifacts/m1/`.
 
-Configured and verified on 2026-09-09:
+The browser work reproduced and corrected title-panning interception, overview
+pointer blocking, overlapping labels and initial-fit interference from handle
+measurement. Rechecks cover the original journeys and neighboring input changes. The owner's
+subsequent feedback also corrected overview dragging, permanent stacking,
+single-click zooming and rectangular marker highlighting. Regression checks cover
+mouse/keyboard overlap access, compact simulated-touch drag/pinch, unchanged camera
+on single-click inspection, double-click focus and circular selection styling.
+A browser accessibility scan reported no confirmed violations; contrast over
+layered canvas content required manual inspection, not an automated pass claim.
+The owner reported specific interaction friction, recorded in CAPABILITIES;
+overall source comprehension, orientation and usefulness remain unjudged. No model calls or paid provisioning occurred.
 
-- Project: [thalient/minerva](https://vercel.com/thalient/minerva),
-  ID `prj_LwZ9H81IBdwWEHZ5DEJfJNaeqfrb`.
-- Team: Thalient, ID `team_CPMDIZRXjSVqupCatDjsDq4Q`.
-- Git integration: `brandyn-s/minerva`; production branch `main`, Git
-  deployments enabled. Branch updates can create previews.
-- Framework: Next.js; root directory `.`; managed Node version `24.x`.
-- Install: `npx --yes npm@12.0.2 ci`; build:
-  `npx --yes npm@12.0.2 run build`; default Next.js output.
-- Stable URL: https://minerva-eight.vercel.app
-- Verified deployment: `dpl_J428z3vwbDGfr8jbp19rEiBNr2mu`, production/READY,
-  [build details](https://vercel.com/thalient/minerva/J428z3vwbDGfr8jbp19rEiBNr2mu).
-- Source revision: `0f8b1a16e1cd831774bcc09fcb61582a9c31a5de`.
+## Startup and next role
 
-The remote source build installed 348 packages with zero reported vulnerabilities
-and built Next.js 16.3.4 successfully using the configured npm 12.0.2 commands.
-Deployment metadata confirms Node 24.x; logs do not report the precise managed
-Node patch. Engine-strict installation passed. The stable URL returned HTTP 200
-without credentials, and browser verification showed the starter shell and a
-working Wander disclosure. This verifies hosting, not the future Wander tool.
-Later Git deployments can move the stable URL beyond this verified revision.
-
-Vercel's default deployment protection remains configured. Local `.vercel/`
-link state and `.env.local` are ignored; the CLI populated a local OIDC token.
-No credentials are committed. No database, model integration, voice or workflow
-resources have been provisioned, and no paid model calls were made.
-
-## Startup and next outcome
-
-From `/Users/brandyn.schult/code/minerva`:
+Startup mode: prepared local atlas, loopback only, no database/model/voice service.
 
 ```sh
+cd /Users/brandyn.schult/code/minerva
 npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm ci
 npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run dev
 npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run check
 ```
 
-Startup mode is the starter shell on loopback, without database or model services.
-The hosted shell is also available at the stable URL above.
+Open http://127.0.0.1:3000. Browser replay is `npm run test:browser` with the pinned
+runtime; browser installation and optional executable/output overrides are in
+[setup](./setup.md#m1-fixture-verification).
 
-Next role: owner steers the next application chunk; Astra builds package 2's
-fixture/domain/presentation foundation and package 3's interactive atlas. This
-turn completes the authorized commit, merge, deployment and handoff outcome.
-The next implementation chunk is **Not authorized yet** by this deployment request.
-The first required Fable review and owner experience acceptance remain at the
-M1 boundary; no additional review gate is introduced here.
+Next role: owner. Inspect **Repair, then stay for supper** and its food/tool parents
+in **Read as text**, then in the atlas. Identify the contributions and choose a
+next direction; report whether the atlas helps, and any orientation or interaction
+friction. Record that observation in CAPABILITIES after the owner supplies it.
+
+The operator starts Fable 5.1 at medium effort on a separate checkout of the
+merged candidate, source read-only, isolated fixtures, port 3001, no paid calls,
+using the M1 review in build-prompts.md. Do not launch the critic automatically.
+Use setup's full review permissions and prompt. A bounded launch after merge is:
+
+```sh
+git -C /Users/brandyn.schult/code/minerva rev-parse HEAD
+git -C /Users/brandyn.schult/code/minerva worktree add --detach /Users/brandyn.schult/code/minerva-review-m1 <merged-candidate-sha>
+cd /Users/brandyn.schult/code/minerva-review-m1
+npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm ci
+npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run dev -- --port 3001
+```
+
+Review scope: M1 packages 2–3; C02/C03/C06/C08/C15 fixture increments and IB01–IB06.
+Start with the four owner-reported interaction failures and their neighboring
+transitions. Distinguish real card movement from grouped collection navigation,
+prepared previews from live execution, and technical findings from experience
+judgment. Return findings to the owner; do not edit application source or claim
+acceptance. M2 work remains **Not authorized yet** and depends on M1 review and
+owner experience acceptance.
+
+## Hosted checkpoint
+
+The hosted shell was last verified on 2026-09-09 at
+`0f8b1a16e1cd831774bcc09fcb61582a9c31a5de`, deployment
+`dpl_J428z3vwbDGfr8jbp19rEiBNr2mu`, on https://minerva-eight.vercel.app.
+This local atlas has not been deployed or verified on the stable URL; subsequent
+Git deployments may have moved that URL beyond the recorded shell revision.
+
+Existing Vercel project: `thalient/minerva`, ID `prj_LwZ9H81IBdwWEHZ5DEJfJNaeqfrb`,
+team `team_CPMDIZRXjSVqupCatDjsDq4Q`. Git integration uses `brandyn-s/minerva`,
+production branch `main`; branch pushes can create previews. Managed Node 24.x,
+install `npx --yes npm@12.0.2 ci`, build `npx --yes npm@12.0.2 run build`.
+Default deployment protection remains configured. Ignored `.vercel/` and
+`.env.local` hold local link/OIDC state; no credentials are committed.
+The M6 demonstration window is not open.
