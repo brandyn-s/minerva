@@ -34,7 +34,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import type { AtlasFixture, Thought, Relationship } from "./domain";
 import type { AtlasSession, LayoutRecord } from "../workspaces/graph-domain";
-import { ArrowRight, ArrowClockwise, Crosshair, CaretRight, X } from "@phosphor-icons/react";
+import { CaretDown, ArrowRight, ArrowClockwise, Crosshair, CaretRight, X } from "@phosphor-icons/react";
 import { relationshipsFor } from "./domain";
 import { mallFixture } from "./fixture";
 import { wanderSchema, weaveSchema, moveCardSchema, type ContextualMove, type GeneratedCard, type LiveFeature } from "./generation";
@@ -297,17 +297,31 @@ function presentNodes(saved?: AtlasFixture): CardNode[] {
   }));
 }
 
-function GraphNavigation({ id, chain, chainIds, byId, folds, setChain, setFolds, focus }: {
-  id: string; chain: { id: string; direction: "ancestors" | "descendants" } | null; chainIds: string[];
+function GraphNavigation({ id, chain, chainIds, descendantCount, byId, folds, setChain, setFolds, focus }: {
+  id: string; chain: { id: string; direction: "ancestors" | "descendants" } | null; chainIds: string[]; descendantCount: number;
   byId: Map<string, Thought>; folds: string[];
   setChain: (chain: { id: string; direction: "ancestors" | "descendants" } | null) => void;
   setFolds: (update: (current: string[]) => string[]) => void; focus: (id: string) => void;
 }) {
-  return <div className="chain-controls">
-    {(["ancestors", "descendants"] as const).map(direction => <button key={direction} aria-pressed={chain?.id === id && chain.direction === direction}
-      onClick={() => setChain(chain?.id === id && chain.direction === direction ? null : { id, direction })}>Show {direction}</button>)}
-    <button onClick={() => setFolds(current => current.includes(id) ? current.filter(key => key !== id) : [...current, id])}>{folds.includes(id) ? "Unfold descendants" : "Fold descendants"}</button>
-    {chain && <><button onClick={() => setChain(null)}>Clear chain</button><p>Selected card, then nearest to farthest {chain.direction}.</p><ol aria-label={`${chain.direction} chain`}>{chainIds.map(key => <li key={key}><button onClick={() => focus(key)}>{byId.get(key)?.title}</button></li>)}</ol></>}
+  const active = chain?.id === id ? chain : null;
+  const relatives = active ? chainIds.filter(key => key !== id) : [];
+  const folded = folds.includes(id);
+  return <div className="lineage-navigation">
+    <div className="lineage-tabs" role="group" aria-label="Trace lineage">
+      {(["ancestors", "descendants"] as const).map(direction => <button key={direction} aria-label={`Show ${direction}`} aria-pressed={active?.direction === direction}
+        onClick={() => setChain({ id, direction })}>{direction === "ancestors" ? "Ancestors" : "Descendants"}</button>)}
+      {active && <button className="lineage-clear" onClick={() => setChain(null)}>Clear</button>}
+    </div>
+    {active && <>
+      <p className="lineage-count">{relatives.length} {active.direction === "ancestors" ? "ancestor" : "descendant"} {relatives.length === 1 ? "idea" : "ideas"}</p>
+      <ul className="lineage-results" aria-label={`${active.direction} chain`}>{relatives.map(key => <li key={key}><button onClick={() => focus(key)}>{byId.get(key)?.title}<CaretRight size={18} aria-hidden="true" /></button></li>)}</ul>
+    </>}
+    <div className="lineage-fold">
+      <button disabled={!descendantCount && !folded} aria-pressed={folded} onClick={() => setFolds(current => current.includes(id) ? current.filter(key => key !== id) : [...current, id])}>
+        {folded ? <CaretRight size={18} aria-hidden="true" /> : <CaretDown size={18} aria-hidden="true" />}{folded ? "Show descendants on canvas" : "Hide descendants"}
+      </button>
+      {!descendantCount && <p>No descendants to hide</p>}
+    </div>
   </div>;
 }
 
@@ -1255,7 +1269,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           </div>
           <details className="focus-connections" key={focusedId}>
           <summary>Connections <CaretRight size={20} aria-hidden="true" /></summary>
-          <GraphNavigation id={focusedId} chain={chain} chainIds={chainIds} byId={byId} folds={folds} setChain={setChain} setFolds={setFolds} focus={focus} />
+          <GraphNavigation id={focusedId} chain={chain} chainIds={chainIds} descendantCount={trace(focusedId, "descendants").length} byId={byId} folds={folds} setChain={setChain} setFolds={setFolds} focus={focus} />
           <label>Show connections <select value={connectionKind} onChange={e => { setConnectionKind(e.target.value); setConnectionPage(0); setBranchId(null); }}>
             <option value="parents">Parents</option><option value="children">Children</option><option value="associations">Associations</option><option value="context">Shared brief</option>
           </select></label>
@@ -1311,7 +1325,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
         {selected.length > 0 && !regroupIds && (
           <div className={`selection-bar${session ? "" : " light-selection-dock"}`}>
             <span className="selection-count">{selected.length} selected</span>
-            {selected.length === 1 && <button onClick={() => focus(selected[0])}><Crosshair size={22} aria-hidden="true" />Focus on atlas</button>}
+            {selected.length === 1 && <button onClick={() => focus(selected[0])}><Crosshair size={22} aria-hidden="true" />Focus</button>}
             {session ? <><button onClick={() => open("compare")}>Compare</button><button onClick={() => move(selected)}>Weave · preview</button></> : <>
               <button className="wander-action" disabled={busy || selected.length !== 1} onClick={() => move(selected)} aria-busy={busy && live?.feature === "wander"}>{busy && live?.feature === "wander" ? <span className="generation-spinner" aria-hidden="true" /> : <GitFork size={22} aria-hidden="true" />}{busy && live?.feature === "wander" ? "Wandering…" : "Wander"}</button>
               <button onClick={() => open("compare")}><Copy size={22} aria-hidden="true" />Compare</button>
@@ -1407,7 +1421,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           {panel === "inspect" && (
             <>
               <h2>{thought.title}</h2>
-              {!session && <GraphNavigation id={thought.id} chain={chain} chainIds={chainIds} byId={byId} folds={folds} setChain={setChain} setFolds={setFolds} focus={focus} />}
+              {!session && <GraphNavigation id={thought.id} chain={chain} chainIds={chainIds} descendantCount={trace(thought.id, "descendants").length} byId={byId} folds={folds} setChain={setChain} setFolds={setFolds} focus={focus} />}
               {!session && <DownloadButton key={thought.id} card={thought} cards={nodes.map((node) => node.data.thought)} relationships={relationships} />}
               {thought.decision !== "unkept draft" && thought.decision !== "kept" && <div className="status-line">
                 <span>{thought.decision}</span>
