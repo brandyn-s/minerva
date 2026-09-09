@@ -1,32 +1,36 @@
-# Wander toolbar consolidation
+# Selected regroup preview
 
-Release branch: `feat/wander-toolbar`, based on main `7002d7a`.
-Worktree: `/Users/brandyn.schult/code/minerva-wander-toolbar`.
-Scope: requested Wander consolidation and compact selection-toolbar dismissal.
-Existing main features are preserved; unrelated edits in the original checkout are excluded.
+Branch: feat/regroup-selection
+Worktree: /Users/brandyn.schult/code/minerva-regroup-selection
+Regroup implementation: a8c8dca; integrated with current origin/main.
 
-## Behavior
-Wander opens suggested next steps for one selected card.
-Choosing a suggestion develops one card; Explore freely generates two or three directions.
-Wander is highlighted before Compare, Expedition, and Weave.
-Card footers are removed; selection is beside the drag handle.
-The top-right X keeps a 44px hit area and Clear selection label/tooltip.
-No backend, persistence, or model changes.
+## Outcome
+Constellation grouping controls move to the upper left, freeing the Minerva corner.
+Regroup selected (or all when nothing is selected) opens a left preview panel.
+The existing themes endpoint receives only the chosen cards. Apply changes the
+selected memberships; unaffected cards and theme slots retain their positions.
+Cancel, request cancellation, retry, stale-source protection, and Undo are included.
+Apply announces completion; View regrouped ideas includes affected theme headings.
+Undo restores the camera as well as membership and layout. Full regroup replaces
+old slots; selected regroup reuses emptied slots without moving other ideas.
+Talk opens through the existing launcher. Preview and card review lists scroll.
+No new persistence or provider implementation is introduced.
 
-## Validation
-`npm run check` passed (lint, typecheck, tests, production build).
-Full mocked browser replay passed on the initial release candidate, including mobile gestures and Constellation fit.
-Latest main Expedition styling is preserved in this release.
-`node scripts/verify-wander.mjs` passed at 1399px and 390px with mocked responses and no page errors.
-Focused artifacts: `/tmp/wander-release-focused`; design QA: `design-qa.md`.
-Model responses were mocked; no live provider validation is claimed.
+## Evidence
+npm run check: lint, types, unit tests, production build.
+120-node unit coverage verifies 22 selected and 98 untouched memberships/positions,
+full regroup compaction, and empty-slot reuse.
+In-app browser with synthetic theme responses: preview, Apply, Undo, Cancel, Talk.
+See design-qa.md for scope and visual evidence. No paid model calls.
+Live provider quality and dense-browser performance were not measured.
+Local provider configuration is linked from the existing main checkout.
+The merge preserves current Menu, selection, Talk, and local-save features.
+Local saves accept empty theme slots retained for stable group positions.
 
-## Release and startup
-User authorized commit, merge, and production deployment.
-GitHub CI must pass before merge; Git integration deploys main to Vercel.
-Stable URL: https://minerva-eight.vercel.app/.
-Local production preview: http://127.0.0.1:3188/.
-Prefix commands with `npx --yes --package=node@24.20.0 --package=npm@12.0.2`.
-Start: `npm run build`, then `npm run start -- --port 3188`.
-Focused replay: `MINERVA_URL=http://127.0.0.1:3188 node scripts/verify-wander.mjs`.
-Next role: owner inspects the deployed result; no additional work is implied.
+## Startup and next role
+npm run dev -- --port 4320
+Production: npm run start -- --port 4322
+Fixture-response review proxy: http://127.0.0.1:4323/ (temporary local test process).
+Live-endpoint application: http://127.0.0.1:4322/.
+Next role: owner review after the authorized production release.
+The original checkout had concurrent edits, so final checks use this isolated copy.
