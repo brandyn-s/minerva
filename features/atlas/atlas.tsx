@@ -570,7 +570,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           },
     className: `thread ${edge.kind} ${panel === "inspect" && (edge.from === active || edge.to === active) ? "emphasized" : ""}`,
     style: {
-      opacity: perspective === "Constellation" ? 1 : session ? 1 : edge.kind === "association" && !highlighted.has(edge.id) ? .08 : highlighting ? (highlighted.has(edge.id) ? 1 : .12) : overview ? .7 : 1,
+      opacity: perspective === "Constellation" ? 1 : session ? 1 : highlighting ? (highlighted.has(edge.id) ? 1 : .12) : overview ? .7 : 1,
       stroke:
         edge.kind === "association"
           ? "#755584"
@@ -580,7 +580,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
       strokeWidth:
         (!session && overview ? (highlighted.has(edge.id) ? 2 : 1) : panel === "inspect" && (edge.from === active || edge.to === active)
           ? 3
-          : edge.kind === "recombination"
+          : edge.kind === "recombination" || edge.kind === "association"
             ? 2.5
             : 2) / viewport.zoom,
       strokeDasharray:
