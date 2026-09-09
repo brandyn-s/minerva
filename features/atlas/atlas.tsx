@@ -41,6 +41,7 @@ import TalkPanel from "./talk-panel";
 import DownloadButton from "./download-button";
 import MovesPanel from "./moves-panel";
 import ExpeditionPanel from "./expedition-panel";
+import TooltipButton from "./tooltip-button";
 import { overviewDiameter, overviewLabels, overviewName } from "./overview";
 import ExplorationPanel, { ProposalDecisions } from "../exploration/panel";
 
@@ -185,27 +186,27 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
         }}
       />
       {ui.overview ? (
-        <button
+        <TooltipButton
           aria-label={`Open ${thought.title}`}
           title="Click to open; double-click to focus; drag or use arrow keys to move"
           className={`overview-target card-grip nopan ${ui.scalable ? "scale-target" : ui.compact ? "compact-target" : ""}`}
           style={{ transform: `scale(${1 / ui.zoom})`, ...(ui.scalable ? { width: diameter, height: diameter, minHeight: diameter } : {}) }}
         >
           {ui.scalable ? <><span className="overview-code">{diameter >= 30 ? marker : ""}</span>{ui.labels?.has(id) && <span className="overview-name">{overviewName(thought)}</span>}</> : ui.compact ? marker : thought.title}
-        </button>
+        </TooltipButton>
       ) : (
         <>
           <div className="card-top">
             <span>
               {thought.kind === "proposal" ? "Starting proposal" : thought.kind}
             </span>
-            <button
+            <TooltipButton
               className="card-grip"
               aria-label={`Move ${thought.title}`}
               title="Drag to move; arrow keys move the card"
             >
               ⠿
-            </button>
+            </TooltipButton>
           </div>
           <button className="card-title nodrag">{thought.title}</button>
           <p className="card-summary">{thought.summary}</p>
@@ -1016,7 +1017,7 @@ function Studio({ session }: { session?: AtlasSession }) {
             Thoughts <span>{nodes.length}</span>
           </button>
           <button onClick={() => open("text")}>Read as text</button>
-          {!session && <button onClick={() => open("expedition")}>Expedition panel</button>}
+          {!session && <TooltipButton className="expedition-control" aria-label="Expedition panel" title="Open expedition panel" aria-haspopup="dialog" aria-expanded={panel === "expedition"} onClick={() => open("expedition")}><Image src="/images/expedition-compass.png" width={44} height={44} alt="" /></TooltipButton>}
 
           {session && <>
             <button onClick={() => { void session.command({ operation: "seed-mall" }).catch(() => {}); }} disabled={nodes.length > 0}>Load prepared mall</button>
