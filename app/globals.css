@@ -971,3 +971,41 @@ summary {
   .atlas-storage { padding: 4px 10px; gap: 4px 10px; }
   .atlas-storage input { max-width: 145px; }
 }
+
+.expedition-panel { width: min(560px, calc(100vw - 40px)); bottom: auto; max-height: calc(100dvh - 112px); padding: 22px; border-radius: 9px; }
+.expedition-heading { margin-bottom: 24px; }
+.expedition-brand { display: flex; align-items: center; gap: 14px; }
+.expedition-brand img { display: block; }
+.expedition-panel .expedition-heading button { margin: 0; }
+.expedition-source-label, .expedition-budget legend { font-family: ui-monospace, monospace; font-size: 14px; }
+.expedition-source { border: 1px solid #ded5bf; border-left: 9px solid #417975; border-radius: 6px; padding: 15px 18px; margin-top: 8px; overflow-wrap: anywhere; }
+.expedition-source h2 { font-size: 28px; line-height: 1.15; margin: 0 0 7px; }
+.expedition-source p { font-size: 18px; line-height: 1.4; margin: 0; color: #666355; }
+.expedition-panel .expedition-destination { margin: 24px 0; font-family: ui-monospace, monospace; font-size: 14px; gap: 12px; }
+.expedition-destination textarea { width: 100%; min-height: 132px; resize: vertical; padding: 15px 18px; background: #fbf7ec; border: 1px solid #c9bea3; border-radius: 5px; font-family: Georgia, serif; font-size: 20px; line-height: 1.5; }
+.expedition-budget { border: none; padding: 0; margin: 0 0 22px; min-width: 0; }
+.expedition-budget legend { margin-bottom: 10px; }
+.expedition-segments { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid #c9bea3; border-radius: 6px; overflow: hidden; }
+.expedition-panel .expedition-segments label { position: relative; display: block; margin: 0; cursor: pointer; }
+.expedition-segments label + label { border-left: 1px solid #c9bea3; }
+.expedition-segments input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.expedition-segments span { display: block; text-align: center; padding: 9px; font-size: 22px; min-height: 48px; }
+.expedition-segments input:checked + span { background: #273e35; color: #fbf7ec; }
+.expedition-segments input:focus-visible + span { outline: 3px solid #286d70; outline-offset: -4px; }
+.expedition-budget p { margin: 10px 0 0; font: 12px/1.5 ui-monospace, monospace; color: #615c4c; }
+.expedition-panel .expedition-start { display: flex; align-items: center; justify-content: center; gap: 18px; width: 100%; margin: 0; min-height: 60px; background: #273e35; color: #fbf7ec; border: 1px solid #887952; border-radius: 6px; font-family: Georgia, serif; font-size: 22px; }
+.expedition-start:disabled { opacity: .45; cursor: not-allowed; }
+@media (max-width: 600px) { .expedition-panel { max-height: calc(100dvh - 104px); padding: 18px; } .expedition-source h2 { font-size: 24px; } .expedition-destination textarea { font-size: 18px; } }
+
+@media (max-height: 800px) {
+  .expedition-panel { padding: 16px 22px; }
+  .expedition-heading { margin-bottom: 10px; padding-bottom: 0; }
+  .expedition-brand img { width: 44px; height: 44px; }
+  .expedition-source { padding: 10px 16px; }
+  .expedition-source h2 { font-size: 24px; }
+  .expedition-source p { font-size: 16px; }
+  .expedition-panel .expedition-destination { margin: 16px 0; gap: 8px; }
+  .expedition-destination textarea { min-height: 96px; padding: 10px 16px; }
+  .expedition-budget { margin-bottom: 16px; }
+  .expedition-panel .expedition-start { min-height: 52px; }
+}
