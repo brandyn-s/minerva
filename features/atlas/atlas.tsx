@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { ChevronDown } from "lucide-react";
 import {
   createContext,
   useContext,
@@ -477,6 +478,15 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
   const [expeditions, setExpeditions] = useState<AtlasSave["expeditions"]>(initial?.expeditions ?? []);
   const [activeExpedition, setActiveExpedition] = useState<number | null>(initial?.activeExpedition ?? null);
   const [storageNotice, setStorageNotice] = useState(restoreNotice);
+  const storageMenu = useRef<HTMLDetailsElement>(null);
+  const importInput = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const dismiss = (event: PointerEvent) => {
+      if (storageMenu.current && !storageMenu.current.contains(event.target as HTMLElement)) storageMenu.current.open = false;
+    };
+    document.addEventListener("pointerdown", dismiss);
+    return () => document.removeEventListener("pointerdown", dismiss);
+  }, []);
   const [importFile, setImportFile] = useState<AtlasSave>();
   const [importBusy, setImportBusy] = useState(false);
   const [importNotice, setImportNotice] = useState("");
@@ -917,20 +927,25 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           <h1>{session ? "Saved idea atlas" : "The mall, reconsidered"}</h1>
         </div>
         {!session && <nav className="perspective-switch" aria-label="Atlas perspective">{(["Lineage", "Evolution", "Constellation"] as const).map(view => <button key={view} aria-pressed={perspective === view} onClick={() => switchPerspective(view)}>{view}</button>)}</nav>}
-      </header>
-      {!session && <div className="atlas-storage" aria-label="Atlas storage">
-        <button onClick={exportAtlas}>Export atlas</button>
-        <label>Import atlas <input aria-label="Import atlas" type="file" accept=".json,application/json" onChange={async e => {
+      {!session && <details ref={storageMenu} className="atlas-menu" onKeyDown={event => {
+          if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); }
+        }}>
+        <summary>Menu <ChevronDown size={14} aria-hidden="true" /></summary>
+        <div className="atlas-menu-options" aria-label="Atlas storage">
+        <button onClick={() => { exportAtlas(); if (storageMenu.current) storageMenu.current.open = false; }}>Export atlas</button>
+        <button onClick={() => importInput.current?.click()}>Import atlas</button>
+        <input ref={importInput} hidden aria-label="Import atlas file" type="file" accept=".json,application/json" onChange={async e => {
           const file = e.target.files?.[0]; e.target.value = ""; setImportFile(undefined); setImportNotice("");
           if (!file) return;
           try { setImportFile(interruptSavedRuns(atlasSaveSchema.parse(JSON.parse(await file.text())))); }
           catch (error) { setImportNotice(`Invalid atlas file: ${error instanceof Error ? error.message : String(error)}`); }
-        }} /></label>
+        }} />
         <button onClick={() => void resetFixture()}>Reset to fixture</button>
         {importFile && <span>{importFile.thoughts.length} cards ready. <button disabled={importBusy} onClick={() => void importAtlas(false)}>Replace</button> <button disabled={importBusy} onClick={() => void importAtlas(true)}>Merge</button> <button onClick={() => setImportFile(undefined)}>Cancel import</button></span>}
         {importNotice && <p role="alert">{importNotice}</p>}
         {storageNotice && <p role="status">{storageNotice}</p>}
-      </div>}
+      </div></details>}
+      </header>
       <div
         className="field"
         ref={field}

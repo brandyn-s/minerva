@@ -4,7 +4,7 @@
   --card: #f1e9d6;
   --ink: #273a35;
   --muted: #645f51;
-  --teal: #28686a;
+  --teal: #273f32;
   --bronze: #8d6d40;
   --line: #c7bca2;
   color: var(--ink);
@@ -40,7 +40,7 @@ button:hover {
   border-color: var(--bronze);
 }
 button[aria-pressed="true"] {
-  background: var(--ink);
+  background: var(--teal);
   color: var(--card);
 }
 :focus-visible {
@@ -211,7 +211,7 @@ h1 {
   background: transparent;
 }
 .card-top .select-card[aria-pressed="true"] {
-  background: var(--ink);
+  background: var(--teal);
   color: var(--card);
 }
 .react-flow__handle {
@@ -333,7 +333,7 @@ h1 {
   bottom: 86px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--ink);
+  background: var(--teal);
   color: var(--card);
   display: flex;
   align-items: center;
@@ -514,7 +514,7 @@ summary {
 .move-choice {
   width: 100%;
   text-align: left;
-  background: var(--ink);
+  background: var(--teal);
   color: var(--card);
   margin: 18px 0;
 }
@@ -713,7 +713,7 @@ summary {
   gap: 12px;
   padding: 12px 16px;
   border-radius: 5px;
-  background: var(--ink);
+  background: var(--teal);
   color: var(--card);
   box-shadow: 0 4px 20px #273a3525;
   pointer-events: none;
@@ -808,8 +808,25 @@ summary {
 .talk-latest { padding: 5px 10px; }
 @media(max-width:600px) { .talk-panel { width: calc(100vw - 20px); bottom: 10px; } }
 
-.perspective-switch { display: flex; gap: 4px; flex-wrap: wrap; }
-.perspective-switch button[aria-pressed="true"] { background: #28686a; color: white; }
+.perspective-switch { display: flex; gap: 8px; flex-wrap: wrap; }
+.perspective-switch button {
+  position: relative;
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 1px solid #aa9168;
+  border-radius: 6px;
+  background: #faf6ea;
+  color: #273f32;
+  font: 13px/1.5 ui-monospace, monospace;
+  box-shadow: inset 0 0 0 3px #faf6ea, inset 0 0 0 4px #d5c39e, 0 2px 3px #273a3515;
+}
+.perspective-switch button:hover { background: #f1e9d6; }
+.perspective-switch button[aria-pressed="true"] {
+  background: var(--teal);
+  color: #f1e9d6;
+  border-color: #8d6d40;
+  box-shadow: inset 0 0 0 2px #273f32, inset 0 0 0 3px #b59a66, 0 2px 4px #273a3529;
+}
 .theme-heading { width: 440px; color: #28686a; background: #f7f4ec; padding: 16px; border-bottom: 2px solid #28686a; }
 .theme-heading h2 { margin: 0; }
 .themes-status { position: absolute; right: 16px; top: 16px; z-index: 5; max-width: 340px; background: #f7f4ec; padding: 12px; border: 1px solid #ccc5b5; }
@@ -937,7 +954,7 @@ summary {
 .integrated-composer .talk-actions { align-items: flex-end; gap: 8px; margin-top: 8px; }
 .voice-buttons { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .talk-panel .composer-icon { display: inline-flex; justify-content: center; align-items: center; width: 44px; height: 44px; min-height: 44px; padding: 0; border-radius: 50%; flex-shrink: 0; background: transparent; }
-.talk-panel .composer-send { background: #233d35; color: #fbf7ec; border-color: #233d35; margin-left: auto; }
+.talk-panel .composer-send { background: var(--teal); color: #fbf7ec; border-color: var(--teal); margin-left: auto; }
 .talk-panel .composer-send:disabled { opacity: .4; }
 .talk-panel .composer-icon[aria-pressed="true"] { background: #d9e4de; color: #233d35; border-color: #286d70; }
 .talk-panel .voice-end { background: #934d3b; color: #fff8ec; border-color: #934d3b; }
@@ -961,6 +978,24 @@ summary {
 @media (max-width: 600px) {
   .atlas-storage { padding: 4px 10px; gap: 4px 10px; }
   .atlas-storage input { max-width: 145px; }
+}
+
+/* Atlas file actions stay in the header, leaving the canvas unobstructed. */
+.atlas-menu { margin-left: auto; position: relative; flex-shrink: 0; z-index: 30; }
+.atlas-menu summary { display: flex; align-items: center; justify-content: center; gap: 10px; list-style: none; cursor: pointer; min-height: 44px; padding: 10px 16px; border: 1px solid #aa9168; border-radius: 6px; background: #faf6ea; font: 13px/1.5 ui-monospace, monospace; }
+.atlas-menu summary::-webkit-details-marker { display: none; }
+.atlas-menu[open] summary svg { transform: rotate(180deg); }
+.atlas-menu[open] summary { background: var(--teal); color: var(--card); }
+.atlas-menu-options { position: absolute; right: 0; top: calc(100% + 8px); width: 280px; max-width: calc(100vw - 20px); max-height: calc(100dvh - 100px); overflow: auto; padding: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 8px 24px #273a3526; }
+.atlas-menu-options > button { display: block; width: 100%; text-align: left; border: 0; }
+.atlas-menu-options input[hidden] { display: none; }
+.atlas-menu-options > button:hover { background: #273f3212; }
+.atlas-menu-options p, .atlas-menu-options span { font: 12px/1.5 ui-monospace, monospace; overflow-wrap: anywhere; }
+@media (max-width: 700px) { .masthead { flex-wrap: wrap; height: auto; min-height: 76px; padding: 10px; gap: 8px; } .masthead .atlas-menu { margin-left: auto; } .perspective-switch { order: 3; flex-basis: 100%; } }
+@media (max-width: 600px) {
+  .scalable-atlas .masthead { height: auto; }
+  .perspective-switch { flex-wrap: nowrap; gap: 6px; }
+  .perspective-switch button { padding: 10px 12px; font-size: 12px; }
 }
 
 /* Wander owns exploration; dismissal sits outside the action row. */
