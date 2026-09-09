@@ -4,7 +4,7 @@ Root `/` runs the mall atlas with live Wander, Weave, typed Talk and contextual 
 All new state stays in memory; reload clears conversation, generated cards and edges.
 This owner-directed batch supersedes earlier handoff outcomes. Stop after stable deployment.
 
-- Checkout: `/Users/brandyn.schult/code/minerva-remove-denser`; branch: `fix/talk-canvas-context`.
+- Checkout: `/Users/brandyn.schult/code/minerva-remove-denser`; branch: `feat/scalable-atlas-overview`.
 - Base: `origin/main` at `fc4b57e7b7b073fa85c05a42d01b8effa13a4840`.
 - Stable target: https://minerva-eight.vercel.app/; released SHA and hosted evidence are in the operator response.
 - Next role: one operator-started Fable 5.1 review, read-only; no further build is authorized.
@@ -21,7 +21,7 @@ Consider a move selects its source; exactly one selection requests three title/q
 A failed planner keeps the prepared move available and offers Retry. Choosing a move creates one card via `/api/wander` and the shared placement path.
 The derivation edge carries the move title; card-generation failures offer Retry in the panel.
 Wander/Weave show rotating circles on the active action and source cards, rings on overview nodes, and a larger persistent canvas spinner. Browser checks verify actual rotation, overview rings, and clearing on completion/error.
-Wander, Weave and contextual generation fit with `minZoom: 0.73`; overview thresholds are unchanged.
+Root overview uses tinted circles, short collision-filtered labels and distant dots. Focus stays at 100%; linked relatives are paged by category, six at a time, with single-branch Trace. Node positions stay stable.
 Vercel OIDC authenticates Gateway calls; SDK automatic retries are disabled. No new dependencies.
 No voice, chat tools, chat-created cards, persistence, admission, budgets or workspace changes.
 
@@ -55,4 +55,4 @@ Wander now requires explicit `intent: "move"` for single-card generation; legacy
 
 `cd /Users/brandyn.schult/code/minerva-remove-denser`; `npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run dev -- --port 3016`; open `/`.
 Mocked browser check: `MINERVA_URL=http://127.0.0.1:3016 npm run test:browser`.
-No-selection live Talk evidence: `/tmp/minerva-talk-context-live.json`; browser keyboard/context checks: `/tmp/minerva-talk-context`. Live suggestions are speculative. No persistence or owner experience acceptance is claimed.
+Actual React Flow scale evidence (30/100/300, desktop/mobile): `/tmp/minerva-scale-runtime-results.json`. No-selection live Talk evidence: `/tmp/minerva-talk-context-live.json`; browser keyboard/context checks: `/tmp/minerva-talk-context`. Live suggestions are speculative. No persistence or owner experience acceptance is claimed.

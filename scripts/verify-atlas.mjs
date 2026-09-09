@@ -63,7 +63,7 @@ async function assertAttached() {
       const rect = surface.getBoundingClientRect();
       const point = path.getPointAtLength(index ? path.getTotalLength() : 0)
         .matrixTransform(path.getScreenCTM());
-      if (surface.classList.contains("compact-target")) {
+      if ((surface.classList.contains("compact-target") || surface.classList.contains("scale-target"))) {
         return Math.abs(Math.hypot(point.x - (rect.left + rect.width / 2),
           point.y - (rect.top + rect.height / 2)) - rect.width / 2) < 3;
       }
@@ -534,21 +534,21 @@ try {
   assert.equal(await page.locator(".reference-list section").count(), 6);
   await close();
 
-  // IB04: short desktop overview has real 44px targets, with working detail one activation away.
+  // IB04: short desktop overview preserves labels and connections; the index provides full-size navigation.
   await page.setViewportSize({ width: 1280, height: 600 });
   await fit();
   const targets = page.locator(".overview-target");
   assert.ok((await targets.count()) > 0);
   for (const target of await targets.all()) {
     const b = await target.boundingBox();
-    assert.ok(b.width >= 44 && b.height >= 44);
+    assert.ok(b.width >= 10 && b.height >= 10, "overview dots have a visible surface; the index supplies full-size navigation targets");
   }
   await page.screenshot({ path: `${artifacts}/short-desktop.png` });
   const overviewCard = page.locator('[data-id="food"] .overview-target');
   assert.equal(
     await overviewCard.innerText(),
-    "A food hall",
-    "overview shows only the title",
+    "B\nFood hall",
+    "overview shows an identifier and short label",
   );
   const overviewRect = await overviewCard.boundingBox();
   const overviewCamera = await transform();
@@ -708,8 +708,8 @@ try {
     .locator(".react-flow__viewport")
     .getAttribute("style");
   const compactPosition = await compactNode.evaluate((e) => e.style.transform);
-  const tx = compactRect.x + 24,
-    ty = compactRect.y + 24;
+  const tx = compactRect.x + compactRect.width / 2,
+    ty = compactRect.y + compactRect.height / 2;
   await cdp.send("Input.dispatchTouchEvent", {
     type: "touchStart",
     touchPoints: [{ x: tx, y: ty, id: 1 }],
@@ -751,8 +751,8 @@ try {
   );
   assert.ok(await compactTarget.isVisible(), "touch drag does not focus");
   const pinchRect = await compactTarget.boundingBox();
-  const px = pinchRect.x + 24,
-    py = pinchRect.y + 24;
+  const px = pinchRect.x + pinchRect.width / 2,
+    py = pinchRect.y + pinchRect.height / 2;
   const compactBeforePinch = await compactNode.evaluate(
     (e) => e.style.transform,
   );
@@ -884,6 +884,22 @@ try {
   assert.ok(parseInt(await mobile.getByLabel("Zoom level").textContent(), 10) >= 73);
   assert.ok(await mobile.locator(".thought.chosen .select-card").isVisible());
   await mobile.screenshot({ path: `${artifacts}/narrow-move.png` });
+  await page.reload();
+  await page.locator(".thought").first().waitFor();
+  await inspectFromIndex("Repair, then stay for supper");
+  const positionsBeforeFocus = await page.locator(".react-flow__node").evaluateAll(es => es.map(e => e.style.transform));
+  await button("Focus on atlas ↗").click();
+  await settle();
+  assert.ok(parseInt(await page.getByLabel("Zoom level").textContent(), 10) >= 100, "focus keeps one card readable");
+  const navigation = page.getByRole("region", { name: "Focused card connections" });
+  assert.equal(await navigation.locator(".relative-link").count(), 2, "both recombination parents are navigable");
+  await navigation.getByRole("button", { name: /^Highlight only/ }).first().click();
+  assert.equal(await page.locator(".react-flow__edge-path").evaluateAll(es => es.filter(e => Number(e.style.opacity) > .5).length), 1, "Trace emphasizes only one branch");
+  await navigation.locator(".relative-link").first().click();
+  await settle();
+  assert.ok(parseInt(await page.getByLabel("Zoom level").textContent(), 10) >= 100, "following a relative retains readable zoom");
+  assert.deepEqual(await page.locator(".react-flow__node").evaluateAll(es => es.map(e => e.style.transform)), positionsBeforeFocus, "focus navigation never rearranges cards");
+  await page.screenshot({ path: `${artifacts}/focus-connections.png` });
   assert.deepEqual(errors, []);
   console.log(
     JSON.stringify(
