@@ -1,5 +1,5 @@
 # Root atlas: layout controls and graph navigation
-Branch: `demo-layout-navigation`, from `origin/main` at `83844e4`, integrated through `fe57f75`.
+Branch: `demo-layout-navigation`, from `origin/main` at `83844e4`, integrated through `a205446`.
 Worktree: `/Users/brandyn.schult/code/minerva-layout-navigation`.
 Scope ends after merge and deployment to https://minerva-eight.vercel.app/; one operator-started Fable review follows.
 
@@ -18,7 +18,7 @@ Unfold restores the original positions. Folding is local, persisted and included
 Version 2 adds sizes, per-perspective layout history and folded roots; version 1 saves/files migrate with empty values.
 Merge remaps imported sizes/folds, clears history and reports added/skipped card counts in one line.
 Reset and Replace use in-page Confirm/Keep current atlas buttons in Menu.
-Current main header, Wander toolbar and compact card preview are preserved.
+Current main header, Wander toolbar, compact card preview and regroup preview are preserved.
 Recovery copies have a list in the import area with Export and Discard; dev-mode restore shares one pending read.
 No model routes, /workspaces, database or Workflow code changed. No dependencies added.
 

@@ -41,6 +41,8 @@ import { wanderSchema, weaveSchema, moveCardSchema, type ContextualMove, type Ge
 import { cardHash, validateThemes, type ThemeGroup } from "./themes";
 import { atlasSaveSchema, emptyHistory, recoveryCopies, discardRecovery, fixtureSave, restoreSave, writeSave, mergeAtlas, interruptSavedRuns, type AtlasSave } from "./local-state";
 import TalkPanel from "./talk-panel";
+import RegroupPanel from "./regroup-panel";
+import { applyRegroup } from "./regroup-layout";
 import DownloadButton from "./download-button";
 import MovesPanel from "./moves-panel";
 import ExpeditionPanel from "./expedition-panel";
@@ -456,6 +458,9 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
   }
   function clearHistory() { if (!session) { gesture.current = null; setHistory(emptyHistory()); } }
   const [themeCache, setThemeCache] = useState<{ groups: ThemeGroup[]; hashes: Record<string, string>; time: string } | undefined>(initial?.themeCache);
+  const [regroupIds, setRegroupIds] = useState<string[] | null>(null);
+  const [regroupedIds, setRegroupedIds] = useState<string[]>([]);
+  const [themeUndo, setThemeUndo] = useState<{ cache: typeof themeCache; positions: typeof positions; viewport: Viewport }>();
   const [themeError, setThemeError] = useState("");
   const [themeBusy, setThemeBusy] = useState(false);
   const themePending = useRef(false);
@@ -463,7 +468,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
   async function groupThemes(full = false) {
     if (themePending.current) return;
     themePending.current = true;
-    setThemeBusy(true); setThemeError(""); themeRetryFull.current = full;
+    setThemeBusy(true); setThemeError(""); setThemeUndo(undefined); setRegroupedIds([]); themeRetryFull.current = full;
     try {
       const cards = nodes.map(n => n.data.thought);
       const hashes = Object.fromEntries(await Promise.all(cards.map(async c => [c.id, await cardHash(c)])));
@@ -491,6 +496,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
   }
   function switchPerspective(next: Perspective) {
     if (next === perspective) return;
+    setRegroupIds(null);
     setCameras(current => ({ ...current, [perspective]: flow.getViewport() }));
     perspectiveRef.current = next;
     setPerspective(next);
@@ -525,7 +531,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
       position: perspective === "Lineage" ? position : positions[perspective]?.[n.id] ?? position,
       style: { ...n.style, ...(!session ? { width: overview ? undefined : sizes[perspective][n.id]?.width, height: overview ? undefined : sizes[perspective][n.id]?.height } : {}), pointerEvents: overview ? "none" : "all" } };
   });
-  const themeNodes: CardNode[] = perspective === "Constellation" ? groups.map((g, i) => ({ id: `theme-${i}`, type: "theme", className: chain ? "chain-dimmed" : undefined, position: { x: i * 760, y: -70 }, width: 440, height: 140, measured: { width: 440, height: 140 }, style: { width: 440, height: 140 }, draggable: false, data: { thought: { ...thought, title: g.name, summary: g.reason } } })) : [];
+  const themeNodes: CardNode[] = perspective === "Constellation" ? groups.map((g, i) => ({ hidden: !g.memberIds.length, id: `theme-${i}`, type: "theme", className: chain ? "chain-dimmed" : undefined, position: { x: i * 760, y: -70 }, width: 440, height: 140, measured: { width: 440, height: 140 }, style: { width: 440, height: 140 }, draggable: false, data: { thought: { ...thought, title: g.name, summary: g.reason } } })) : [];
   const nodesInitialized = useNodesInitialized();
   useLayoutEffect(() => {
     if (!fitPerspective.current || !nodesInitialized || themeBusy || (perspective === "Constellation" && !themeCache)) return;
@@ -763,6 +769,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
   }
   function open(next: Panel) {
     if (!panel) returnFocus.current = document.activeElement as HTMLElement;
+    setRegroupIds(null);
     setPanel(next);
     setPreview(false);
   }
@@ -1262,12 +1269,27 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           {focusedRelations.length > 6 && <div><button disabled={!connectionPage} onClick={() => { setConnectionPage(p => p - 1); setBranchId(null); }}>Previous connections</button><button disabled={(connectionPage + 1) * 6 >= focusedRelations.length} onClick={() => { setConnectionPage(p => p + 1); setBranchId(null); }}>Next connections</button></div>}
         </details>
         </section>}
-        {perspective === "Constellation" && <section className="themes-status" aria-label="Theme grouping">
-          <p>{themeCache ? `Grouped into themes by Minerva · grouped at ${themeCache.time}` : "Group cards into themes by Minerva"}</p>
-          {themeBusy && <p role="status">Grouping themes…</p>}
-          {themeError && <><p role="alert">{themeError}</p><button disabled={themeBusy} onClick={() => void groupThemes(themeRetryFull.current)}>Retry</button></>}
-          <button disabled={themeBusy} onClick={() => void groupThemes(true)}>Regroup</button>
+        {perspective === "Constellation" && !regroupIds && <section className="themes-status" aria-label="Theme grouping">
+          <span>{themeCache ? `${nodes.length} ideas · ${themeCache.groups.filter(g => g.memberIds.length).length} themes by Minerva` : "Group ideas into themes"}</span>
+          {themeBusy && <span role="status">Grouping themes…</span>}
+          {themeError && <><span role="alert">{themeError}</span><button disabled={themeBusy} onClick={() => void groupThemes(themeRetryFull.current)}>Retry</button></>}
+          <button data-regroup-trigger disabled={themeBusy || !themeCache} onClick={() => { setPanel(null); setFocusedId(null); setRegroupIds(selected.length ? selected : nodes.map(n => n.id)); }}>Regroup{selected.length ? ` ${selected.length} selected` : " all"}</button>
+          {selected.length > 0 && <button onClick={() => setSelected([])}>Clear selection</button>}
+          {regroupedIds.length > 0 && <><span role="status">Regrouped {regroupedIds.length} ideas</span><button onClick={() => void flow.fitView({ nodes: [...regroupedIds, ...themeCache!.groups.flatMap((g, i) => g.memberIds.some(id => regroupedIds.includes(id)) ? [`theme-${i}`] : [])].map(id => ({ id })), padding: .3, maxZoom: 1 })}>View regrouped ideas</button></>}
+          {themeUndo && <button onClick={() => { clearHistory(); setThemeCache(themeUndo.cache); setPositions(themeUndo.positions); void flow.setViewport(themeUndo.viewport); setThemeUndo(undefined); setRegroupedIds([]); }}>Undo regroup</button>}
         </section>}
+        {perspective === "Constellation" && regroupIds && themeCache && <RegroupPanel
+          key={regroupIds.join(",")} cards={nodes.map(n => n.data.thought)} ids={regroupIds}
+          close={() => setRegroupIds(null)} onGenerate={clearHistory}
+          apply={(incoming) => {
+            clearHistory();
+            setThemeUndo({ cache: themeCache, positions, viewport: flow.getViewport() });
+            setRegroupedIds(regroupIds);
+            const { groups: next, layout } = applyRegroup(themeCache.groups, incoming, regroupIds, renderedNodes);
+            setPositions(current => ({ ...current, Constellation: layout }));
+            setThemeCache({ ...themeCache, groups: next, time: new Date().toLocaleString() });
+            setRegroupIds(null);
+          }} />}
         <div className="legend" hidden={perspective === "Constellation"}>
           <span>
             <i className="legend-line inheritance" aria-hidden="true" />
@@ -1291,7 +1313,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
             </div>
           </div>}
         </div>
-        {selected.length > 0 && (
+        {selected.length > 0 && !regroupIds && (
           <div className="selection-bar">
             <span>{selected.length} selected</span>
             {session ? <><button onClick={() => open("compare")}>Compare</button><button onClick={() => move(selected)}>Weave · preview</button></> : <>

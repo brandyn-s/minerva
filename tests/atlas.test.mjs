@@ -84,3 +84,41 @@ test("mall fixture has unique references, positions, and acyclic inheritance", (
   };
   for (const id of ids) visit(id);
 });
+
+const { applyRegroup } = load("../features/atlas/regroup-layout.ts");
+test("regroup 22 of 120 ideas preserves 98 memberships and positions without overlap", () => {
+  const nodes = Array.from({length:120}, (_,i) => ({id:String(i), position:{x:0,y:160+i*480}}));
+  const current = [{name:"Original", reason:"Existing",memberIds:nodes.map(n=>n.id)}];
+  const ids = nodes.slice(0,22).map(n=>n.id);
+  const incoming = [{name:"Original",reason:"Same name",memberIds:ids.slice(0,9)}, {name:"Fresh",reason:"New theme",memberIds:ids.slice(9)}];
+  const snapshot = structuredClone(current);
+  const result = applyRegroup(current,incoming,ids,nodes);
+  assert.deepEqual(current,snapshot,"must not mutate cache needed by Undo");
+  for(const node of nodes.slice(22)) {
+    assert.deepEqual(result.layout[node.id],node.position);
+    assert.ok(result.groups[0].memberIds.includes(node.id));
+  }
+  assert.equal(new Set(result.groups.flatMap(g=>g.memberIds)).size,120);
+  assert.equal(new Set(Object.values(result.layout).map(p=>`${p.x},${p.y}`)).size,120);
+});
+
+test("regroup all replaces old slots instead of accumulating hidden themes", () => {
+  const nodes = Array.from({length:120}, (_,i) => ({id:String(i),position:{x:50000,y:i*480}}));
+  const ids = nodes.map(n=>n.id);
+  const previous = Array.from({length:12}, (_,i)=>({name:`Old ${i}`,reason:"Old",memberIds:ids.slice(i*10,(i+1)*10)}));
+  const proposal = [{name:"Fresh",reason:"New",memberIds:ids}];
+  const result = applyRegroup(previous,proposal,ids,nodes);
+  assert.equal(result.groups.length,1);
+  assert.equal(result.layout['0'].x,0);
+  assert.equal(result.layout['0'].y,160);
+  assert.deepEqual(previous[0].memberIds,ids.slice(0,10));
+});
+
+test("selected regroup reuses vacated theme slots without moving others", () => {
+  const current = [{name:"A",reason:"A",memberIds:['a']},{name:"B",reason:"B",memberIds:['b']}];
+  const nodes = [{id:'a',position:{x:0,y:160}},{id:'b',position:{x:760,y:900}}];
+  const result = applyRegroup(current,[{name:"C",reason:"C",memberIds:['a']}],['a'],nodes);
+  assert.equal(result.groups.length,2);
+  assert.equal(result.groups[0].name,'C');
+  assert.deepEqual(result.layout.b,nodes[1].position);
+});
