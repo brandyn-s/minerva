@@ -1,36 +1,24 @@
-# Selected regroup preview
+# Light selection dock
 
-Branch: feat/regroup-selection
-Worktree: /Users/brandyn.schult/code/minerva-regroup-selection
-Regroup implementation: a8c8dca; integrated with current origin/main.
+Branch: `feat/light-selection-dock`.
+Worktree: `/Users/brandyn.schult/code/minerva-light-selection-dock`.
+Base: origin/main `3899480`.
 
 ## Outcome
-Constellation grouping controls move to the upper left, freeing the Minerva corner.
-Regroup selected (or all when nothing is selected) opens a left preview panel.
-The existing themes endpoint receives only the chosen cards. Apply changes the
-selected memberships; unaffected cards and theme slots retain their positions.
-Cancel, request cancellation, retry, stale-source protection, and Undo are included.
-Apply announces completion; View regrouped ideas includes affected theme headings.
-Undo restores the camera as well as membership and layout. Full regroup replaces
-old slots; selected regroup reuses emptied slots without moving other ideas.
-Talk opens through the existing launcher. Preview and card review lists scroll.
-No new persistence or provider implementation is introduced.
+Root atlas selection toolbar matches the chosen light dock: parchment surface,
+bronze border/dividers, green Wander, labelled icons and inline Clear selection.
+Existing single/multiple selection eligibility, actions and loading behavior remain.
+Mobile uses two action columns; summary and cameo sit clear of its controls.
+Workspace toolbar styling remains separate. No backend or model changes.
 
 ## Evidence
-npm run check: lint, types, unit tests, production build.
-120-node unit coverage verifies 22 selected and 98 untouched memberships/positions,
-full regroup compaction, and empty-slot reuse.
-In-app browser with synthetic theme responses: preview, Apply, Undo, Cancel, Talk.
-See design-qa.md for scope and visual evidence. No paid model calls.
-Live provider quality and dense-browser performance were not measured.
-Local provider configuration is linked from the existing main checkout.
-The merge preserves current Menu, selection, Talk, and local-save features.
-Local saves accept empty theme slots retained for stable group positions.
+`npm run check` passed lint, TypeScript, repository tests and production build.
+Focused browser replay passed one/two-card states, all four actions, mocked Weave
+loading/completion, clearing, and 390px layout; no browser page errors.
+Desktop in-app inspection and mobile screenshot comparison passed; `design-qa.md`.
+No paid calls. Full legacy replay was not rerun for this scoped toolbar change.
 
 ## Startup and next role
-npm run dev -- --port 4320
-Production: npm run start -- --port 4322
-Fixture-response review proxy: http://127.0.0.1:4323/ (temporary local test process).
-Live-endpoint application: http://127.0.0.1:4322/.
-Next role: owner review after the authorized production release.
-The original checkout had concurrent edits, so final checks use this isolated copy.
+`npm run dev -- --port 3067` with the Node/npm launcher in AGENTS.md.
+Preview: http://127.0.0.1:3067/.
+Next: owner visual acceptance. No critic or further work queued.
