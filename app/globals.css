@@ -857,3 +857,54 @@ summary {
 .expedition-links { display: inline-flex; flex-wrap: wrap; }
 .expedition-reading { border-top: 1px solid #aaa084; margin-top: 18px; }
 .expedition-stop { font-weight: 600; }
+.field-tools .expedition-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  min-height: 48px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+}
+.expedition-control img { display: block; }
+.field-tools .expedition-control:hover,
+.field-tools .expedition-control[aria-expanded="true"] {
+  background: var(--paper);
+  box-shadow: 0 0 0 2px #b18a58;
+}
+.minerva-tooltip {
+  position: fixed;
+  z-index: 10000;
+  max-width: min(320px, calc(100vw - 16px));
+  box-sizing: border-box;
+  padding: 10px 14px;
+  border: 1px solid #b18a58;
+  border-radius: 8px;
+  background: #273f32;
+  color: #f1e9d6;
+  box-shadow: inset 0 0 0 2px #ffffff0d, 0 3px 10px #273a3526;
+  font: 13px/1.5 ui-monospace, monospace;
+  overflow-wrap: anywhere;
+}
+.minerva-tooltip::after {
+  content: "";
+  position: absolute;
+  left: var(--tip-arrow);
+  width: 10px;
+  height: 10px;
+  background: #273f32;
+  transform: translateX(-50%) rotate(45deg);
+}
+.minerva-tooltip[data-side="above"]::after {
+  bottom: -6px;
+  border-right: 1px solid #b18a58;
+  border-bottom: 1px solid #b18a58;
+}
+.minerva-tooltip[data-side="below"]::after {
+  top: -6px;
+  border-left: 1px solid #b18a58;
+  border-top: 1px solid #b18a58;
+}

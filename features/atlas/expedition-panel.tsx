@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import TooltipButton from "./tooltip-button";
 import type { Thought } from "./domain";
 import { expeditionStepSchema, nearIdentical, validateReading, type ExpeditionStep, type Reading } from "./expedition";
 import type { GeneratedCard } from "./generation";
@@ -79,7 +80,7 @@ export default function ExpeditionPanel({ open, close, source, cards, add, focus
   function links(steps: number[]) {
     return <span className="expedition-links">{steps.map(step => {
       const entry = run!.steps.find(s => s.step === step)!;
-      return <button key={step} onClick={() => focus(entry.id)} title={cards.find(c => c.id === entry.id)?.title}>Step {step} ↗</button>;
+      return <TooltipButton key={step} onClick={() => focus(entry.id)} title={cards.find(c => c.id === entry.id)?.title}>Step {step} ↗</TooltipButton>;
     })}</span>;
   }
   return <aside ref={panelRef} tabIndex={-1} hidden={!open} className="detail-panel expedition-panel" role="dialog" aria-label="Expedition" onKeyDown={e => {
