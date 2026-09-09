@@ -15,16 +15,22 @@ interaction friction. Fable M1 review remains pending.
 The next M2 milestone has not been authorized. No live services are simulated.
 
 - Repository: https://github.com/brandyn-s/minerva
-- Isolated publication worktree: `/Users/brandyn.schult/code/minerva-m1-overview-fix`.
+- Isolated publication worktree: `/Users/brandyn.schult/code/minerva-atlas-readability`.
 - The original `/Users/brandyn.schult/code/minerva` checkout contains separate M2
   work and is not reset or switched by this publication.
-- Branch: `fix/m1-overview-ghosting` (M1 overview corrections and owner observations).
-- Last committed application/review candidate: `4e28dfbd85f6cdf349bba6fd2d180371492a327b`.
-  This publication additionally removes overview subtext and fixes drag-shadow
-  ghosting; the existing review checkout does not include those corrections.
-- Publication: [PR #5](https://github.com/brandyn-s/minerva/pull/5) is merged to
-  `main`; the owner-observation documentation is preserved alongside the additional
-  UI corrections published by this branch.
+- Branch: `fix/atlas-readability` (atlas readability and dynamic connections).
+- Base revision: `fb5cfc3` on `origin/main`. This candidate adds dynamic curved
+  connections, consistent line weight across zoom, clearer legend text, grouped
+  dense variations at every zoom, and the requested removal of status/overview
+  annotations and the visible zoom panel. The seed marker reads “Seed”.
+- Validation: lint, typecheck, tests, production build, and IB01–IB06 browser
+  journeys passed at 1440×900, 1280×600 and simulated touch at 390×844. Endpoint
+  attachment and dense grouping across zoom passed. The isolated checkout excludes
+  the ongoing M2 implementation.
+- Start: pinned Node/npm `npm run dev -- --port 3013` in this worktree.
+- Next role: owner can inspect the merged refinements; Fable's M1 review remains
+  operator-started. This update does not imply fresh experience acceptance.
+
 - Seed provenance: `brandyn-s/minerva-template` at
   `248665c116fb0655e2b70f732ca1b9bffb5b5dcb`; generated initial commit
   `33f81109ea47ad83732f316e72f6adeb8ed7a352`.

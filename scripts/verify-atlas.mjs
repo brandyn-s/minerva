@@ -15,8 +15,12 @@ const button = (name) => page.getByRole("button", { name, exact: true });
 const transform = () =>
   page.locator(".react-flow__viewport").getAttribute("style");
 const settle = () => page.waitForTimeout(350);
+const cameraKey = async (key, target = page) => {
+  await target.locator(".field").focus();
+  await target.keyboard.press(key);
+};
 const fit = async () => {
-  await button("Fit").click();
+  await cameraKey("0");
   await settle();
 };
 const close = async () => {
@@ -29,11 +33,33 @@ async function inspectFromIndex(title) {
     .filter({ has: page.getByRole("heading", { name: title, exact: true }) });
   await row.getByRole("button", { name: "Inspect", exact: true }).click();
 }
+async function assertAttached() {
+  const attached = await page.evaluate(() => {
+    const path = document.querySelector('[data-id="food-repair"] .react-flow__edge-path');
+    return ["food", "repair"].every((id, index) => {
+      const node = document.querySelector(`[data-id="${id}"]`);
+      const surface = node.querySelector(".overview-target") || node.querySelector(".thought");
+      const rect = surface.getBoundingClientRect();
+      const point = path.getPointAtLength(index ? path.getTotalLength() : 0)
+        .matrixTransform(path.getScreenCTM());
+      if (surface.classList.contains("compact-target")) {
+        return Math.abs(Math.hypot(point.x - (rect.left + rect.width / 2),
+          point.y - (rect.top + rect.height / 2)) - rect.width / 2) < 3;
+      }
+      return point.x >= rect.left - 3 && point.x <= rect.right + 3 &&
+        point.y >= rect.top - 3 && point.y <= rect.bottom + 3 &&
+        Math.min(Math.abs(point.x - rect.left), Math.abs(point.x - rect.right),
+          Math.abs(point.y - rect.top), Math.abs(point.y - rect.bottom)) < 3;
+    });
+  });
+  assert.ok(attached, "connection endpoints must follow visible card boundaries");
+}
 try {
   await page.goto(base);
   await page.locator(".thought").first().waitFor();
   await settle();
   await fit();
+  assert.equal(await page.locator(".zoom-controls").isVisible(), false);
   assert.equal(await page.locator(".thought").count(), 6);
   assert.equal(await page.locator(".react-flow__edge").count(), 7);
   assert.ok(
@@ -42,6 +68,41 @@ try {
       .evaluate((e) => e.getBoundingClientRect().height / innerHeight)) >= 0.8,
   );
   await page.screenshot({ path: `${artifacts}/desktop.png` });
+  await assertAttached();
+  // Farthest zoom-out must preserve distinct, clickable overview markers.
+  for (let i = 0; i < 15; i++) await cameraKey("-");
+  await settle();
+  await assertAttached();
+  const markerRects = await page
+    .locator(".overview-target")
+    .evaluateAll((elements) =>
+      elements.map((e) => {
+        const r = e.getBoundingClientRect();
+        return {
+          label: e.textContent,
+          left: r.left,
+          right: r.right,
+          top: r.top,
+          bottom: r.bottom,
+        };
+      }),
+    );
+  assert.equal(markerRects.length, 6);
+  for (let i = 0; i < markerRects.length; i++)
+    for (let j = i + 1; j < markerRects.length; j++) {
+      const a = markerRects[i],
+        b = markerRects[j];
+      assert.ok(
+        !(
+          a.left < b.right &&
+          a.right > b.left &&
+          a.top < b.bottom &&
+          a.bottom > b.top
+        ),
+        `overview markers overlap: ${a.label}, ${b.label}`,
+      );
+    }
+  await fit();
 
   // IB01: drag across title pans without selecting text or opening inspection.
   const title = page.locator('[data-id="food"] .card-title');
@@ -80,13 +141,13 @@ try {
   await settle();
   assert.notEqual(await node.evaluate((e) => e.style.transform), beforeNode);
   assert.notEqual(await edge.getAttribute("d"), beforeEdge);
+  await assertAttached();
   assert.equal(await transform(), camera);
-  await button("Fit").focus();
-  await page.keyboard.press("Enter");
+  await cameraKey("0");
   await settle();
-  await button("Zoom in").focus();
+  await page.locator(".field").focus();
   const oldZoom = await transform();
-  await page.keyboard.press("Space");
+  await page.keyboard.press("+");
   await settle();
   assert.notEqual(await transform(), oldZoom, "keyboard zoom after dragging");
   await fit();
@@ -128,7 +189,7 @@ try {
     "retail",
     "exposed lower card should come to front",
   );
-  await button("Fit").focus();
+  await page.locator(".field").focus();
   await page.locator('[data-id="food"] .card-grip').focus();
   assert.equal(
     await topCard(),
@@ -322,10 +383,6 @@ try {
   assert.equal(await page.locator(".thought-group").count(), 3);
   for (const group of await page.locator(".thought-group button").all())
     assert.ok(await group.isVisible());
-  assert.match(
-    await page.locator(".overview-note").innerText(),
-    /24 variations grouped by source/,
-  );
   assert.equal(
     await page.locator(".react-flow__edge").count(),
     10,
@@ -334,6 +391,13 @@ try {
   await page.locator(".thought-group button").last().click();
   assert.equal(await page.locator(".reference-list section").count(), 8);
   await close();
+  for (let i = 0; i < 6; i++) await cameraKey("+");
+  await settle();
+  assert.equal(await page.locator(".thought-group").count(), 3,
+    "zooming in keeps dense variations grouped");
+  assert.equal(await page.locator(".react-flow__edge").count(), 10,
+    "zooming in must not restore the dense web of variation edges");
+  await fit();
   await inspectFromIndex("beginner session · tools");
   assert.match(
     await page.getByRole("dialog").innerText(),
@@ -353,7 +417,7 @@ try {
   await mobile.goto(base);
   await mobile.locator(".overview-target").first().waitFor();
   await mobile.waitForTimeout(350);
-  await mobile.getByRole("button", { name: "Fit", exact: true }).click();
+  await cameraKey("0", mobile);
   await mobile.waitForTimeout(350);
   await mobile.screenshot({ path: `${artifacts}/narrow-overview.png` });
   const markerCamera = await mobile
@@ -556,11 +620,9 @@ try {
     0,
     "pinch must not activate controls",
   );
-  await mobile.getByRole("button", { name: "Fit", exact: true }).focus();
-  await mobile.keyboard.press("Enter");
+  await cameraKey("0", mobile);
   await mobile.waitForTimeout(350);
-  await mobile.getByRole("button", { name: "Zoom in", exact: true }).focus();
-  await mobile.keyboard.press("Space");
+  await cameraKey("+", mobile);
   await mobile.waitForTimeout(350);
   await mobile
     .getByRole("button", { name: /^Thoughts / })
