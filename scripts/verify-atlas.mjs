@@ -72,6 +72,41 @@ const fit = async () => {
 const close = async () => {
   await button("Close panel").click();
 };
+if (process.env.MINERVA_EXPEDITION_ONLY === "1") {
+  try {
+    await page.goto(base);
+    await page.getByRole("button", { name: "Expedition panel", exact: true }).click();
+    assert.ok(await button("Start expedition").isDisabled());
+    await page.getByText("Select one card on the atlas to begin.").waitFor();
+    await close();
+    await page.getByRole("button", { name: "Select A food hall", exact: true }).click();
+    await page.getByRole("button", { name: "Expedition panel", exact: true }).click();
+    await page.getByLabel("Where would you like to take this idea?").fill("Find a practical way to bring people here on weekday evenings.");
+    const steps = page.getByRole("group", { name: "Maximum steps" });
+    await steps.getByRole("radio", { name: "3", exact: true }).check();
+    await page.screenshot({ path: `${artifacts}/expedition-setup-desktop.png` });
+    await page.setViewportSize({ width: 390, height: 844 });
+    assert.equal(await page.locator(".expedition-panel").evaluate(el => el.scrollWidth <= el.clientWidth), true);
+    await button("Start expedition").scrollIntoViewIfNeeded();
+    await page.screenshot({ path: `${artifacts}/expedition-setup-mobile.png` });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    let count = 0;
+    await page.route("**/api/expedition", route => {
+      const input = route.request().postDataJSON(); count++;
+      assert.equal(input.step, count);
+      return route.fulfill({ json: { card: { title: ["", "Repair supper club", "Bookable kitchen lessons", "Neighbourhood maker market"][count], summary: `Explore a different format: ${["", "repairing over dinner", "learning kitchen skills", "selling local crafts"][count]}.`, body: "A staffed table with shared activities." }, rationale: "A practical next step.", reached: false, reason: "More exploration remains." } });
+    });
+    await button("Start expedition").click();
+    await page.getByText("Step budget reached.", { exact: true }).waitFor();
+    assert.equal(count, 3);
+    assert.equal(await page.locator(".expedition-steps > li").count(), 3);
+    await button("New expedition").click();
+    await page.getByLabel("Where would you like to take this idea?").waitFor();
+    assert.deepEqual(errors, []);
+    console.log("Expedition setup: empty state, selection, three steps, completion and responsive layout passed.");
+  } finally { await browser.close(); streamServer.close(); }
+  process.exit(0);
+}
 async function inspectFromIndex(title) {
   await page.getByRole("button", { name: /^Thoughts / }).click();
   const row = page
@@ -729,10 +764,10 @@ try {
     });
     await button("Expedition").click();
     const goal = condition === "live" ? "Develop two distinct, connected drafts toward a testable evening repair service, first defining a session format and then a booking experiment." : frozenGoal;
-    await page.getByLabel("Goal in one sentence").fill(goal);
-    await page.getByLabel("Step budget", { exact: true }).selectOption(condition === "stagnation" ? "5" : "2");
+    await page.getByLabel("Where would you like to take this idea?").fill(goal);
+    await page.getByRole("group", { name: "Maximum steps" }).getByRole("radio", { name: condition === "stagnation" ? "5" : "2", exact: true }).check();
     await button("Start expedition").click();
-    assert.equal(await page.getByLabel("Goal in one sentence").count(), 0, "goal cannot be edited after start");
+    assert.equal(await page.getByLabel("Where would you like to take this idea?").count(), 0, "goal cannot be edited after start");
     if (condition === "stop") {
       await page.waitForFunction(() => document.querySelector(".expedition-steps")?.children.length === 1);
       while (calls.length < 2) await page.waitForTimeout(25);
@@ -836,7 +871,7 @@ try {
     return route.fulfill({ json: { card: card(`Durable expedition ${input.step}`), rationale: `Durable rationale ${input.step}`, reached: false, reason: "Continue exploring." } });
   });
   await page.route("**/api/reading", route => route.fulfill({ json: readingFixture }));
-  await button("Expedition").click(); await page.getByLabel("Goal in one sentence").fill("Preserve this expedition"); await button("Start expedition").click();
+  await button("Expedition").click(); await page.getByLabel("Where would you like to take this idea?").fill("Preserve this expedition"); await button("Start expedition").click();
   await page.locator(".expedition-stop").waitFor(); await button("What this expedition suggests").click();
   await page.getByRole("button", { name: "Challenge group 1" }).click();
   await button("New expedition").click();
