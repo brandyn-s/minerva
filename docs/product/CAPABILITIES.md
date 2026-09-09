@@ -160,3 +160,15 @@ held-drag checks verify transparent overview containers with no shadow/outline;
 IB01–IB06 still pass. These changes are published separately from candidate
 `4e28dfbd85f6cdf349bba6fd2d180371492a327b`; use the correction PR merge commit
 for the next review. The existing review checkout remains at the earlier candidate.
+
+## Atlas readability refinement
+
+The atlas uses measured visible boundaries for dynamic Bézier connections.
+Endpoint placement and curvature update with movement and semantic zoom; line
+weight and dash spacing remain readable. Overview hides edge labels. Dense
+variations stay grouped at every zoom and remain inspectable through group lists.
+The visible camera panel is hidden; focusing the canvas and using `+`, `-`, or `0`
+provides keyboard zoom or Fit. The seed and legend are clearer, and the requested
+status and overview annotations are removed. Browser coverage checks visible
+endpoint attachment, grouping across zoom, mouse/keyboard and simulated touch.
+This is fixture-based evidence, not live service evidence or a new owner acceptance.
