@@ -970,6 +970,21 @@ summary {
   .atlas-storage input { max-width: 145px; }
 }
 
+/* Root atlas layout and transitive navigation. */
+.scalable-atlas .thought:not(.thought-overview) { position: relative; }
+.scalable-atlas .card-content { height: 100%; overflow: auto; border-radius: 3px; }
+.scalable-atlas .react-flow__resize-control.handle { width: 10px; height: 10px; border-color: var(--card); background: var(--teal); }
+.chain-dimmed { opacity: .18; }
+.chain-highlighted .thought { outline: 3px solid var(--teal); outline-offset: 3px; }
+.fold-marker { pointer-events: all; position: absolute; top: -28px; right: 0; white-space: nowrap; z-index: 3; background: var(--card); }
+.chain-controls { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0; }
+.chain-controls ol { flex-basis: 100%; }
+.field-tools .layout-menu { max-width: 270px; background: var(--card); padding: 8px; border: 1px solid #c9bea3; }
+
+.studio:not(.scalable-atlas) .card-content { display: contents; }
+
+.scalable-atlas .react-flow__resize-control.line,
+.scalable-atlas .react-flow__resize-control.handle:not(.bottom.right) { display: none; }
 /* Atlas file actions stay in the header, leaving the canvas unobstructed. */
 .atlas-menu { margin-left: auto; position: relative; flex-shrink: 0; z-index: 30; }
 .atlas-menu summary { display: flex; align-items: center; justify-content: center; gap: 10px; list-style: none; cursor: pointer; min-height: 44px; padding: 10px 16px; border: 1px solid #aa9168; border-radius: 6px; background: #faf6ea; font: 13px/1.5 ui-monospace, monospace; }
@@ -1219,6 +1234,7 @@ summary {
 .catalogue-menu > summary:hover { background: #e4d8bc; border-color: var(--bronze); }
 .catalogue-actions button { min-height: 34px; padding: 6px 10px; }
 
+.catalogue-fold { margin: 0 14px 10px 48px; font-size: 13px; }
 .relationship-label-toggle { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 8px 12px; font: 13px/1.5 ui-monospace, monospace; cursor: pointer; }
 .relationship-label-toggle input { width: 18px; height: 18px; margin: 0; accent-color: var(--teal); }
 
