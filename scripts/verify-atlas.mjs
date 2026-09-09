@@ -15,8 +15,12 @@ const button = (name) => page.getByRole("button", { name, exact: true });
 const transform = () =>
   page.locator(".react-flow__viewport").getAttribute("style");
 const settle = () => page.waitForTimeout(350);
+const cameraKey = async (key, target = page) => {
+  await target.locator(".field").focus();
+  await target.keyboard.press(key);
+};
 const fit = async () => {
-  await button("Fit").click();
+  await cameraKey("0");
   await settle();
 };
 const close = async () => {
@@ -55,6 +59,7 @@ try {
   await page.locator(".thought").first().waitFor();
   await settle();
   await fit();
+  assert.equal(await page.locator(".zoom-controls").isVisible(), false);
   assert.equal(await page.locator(".thought").count(), 6);
   assert.equal(await page.locator(".react-flow__edge").count(), 7);
   assert.ok(
@@ -65,7 +70,7 @@ try {
   await page.screenshot({ path: `${artifacts}/desktop.png` });
   await assertAttached();
   // Farthest zoom-out must preserve distinct, clickable overview markers.
-  for (let i = 0; i < 15; i++) await button("Zoom out").click();
+  for (let i = 0; i < 15; i++) await cameraKey("-");
   await settle();
   await assertAttached();
   const markerRects = await page
@@ -138,12 +143,11 @@ try {
   assert.notEqual(await edge.getAttribute("d"), beforeEdge);
   await assertAttached();
   assert.equal(await transform(), camera);
-  await button("Fit").focus();
-  await page.keyboard.press("Enter");
+  await cameraKey("0");
   await settle();
-  await button("Zoom in").focus();
+  await page.locator(".field").focus();
   const oldZoom = await transform();
-  await page.keyboard.press("Space");
+  await page.keyboard.press("+");
   await settle();
   assert.notEqual(await transform(), oldZoom, "keyboard zoom after dragging");
   await fit();
@@ -185,7 +189,7 @@ try {
     "retail",
     "exposed lower card should come to front",
   );
-  await button("Fit").focus();
+  await page.locator(".field").focus();
   await page.locator('[data-id="food"] .card-grip').focus();
   assert.equal(
     await topCard(),
@@ -387,7 +391,7 @@ try {
   await page.locator(".thought-group button").last().click();
   assert.equal(await page.locator(".reference-list section").count(), 8);
   await close();
-  for (let i = 0; i < 6; i++) await button("Zoom in").click();
+  for (let i = 0; i < 6; i++) await cameraKey("+");
   await settle();
   assert.equal(await page.locator(".thought-group").count(), 3,
     "zooming in keeps dense variations grouped");
@@ -413,7 +417,7 @@ try {
   await mobile.goto(base);
   await mobile.locator(".overview-target").first().waitFor();
   await mobile.waitForTimeout(350);
-  await mobile.getByRole("button", { name: "Fit", exact: true }).click();
+  await cameraKey("0", mobile);
   await mobile.waitForTimeout(350);
   await mobile.screenshot({ path: `${artifacts}/narrow-overview.png` });
   const markerCamera = await mobile
@@ -616,11 +620,9 @@ try {
     0,
     "pinch must not activate controls",
   );
-  await mobile.getByRole("button", { name: "Fit", exact: true }).focus();
-  await mobile.keyboard.press("Enter");
+  await cameraKey("0", mobile);
   await mobile.waitForTimeout(350);
-  await mobile.getByRole("button", { name: "Zoom in", exact: true }).focus();
-  await mobile.keyboard.press("Space");
+  await cameraKey("+", mobile);
   await mobile.waitForTimeout(350);
   await mobile
     .getByRole("button", { name: /^Thoughts / })

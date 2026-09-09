@@ -158,7 +158,7 @@ packages 11–12. Total incremental spending allowance is $5, including authoriz
 previews on the existing Vercel project and required development database.
 Recoverable workspace deletion and complete versioned JSON export are agreed;
 backup/restore is excluded by the owner. Managed Postgres is selected.
-The saved MVP now integrates persistence, frozen context, Workflow/Gateway generation, assessment and explicit decisions. One browser live smoke run completed four calls for an estimated $0.0035978, kept a revision, reloaded and exported all run records. This was builder verification, not owner acceptance. Required checks pass (14 tests plus lint/typecheck/build). Neon Free is provisioned for development/preview and a $4 non-refreshing Gateway budget is active under the $5 total cap. Broader M2 fault/input checks are not claimed; the owner requested streamlined MVP verification. See [HANDOFF](../HANDOFF.md) for exact evidence, open scope and the uncommitted candidate.
+The saved MVP now integrates persistence, frozen context, Workflow/Gateway generation, assessment and explicit decisions. One browser live smoke run completed four calls for an estimated $0.0035978, kept a revision, reloaded and exported all run records. This was builder verification, not owner acceptance. Required checks pass (14 tests plus lint/typecheck/build). Neon Free is provisioned for development/preview and a $4 non-refreshing Gateway budget is active under the $5 total cap. Broader M2 fault/input checks are not claimed; the owner requested streamlined MVP verification. See [HANDOFF](../HANDOFF.md) for exact evidence, open scope and the committed candidate.
 
 Owner judgment on the live proposals (2026-09-09): both are useful enough to show
 that the working flow is becoming concrete, but they converge too heavily on
@@ -175,3 +175,15 @@ and restricts the drag shadow to full-detail cards. Mouse and simulated-touch
 held-drag checks verify transparent overview containers with no shadow/outline;
 IB01–IB06 still pass. These changes are not included in committed candidate
 `4e28dfbd85f6cdf349bba6fd2d180371492a327b` or the existing review checkout.
+
+## Atlas readability refinement
+
+The atlas uses measured visible boundaries for dynamic Bézier connections.
+Endpoint placement and curvature update with movement and semantic zoom; line
+weight and dash spacing remain readable. Overview hides edge labels. Dense
+variations stay grouped at every zoom and remain inspectable through group lists.
+The visible camera panel is hidden; focusing the canvas and using `+`, `-`, or `0`
+provides keyboard zoom or Fit. The seed and legend are clearer, and the requested
+status and overview annotations are removed. Browser coverage checks visible
+endpoint attachment, grouping across zoom, mouse/keyboard and simulated touch.
+This is fixture-based evidence, not live service evidence or a new owner acceptance.

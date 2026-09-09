@@ -11,13 +11,14 @@ remains the prepared M1 atlas; `/workspaces` opens the saved application.
 - Writable worktree: `/Users/brandyn.schult/code/minerva`.
 - Branch: `feat/m2-working-spine`.
 - Base SHA: `4e28dfbd85f6cdf349bba6fd2d180371492a327b`.
-- M2 is **uncommitted**; this base SHA does not identify the new implementation.
-  No commit, push or production promotion has been performed.
+- M2 implementation commit: `4466d1c`; this base SHA does not identify the new implementation.
+  The owner authorized commit and merge. The PR merges the latest main changes;
+  its squash merge SHA, supplied in the operator response, identifies the review candidate.
 - M1: Fable approved the base candidate from an independent clone; the owner
   accepted the experience with orientation friction, overlay occlusion and
   phone markers documented as limitations. Hosted M1 verification is deferred.
-- M2 is authorized; next step is preparation of an exact
-  committed candidate for the planned interim Fable review before voice
+- M2 is authorized; next role is Fable on the exact
+  merged candidate for the planned interim review before voice
   packages 11–12. Do not launch the reviewer automatically.
 
 ## Implemented path
@@ -126,5 +127,5 @@ Preview deployment `dpl_ECpu6bNfkvhWHHbL4eMx96n6nMmY` is **READY**. An authentic
 the saved generated proposal and its kept decision from managed Postgres. The
 CLI generated a project protection-bypass token for this request; its value is
 not recorded here. Protection remains enabled. This verifies preview storage
-reads, not hosted generation or fault recovery. The preview predates these final
-documentation edits; its application code matches this checkpoint.
+reads, not hosted generation or fault recovery. The preview predates the final documentation and main-branch readability merge;
+it is earlier evidence, not a verified deployment of the final review candidate.

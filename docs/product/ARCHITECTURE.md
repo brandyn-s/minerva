@@ -64,6 +64,25 @@ database. Do not replace migrations with schema push or mutate schema during
 requests or ordinary server startup. Add these dependencies with M2 persistence,
 not to the content-free seed or an unused M1 persistence skeleton.
 
+Committing a mutation and its command receipt in one transaction requires a
+driver that supports transactions, which excludes HTTP-only serverless drivers.
+Select the driver and its pooling configuration with M2 / 4 rather than at the
+durable-execution package, and record the choice here. A pooler in transaction
+mode reassigns backend connections between statements, so prepared statements
+must be disabled against those endpoints; the failure is intermittent and
+silently drops work rather than failing the request, so assert the pairing at
+startup instead of relying on the connection string being right.
+
+The platform provides no migration step, so "an explicit command" means a
+deliberate operator action against a named database, not a build hook. Applying
+migrations from the build command couples schema change to deployment and makes
+a transient database connection fail the whole deploy, and it also runs on every
+preview build against whatever database that environment resolves to. Run
+migrations as their own command, confirm the target database first, and treat a
+deployment expecting new schema as ordered after that command rather than
+carrying it. Record with M2 / 4 which command applies migrations, who runs it,
+and how a failed partial migration is recovered.
+
 Postgres owns workspaces, brief/constraint revisions, ideas and immutable
 revisions, derivation edges, semantic links, proposals, reviews, decisions,
 command receipts, operation manifests, runs/steps and exploration observations.
@@ -144,10 +163,51 @@ proposal-saved and terminal events for presentation. Event delivery is not a
 second state store. Reconnect from durable state rather than replaying UI actions.
 Stopping ends future admission; already-admitted work may finish or incur cost.
 
+Workflow keeps a run on the deployment that created it, so releasing new code
+does not disturb runs already in flight and recovery need not defend against
+that case. A run is also pinned at creation to the region of the function that
+started it and stays there for its lifetime; upgrading the SDK does not migrate
+existing runs. Neither property removes the dispatch reconciliation above.
+
+Stop is an application capability, not a platform call. The SDK cancels in-flight
+work by threading an abort signal into steps, and run cancellation outside the
+application is an operator CLI, so a user-facing stop persists a stop intent that
+the run observes and then aborts its own in-flight steps. Keep that path distinct
+from a suspended run needing operator recovery.
+
+Workflow selects a world for its storage and queuing. Local development uses the
+bundled local world automatically under the ordinary development server, with no
+extra command. That world separates its two halves: run data persists to a local
+`.workflow-data/` directory, while the step queue is in memory and does not
+survive a restart. So a restart loses queued steps, not run state, and local
+recovery reconciles a queue against records the world still holds rather than
+reconstructing those records. Ignore that directory rather than committing it.
+
+The local world also processes steps synchronously and runs as a single
+instance, so it cannot demonstrate concurrent step execution. Evidence for
+concurrent runs comes from a preview deployment; a local pass does not establish
+it. A Postgres-backed world exists as a selectable alternative if durable local
+runs are later required, which is a configuration choice rather than building a
+queue.
+
 Bound SDK retries, workflow retries, repair and replanning under one explicit
 attempt/time/spend policy. Transient failures, invalid output, revision conflict,
 repetition and quota denial have different responses. Preserve partial results
 and failed attempts. Never bypass a quota or invent successful fallback output.
+
+Quota denial is identifiable rather than inferred: the Gateway rejects an
+over-budget request with HTTP 402 and a stable quota type, and names the
+exceeded scope with its spend and limit. Authentication and billing-prerequisite
+failures arrive as their own statuses and types and are configuration faults,
+not transient ones. Match those explicitly and treat the remainder as transient,
+rather than reading any failure as retryable.
+
+Usage arrives in two phases. A generation identifier is available immediately,
+including inside the first chunk of a streamed response, while cost and token
+usage for that generation become available shortly afterward. Record the
+identifier with the attempt when it completes and reconcile usage against it
+later; a receipt written at completion time cannot carry a cost that does not
+exist yet.
 
 ## Concurrent interaction
 
@@ -167,10 +227,21 @@ analysis off the synchronous pointer path; add workers for observed need.
 
 Voice uses the Vercel AI Gateway realtime path: a server route mints a single-use
 short-lived session token after microphone permission is granted, the browser
-connects with that token, and the Gateway bounds each session (25 minutes
-maximum, 5 minutes idle, and closed if no client message arrives within 30
-seconds of connecting). Realtime support is in beta; confirm the installed AI
-SDK channel against current documentation.
+connects with that token, and the Gateway bounds each session. The published
+limits are 25 minutes maximum duration, 5 minutes idle, closure if no client
+message arrives within 30 seconds of connecting, and a 256 KB maximum message
+size; teams also have an unpublished concurrent-session limit that rejects
+further connections until a session ends. Realtime sessions do not accept image
+input. The route mints the token with the deployment's OIDC credential, not a
+Gateway API key, and sets an explicit token lifetime rather than relying on a
+default. Realtime support is in beta and its entry points are still
+`experimental_`-prefixed; pin exact versions and confirm the installed AI SDK
+channel against current documentation before implementing.
+
+Reconnecting does not resume a Gateway session. A reconnect starts a new session
+with no provider-side memory, so resynchronization is the application's work:
+recompile and replay the context the conversation needs while suppressing
+re-execution of intents already applied and discarding stale navigation.
 Provide interruption and context resync. Barge-in stops speech, not unrelated
 work or acknowledged commands. Typed fallback remains.
 Typed and voice collaboration share context compilation and named application
@@ -205,13 +276,27 @@ teardown are recorded in the application handoff; the template holds no
 account-specific values.
 
 Every deployment authenticates to the AI Gateway with its Vercel OIDC token, the
-one credential lane, and the owner sets a project-scoped Gateway budget, the one
-scope that meters that lane; the Gateway rejects requests with HTTP 402 once
-that budget is exceeded. Spend Management is the backstop: it checks every few
+one credential lane, and the owner sets a project-scoped Gateway budget for it;
+the Gateway rejects requests with HTTP 402 once that budget is exceeded. Budgets
+stack rather than replace each other: a request must pass every budget in its
+lane, and a request authenticated by a deployment's OIDC token counts against
+both the project budget and the team budget. A team budget exhausted by other
+work therefore rejects this application even while its project budget has room,
+so the project budget bounds this project's spend without being the only scope
+that can stop it. The rejection names the exceeded scope, which is what the
+application reports. Spend Management is the backstop: it checks every few
 minutes and does not cover Marketplace databases. Do not add Gateway API keys or
-bring-your-own provider keys, which the project budget does not meter.
+bring-your-own provider keys, which move requests to a different budget lane
+that the project budget does not meter.
 Application admission keeps
-its own bounded attempt and spend allowances with headroom. Consult current
+its own bounded attempt and spend allowances with headroom.
+
+Text and voice do not share a spend unit. Text generation meters by tokens,
+while realtime voice models are priced by connected session time, so a voice
+allowance is a duration budget and the 25-minute session cap is also a per-session
+cost ceiling. Allocate and report the two separately rather than converting one
+into the other; confirm the per-model rate and the usage a closed session
+actually reports when configuring the runtime profiles. Consult current
 official Vercel documentation when configuring these services. Voice never
 places a long-lived key in the browser. Use runtime credentials, not captured
 build tokens.

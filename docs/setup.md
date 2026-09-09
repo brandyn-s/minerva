@@ -129,6 +129,16 @@ git -C "<absolute-build-worktree-path>" worktree add --detach "<absolute-review-
 cd "<absolute-review-checkout-path>"
 ```
 
+The review checkout inherits no credentials, because `.vercel/` and `.env.local`
+are ignored. Where the packet allows live provider evidence, mint a short-lived
+project-scoped OIDC token for that checkout rather than copying the builder's
+environment or issuing a Gateway API key. OIDC tokens last 12 hours, so a review
+running past that window needs a fresh one.
+
+```sh
+vercel project token minerva
+```
+
 Open Fable 5.1 at medium effort in Claude and paste. Fable 5.1 defaults to high
 effort in Claude Code and to medium in Cowork and claude.ai, so set medium
 explicitly. Back the read-only rule with tool permissions in the review checkout:
@@ -231,11 +241,16 @@ Record the window's dates, audience, budget and teardown owner in `docs/HANDOFF.
   separately. A preview build is evidence, not the release or a hosted journey.
 - **Models.** Text and realtime voice use Vercel AI Gateway. Authenticate the
   deployment with its Vercel OIDC token only; do not add a Gateway API key or a
-  bring-your-own provider key. Set the Gateway budget at project scope, the one
-  scope that meters OIDC requests and rejects with HTTP 402 when exceeded.
+  bring-your-own provider key. Set the Gateway budget at project scope; OIDC
+  requests are rejected with HTTP 402 once it is exceeded. Budgets stack, so
+  those requests also count against the team budget and a team budget exhausted
+  by other work rejects this project as well. Check the team budget's headroom
+  before the window opens, not only the project's.
   Realtime voice is a beta Gateway capability: the token route mints single-use
   short-lived client tokens after microphone permission is granted, and sessions
-  are capped at 25 minutes.
+  are capped at 25 minutes. Voice models bill by connected session time rather
+  than tokens, so budget voice as session duration and check the current
+  per-model hourly rate before opening the window.
 - **Platform spend.** Set the Spend Management amount the owner chooses. It
   covers functions, bandwidth and workflow events, checks every few minutes and
   does not cover Marketplace databases. Pausing production at that amount is
@@ -246,8 +261,22 @@ Record the window's dates, audience, budget and teardown owner in `docs/HANDOFF.
   and a separate production database with its own credentials. Seed the
   demonstration workspace before the window opens; judges start by duplicating
   it, and re-running the seed restores it.
-- **Durable runs.** Vercel Workflows execute Wander, Agent Drive and other runs;
-  use the stable SDK line unless a demonstrated requirement needs the beta.
+
+  Connecting a Marketplace resource targets production, preview and development
+  together by default, which is the opposite of the split above, so the two
+  databases need deliberate scoping rather than two plain connections. Connect
+  the production store, then set the non-production connection string on the
+  preview and development targets so the same variable name resolves per
+  environment; a second store connected alongside takes a name prefix to avoid
+  collisions. Audit the result per environment before relying on it, because a
+  wrong value here is silent and points development at production data. Marking
+  the variable sensitive hides it from the dashboard but also withholds it from
+  the development target, so a local checkout can no longer pull it.
+- **Durable runs.** Vercel Workflows execute Wander, Agent Drive and other runs.
+  The demonstration is single-region, so the stable SDK line is sufficient;
+  multi-region run placement is what requires the beta line, and no demonstrated
+  requirement calls for it. Runs stay on the deployment and in the region that
+  created them, so deploying during the window does not disturb work in flight.
 - **Teardown.** When the window closes, pause or delete the deployment, which
   ends its OIDC access to the Gateway, revoke the database credentials, export
   or delete judge data, and record in the handoff what was preserved.

@@ -736,6 +736,15 @@ function Studio({ session }: { session?: AtlasSession }) {
       <div
         className="field"
         ref={field}
+        tabIndex={0}
+        onKeyDown={(event) => {
+          if (event.target !== event.currentTarget) return;
+          if (event.key === "0") fit();
+          else if (event.key === "+" || event.key === "=") void flow.zoomIn();
+          else if (event.key === "-") void flow.zoomOut();
+          else return;
+          event.preventDefault();
+        }}
         role="region"
         aria-label="Idea atlas"
         onPointerDownCapture={(event) => {
