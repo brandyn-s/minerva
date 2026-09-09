@@ -43,16 +43,17 @@ window used by a small judge panel, still with no sign-in. See
 
 ## Build and review
 
-[Build prompts](./docs/build-prompts.md) contain 32 work packages across six
-milestones, a Fable review for each milestone and an outside-consultation prompt.
-Use one connected user outcome per assignment. Related packages may share a
-session; a difficult package may span sessions. All capabilities remain required.
+The default target is a hosted demonstration, defined in
+[AGENTS.md](./AGENTS.md#current-direction) and opened one task message at a
+time. [Build prompts](./docs/build-prompts.md) is a backlog catalog of 32
+packages toward the complete product; a package applies only when the owner's
+task message names it.
 
 Astra in Codex builds; the operator starts Fable 5.1 in Claude on a separate
-checkout of the exact candidate. Both start at medium effort. Use the existing
-handoff and capability record, not extra process machinery. See
-[AGENTS.md](./AGENTS.md) for working rules and [setup](./docs/setup.md) for
-copyable launch instructions and scoped authorization boundaries.
+checkout of the exact candidate, using the
+[review rubric](./docs/review/judge-fable-5-1.system.md). Both start at low
+effort. Use the existing handoff and capability record, not extra process
+machinery. See [setup](./docs/setup.md) for copyable launch instructions.
 
 ## Documentation
 
@@ -64,7 +65,8 @@ copyable launch instructions and scoped authorization boundaries.
 | State ownership, boundaries and open implementation choices | [ARCHITECTURE](./docs/product/ARCHITECTURE.md) |
 | Living-atlas identity and interaction | [DESIGN](./docs/product/DESIGN.md) |
 | Implementation evidence | [CAPABILITIES](./docs/product/CAPABILITIES.md) |
-| Work packages and milestone reviews | [Build prompts](./docs/build-prompts.md) |
+| Backlog catalog of packages and milestone reviews | [Build prompts](./docs/build-prompts.md) |
+| Reviewer system prompt and harness notes | [Review rubric](./docs/review/judge-fable-5-1.system.md) |
 | Repository identity, sessions and local operation | [Setup](./docs/setup.md) |
 
 Read the relevant source, not every document each session. Packages reference
@@ -79,8 +81,8 @@ npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run check
 ```
 
 `check` runs lint, typecheck, tests and build. Portable tests check document
-structure, references, matching IDs and actual configuration behavior;
-they do not prove semantic consistency or product behavior.
+links, matching capability IDs and actual configuration behavior; they do not
+prove semantic consistency or product behavior.
 Package 1 removed the empty-seed restrictions. The retained checks allow
 application dependencies, files and capability progress. Review prose against
 its owning contract and add behavior coverage

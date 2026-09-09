@@ -1,44 +1,30 @@
 # Minerva capability evidence
 
 Requirements live in [SPEC.md](./SPEC.md); this file records implementation
-evidence, not another specification. Status values are `not started`, `partial`,
-`implemented`, `exercised`, and `accepted`. A seed shell is not product evidence.
-
-Use the existing evidence column and handoff to distinguish delivery facts;
-do not introduce a second tracking system or treat these as seven mandatory
-sequential gates. Written code may still be unintegrated. Implemented behavior
-has a connected path through the applicable UI/application/persistence/provider
-layers. Exercised behavior states whether it was demonstrated locally with
-fixtures or against live services. Reviewed identifies the candidate and
-review disposition; accepted identifies the user's decision and its scope.
-Deployed identifies the actual serving revision/URL, not merely a merged commit.
-
-For example: "Typed reply integrated and demonstrated locally in fixture mode;
-live transport unverified; review pending; not deployed." M1's live-service facts
-are not applicable to its prepared proof, not evidence that those services work.
-Keep a whole capability partial when only one increment is complete.
-For each implemented capability, link its mall-demo example and observed tool
-behavior in the existing evidence column. Record the owner's feasibility and
-usefulness judgments and small task comparisons here; do not substitute model
-scores or imply that preparing demo data completes a capability.
+evidence, not another specification. Status values are `not started`,
+`works locally` and `works on the hosted URL`. Update a row only when its
+status changes, and keep the evidence column short, naming the surface and the
+revision. Do not record reviewer observations, owner remarks or later-milestone
+ideas here; the handoff carries the next outcome and nothing else carries a
+backlog.
 
 | ID | Capability | Status | Evidence / owning surface |
 |---|---|---|---|
-| C01 | Workspaces and durable state | partial | Managed Postgres workspace lifecycle, revisions, receipts, recoverable deletion and versioned complete JSON export are integrated. Local browser persistence journey passed; execution-history duplication and permanent purge UI remain open. [Implementation](../../features/workspaces/postgres.ts). |
-| C02 | Spatial canvas and view controls | partial | Pan/zoom, Fit, focus/search, pointer and keyboard card movement, persistent-in-session selection; [atlas presentation](../../features/atlas/atlas.tsx). IB01-IB04 and IB06 exercised locally with fixtures. Saved layout/size/camera, resize and session-local layout undo are now integrated with Postgres; the complete M2 interaction matrix is not claimed. |
-| C03 | Visible relationships | partial | [Mall fixture](../../features/atlas/fixture.ts) distinguishes shared brief, derivation, two-parent recombination and a semantic association. Both directions and exact prepared source revisions are inspectable. Moving edges and IB05 exercised locally; the saved graph now includes exact revisions, a grandchild, revised source, semantic cycle and direct connections. Dense saved-graph folding/focus remains incomplete. |
-| C04 | History, inheritance and genome | partial | Immutable idea/source revisions and frozen manifests are stored and inspectable; rich genome/history workflows remain open. |
+| C01 | Workspaces and durable state | works locally | Managed Postgres workspace lifecycle, revisions, receipts, recoverable deletion and versioned complete JSON export are integrated. Local browser persistence journey passed; execution-history duplication and permanent purge UI remain open. [Implementation](../../features/workspaces/postgres.ts). |
+| C02 | Spatial canvas and view controls | works locally | Pan/zoom, Fit, focus/search, pointer and keyboard card movement, persistent-in-session selection; [atlas presentation](../../features/atlas/atlas.tsx). IB01-IB04 and IB06 exercised locally with fixtures. Saved layout/size/camera, resize and session-local layout undo are now integrated with Postgres; the complete M2 interaction matrix is not claimed. |
+| C03 | Visible relationships | works locally | [Mall fixture](../../features/atlas/fixture.ts) distinguishes shared brief, derivation, two-parent recombination and a semantic association. Both directions and exact prepared source revisions are inspectable. Moving edges and IB05 exercised locally; the saved graph now includes exact revisions, a grandchild, revised source, semantic cycle and direct connections. Dense saved-graph folding/focus remains incomplete. |
+| C04 | History, inheritance and genome | works locally | Immutable idea/source revisions and frozen manifests are stored and inspectable; rich genome/history workflows remain open. |
 | C05 | Branch development and reusable intent | not started | No application implementation |
-| C06 | Comparison and Weave | partial | Root demo: two selected cards generate one live recombination draft with both parent edges and one-line contributions. Local real Sonnet 5 call and browser error/retry, lineage and reload-reset checks passed. In memory only; no saved recombination. |
+| C06 | Comparison and Weave | works locally | Root demo: two selected cards generate one live recombination draft with both parent edges and one-line contributions. Local real Sonnet 5 call and browser error/retry, lineage and reload-reset checks passed. In memory only; no saved recombination. |
 | C07 | Three perspectives | not started | No application implementation |
-| C08 | Contextual creative moves | partial | Prepared contextual previews remain. Root selection now offers live Wander for one source and Weave for two; calls use AI Gateway OIDC and feature tags. Local real calls and card error/retry checks passed. No contextual planner or other live moves. |
-| C09 | Creative instruments | partial | A bounded two-alternative generation and assessment workflow is integrated. One brief-only live Gateway run produced two proposals, followed by inspect/keep/reload/export. Whole-source live execution remains unverified; broader instruments remain open. |
-| C10 | Wander | partial | Root demo: one selected card generates two or three adjacent cards with derivation edges. Local real Sonnet 5 call returned three cards; browser checks cover generation, error/retry and reload reset. In memory only; no durable run or history. |
+| C08 | Contextual creative moves | works locally | Prepared contextual previews remain. Root selection now offers live Wander for one source and Weave for two; calls use AI Gateway OIDC and feature tags. Local real calls and card error/retry checks passed. No contextual planner or other live moves. |
+| C09 | Creative instruments | works locally | A bounded two-alternative generation and assessment workflow is integrated. One brief-only live Gateway run produced two proposals, followed by inspect/keep/reload/export. Whole-source live execution remains unverified; broader instruments remain open. |
+| C10 | Wander | works locally | Root demo: one selected card generates two or three adjacent cards with derivation edges. Local real Sonnet 5 call returned three cards; browser checks cover generation, error/retry and reload reset. In memory only; no durable run or history. |
 | C11 | Navigable interpretation and feedback | not started | No application implementation |
 | C12 | Agent Drive | not started | No application implementation |
 | C13 | Typed and spoken collaboration | not started | No application implementation |
 | C14 | Outputs and reusable results | not started | No application implementation |
-| C15 | Living-atlas experience | partial | Original paper/ink atlas, serif cards, screen-space overview targets, explicit dense aggregation, dismissible inspection/comparison. IB01-IB06 exercised locally. Fable approves the M1 candidate; owner accepts the fixture experience with documented orientation/interaction friction. Production capability remains pending. |
+| C15 | Living-atlas experience | works locally | Original paper/ink atlas, serif cards, screen-space overview targets, explicit dense aggregation, dismissible inspection/comparison. IB01-IB06 exercised locally. Fable approves the M1 candidate; owner accepts the fixture experience with documented orientation/interaction friction. Production capability remains pending. |
 
 ## Current milestone
 
