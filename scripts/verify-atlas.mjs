@@ -161,6 +161,18 @@ async function inspectFromIndex(title) {
   await focusFromIndex(page, title);
   await button("Open card").click();
 }
+async function selectCatalogue(target, title, only = false) {
+  await target.getByRole("button", { name: /^Thoughts / }).click();
+  if (only) for (const checkbox of await target.locator(".catalogue-entry input:checked").all()) await checkbox.uncheck();
+  await catalogueRow(target, title).getByRole("checkbox").check();
+  await target.getByRole("button", { name: "Close panel", exact: true }).click();
+}
+async function focusInspected(target) {
+  const title = await target.getByRole("dialog").getByRole("heading", { level: 2 }).first().innerText();
+  await target.getByRole("button", { name: "Close panel", exact: true }).click();
+  await target.getByRole("button", { name: /^Thoughts / }).click();
+  await focusFromIndex(target, title);
+}
 async function assertAttached() {
   const attached = await page.evaluate(() => {
     const path = document.querySelector('[data-id="food-repair"] .react-flow__edge-path');
@@ -416,9 +428,7 @@ try {
     assert.ok(await page.locator(".thought.chosen .select-card").first().isVisible(), "new card Select control is visible");
   }
   async function selectFromIndex(title) {
-    await inspectFromIndex(title);
-    await button("Select for comparison").click();
-    await close();
+    await selectCatalogue(page, title);
   }
   let total = 6;
   for (const feature of ["wander", "weave"]) {
@@ -628,8 +638,8 @@ try {
     else if (live) await route.continue();
     else await route.fulfill({ json: mockMoves });
   });
-  await inspectFromIndex("A food hall");
-  await page.getByRole("dialog").getByRole("button", { name: "Wander", exact: true }).click();
+  await selectCatalogue(page, "A food hall", true);
+  await page.locator(".selection-bar").getByRole("button", { name: "Wander", exact: true }).click();
   await page.getByRole("dialog").getByRole("alert").waitFor();
   assert.match(await page.getByRole("dialog").getByRole("alert").innerText(), /Moves test failure/);
   assert.ok(await button("Try Explore the quiet hours →").isVisible(), "prepared move remains usable");
@@ -785,7 +795,7 @@ try {
   await page.screenshot({ path: `${artifacts}/constellation.png` });
   await writeFile(`${artifacts}/perspectives.json`, JSON.stringify({ themeRequests, themeInputs, beforeIds, beforeChosen }, null, 2));
   await settle();
-  await button("Evolution").click(); await inspectFromIndex("Morning repair table"); await button("Focus on atlas ↗").click(); await settle();
+  await button("Evolution").click(); await inspectFromIndex("Morning repair table"); await focusInspected(page); await settle();
   const evolutionCard = page.locator('.react-flow__node').filter({ has: page.getByRole("button", { name: "Morning repair table", exact: true }) });
   await evolutionCard.locator(".card-grip").focus(); await page.keyboard.press("ArrowRight");
   await button("Constellation").click(); await settle();
@@ -942,7 +952,7 @@ try {
   await page.getByText("Edit prepared text", { exact: true }).click();
   await page.getByRole("dialog").locator("details input").fill("Durable repair apprenticeships");
   await close();
-  await inspectFromIndex("Durable repair apprenticeships"); await button("Focus on atlas ↗").click(); await settle();
+  await inspectFromIndex("Durable repair apprenticeships"); await focusInspected(page); await settle();
   const durableNode = page.locator('.react-flow__node').filter({ has: page.getByRole("button", { name: "Durable repair apprenticeships", exact: true }) });
   const durableId = await durableNode.getAttribute("data-id");
   const positionBefore = await durableNode.getAttribute("style");
@@ -1061,7 +1071,7 @@ try {
   assert.deepEqual(migrated.folds, []); assert.equal(migrated.layoutHistory.Lineage.undo.length, 0);
   await openAtlasMenu(); await button("Reset to fixture").click(); await button("Keep current atlas").click();
   assert.deepEqual((await storedSave()).thoughts, migrated.thoughts);
-  await inspectFromIndex("Repair, then stay for supper"); await button("Focus on atlas ↗").click(); await settle();
+  await inspectFromIndex("Repair, then stay for supper"); await focusInspected(page); await settle();
   // Close connections so it cannot cover the resize handle.
   await button("Close focused connections").click();
   const repairNode = page.locator('.react-flow__node[data-id="repair"]');
@@ -1292,10 +1302,8 @@ try {
     markerCamera,
     "single compact tap opens without zooming",
   );
-  await mobile
-    .getByRole("button", { name: "Select for comparison", exact: true })
-    .tap();
   await mobile.getByRole("button", { name: "Close panel", exact: true }).tap();
+  await selectCatalogue(mobile, "Repair, then stay for supper");
   await mobile.locator('[data-id="repair"] .overview-target').focus();
   const markerHighlight = await mobile
     .locator('[data-id="repair"]')
@@ -1494,9 +1502,9 @@ try {
   await mobile.getByRole("button", { name: "A food hall", exact: true }).tap();
   await mobile.getByRole("dialog").waitFor();
   assert.equal(await mobile.getByRole("dialog").count(), 1);
-  await mobile
-    .getByRole("dialog").getByRole("button", { name: "Wander", exact: true })
-    .tap();
+  await mobile.getByRole("button", { name: "Close panel", exact: true }).tap();
+  await selectCatalogue(mobile, "A food hall", true);
+  await mobile.locator(".selection-bar").getByRole("button", { name: "Wander", exact: true }).tap();
   await mobile
     .getByRole("button", { name: "Try Explore the quiet hours →", exact: true })
     .tap();
@@ -1509,7 +1517,7 @@ try {
   await page.locator(".thought").first().waitFor();
   await inspectFromIndex("Repair, then stay for supper");
   const positionsBeforeFocus = await page.locator(".react-flow__node").evaluateAll(es => es.map(e => e.style.transform));
-  await button("Focus on atlas ↗").click();
+  await focusInspected(page);
   await settle();
   assert.ok(parseInt(await page.getByLabel("Zoom level").textContent(), 10) >= 100, "focus keeps one card readable");
   const navigation = page.getByRole("region", { name: "Focused card connections" });
