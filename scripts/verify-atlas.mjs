@@ -335,8 +335,15 @@ try {
     await progress.waitFor();
     assert.match(await progress.innerText(), feature === "wander" ? /Wander is generating new cards/ : /Weave is combining your cards/);
     assert.equal(await button(feature === "wander" ? "Wandering…" : "Weaving…").isDisabled(), true);
+    const actionSpinner = button(feature === "wander" ? "Wandering…" : "Weaving…").locator(".generation-spinner");
+    assert.equal(await actionSpinner.isVisible(), true, "active action has a visible spinner");
+    const rotationBefore = await actionSpinner.evaluate((el) => getComputedStyle(el).transform);
+    await page.waitForTimeout(150);
+    assert.notEqual(await actionSpinner.evaluate((el) => getComputedStyle(el).transform), rotationBefore, "loading circle actually rotates");
+    assert.ok(await page.locator('.thought[aria-busy="true"] .generation-spinner').count() > 0, "source cards display loading circles");
     // Progress survives overview, panning, clearing selection, and a narrow viewport.
     for (let i = 0; i < 15; i++) await cameraKey("-");
+    assert.equal(await page.locator(".thought-generating .overview-target").first().evaluate((el) => getComputedStyle(el, "::after").animationName), "generation-spin", "overview source nodes retain a loading ring");
     const beforePendingPan = await transform();
     await page.mouse.move(60, 500);
     await page.mouse.down();
