@@ -4,7 +4,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, type ButtonHTMLAtt
 import { createPortal } from "react-dom";
 
 /** Shared, unscaled tooltip for controls both on and outside the atlas canvas. */
-export default function TooltipButton({ title, children, ...props }: ButtonHTMLAttributes<HTMLButtonElement>) {
+export default function TooltipButton({ title, children, as: Tag = "button", ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { as?: "button" | "summary" }) {
   const id = useId();
   const button = useRef<HTMLButtonElement>(null);
   const tip = useRef<HTMLSpanElement>(null);
@@ -42,7 +42,7 @@ export default function TooltipButton({ title, children, ...props }: ButtonHTMLA
   }, [open, title]);
 
   return <>
-    <button {...props} ref={button}
+    <Tag {...props} ref={button}
       aria-describedby={[props["aria-describedby"], open && title ? id : undefined].filter(Boolean).join(" ") || undefined}
       onPointerEnter={event => { if (event.pointerType !== "touch") show(); props.onPointerEnter?.(event); }}
       onPointerLeave={event => { leave(); props.onPointerLeave?.(event); }}
@@ -50,7 +50,7 @@ export default function TooltipButton({ title, children, ...props }: ButtonHTMLA
       onBlur={event => { hide(); props.onBlur?.(event); }}
       onPointerDown={event => { hide(); props.onPointerDown?.(event); }}
       onClick={event => { hide(); props.onClick?.(event); }}
-    >{children}</button>
+    >{children}</Tag>
     {open && title && createPortal(<span ref={tip} id={id} role="tooltip" className="minerva-tooltip"
       onPointerEnter={cancel} onPointerLeave={leave}>{title}</span>, document.body)}
   </>;
