@@ -1,2 +1,8 @@
 model = "gpt-6-astra"
 model_reasoning_effort = "medium"
+
+# Keep notes and searchable history across context windows instead of repeated
+# compaction summaries; long M2 and M6 sessions lose "why a fix failed" details
+# otherwise. Experimental; requires ChatGPT sign-in on Plus, Pro or Pro Lite.
+[features.context_management]
+experimental_mode = true

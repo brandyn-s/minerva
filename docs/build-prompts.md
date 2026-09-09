@@ -173,7 +173,11 @@ Outcome: A populated, interactive living-atlas experience proof using prepared d
 
 Integration work:
 Implement DESIGN's tokens, typography, composition and card interactions in the
-existing fixture presentation. Preserve the original identity assets and author
+existing fixture presentation. Treat DESIGN's Materials, Composition and direct
+interaction, and Interaction transitions and overview as required contract, not
+preference: a generic card grid, landing-page structure, default color scheme or
+decorative subtitles is a contract failure for review, not a taste note.
+Preserve the original identity assets and author
 the mall fixture with independent branches, a multi-parent child, an unkept draft,
 a semantic link and unknown evidence. Use the seed alone and selected A/B/C
 proposals as the starting material defined in SPEC.
