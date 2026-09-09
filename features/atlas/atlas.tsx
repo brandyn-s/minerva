@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ChevronDown, GitFork, Copy, Compass, Shuffle } from "lucide-react";
+import { ChevronDown, GitFork, Copy, Compass, Shuffle, Undo2, Redo2, LayoutGrid } from "lucide-react";
 import {
   createContext,
   useContext,
@@ -1230,14 +1230,15 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           </TooltipButton>
           {!session && <TooltipButton className="expedition-control" aria-label="Expedition panel" title="Open expedition panel" aria-haspopup="dialog" aria-expanded={panel === "expedition"} onClick={() => open("expedition")}><Image src="/images/expedition-compass.png" width={44} height={44} alt="" /></TooltipButton>}
 
-          {!session && <details className="layout-menu"><summary>Layout</summary>
-            <p>Last 50 moves, resizes and arrangements per perspective, saved in this browser. Text edits, generation, import and reset clear history and cannot be undone.</p>
-            <button disabled={!history[perspective].undo.length} onClick={() => undoLayout()}>Undo {history[perspective].undo.at(-1)?.kind ?? "layout"}</button>
-            <button disabled={!history[perspective].redo.length} onClick={() => undoLayout(true)}>Redo {history[perspective].redo.at(-1)?.kind ?? "layout"}</button>
-            <button onClick={() => { const before = captureLayout(), after = structuredClone(before); const visible = renderedNodes.filter(n => !n.hidden);
+          {!session && <details className="layout-menu layout-icon-menu"><TooltipButton as="summary" aria-label="Layout" title="Arrange layout"><Image src="/images/layout-medallion.png" width={48} height={48} alt="" /></TooltipButton>
+            <div className="layout-popover"><h3>Layout</h3><p>Undo up to 50 layout changes in this view.</p><div className="layout-actions">
+            <button disabled={!history[perspective].undo.length} onClick={() => undoLayout()}><Undo2 size={16} aria-hidden="true" />Undo</button>
+            <button disabled={!history[perspective].redo.length} onClick={() => undoLayout(true)}><Redo2 size={16} aria-hidden="true" />Redo</button>
+            <button className="layout-arrange" onClick={() => { const before = captureLayout(), after = structuredClone(before); const visible = renderedNodes.filter(n => !n.hidden);
               const widths = [0, 1, 2].map(column => Math.max(290, ...visible.filter((_, i) => i % 3 === column).map(n => sizes[perspective][n.id]?.width ?? n.measured?.width ?? 290)) + 90);
               let y = 0;
-              visible.forEach((n, i) => { if (i && i % 3 === 0) y += Math.max(...visible.slice(i - 3, i).map(n => sizes[perspective][n.id]?.height ?? n.measured?.height ?? 320)) + 90; after.positions[n.id] = { x: widths.slice(0, i % 3).reduce((a, b) => a + b, 0), y }; }); applyLayout(after); rememberLayout("arrange", before, after); }}>Arrange grid</button>
+              visible.forEach((n, i) => { if (i && i % 3 === 0) y += Math.max(...visible.slice(i - 3, i).map(n => sizes[perspective][n.id]?.height ?? n.measured?.height ?? 320)) + 90; after.positions[n.id] = { x: widths.slice(0, i % 3).reduce((a, b) => a + b, 0), y }; }); applyLayout(after); rememberLayout("arrange", before, after); }}><LayoutGrid size={16} aria-hidden="true" />Arrange grid</button>
+            </div><small>Editing ideas, generating, importing or resetting clears history.</small></div>
           </details>}
           {session && <>
             <label className="relationship-label-toggle"><input type="checkbox" checked={showRelationshipLabels} onChange={event => setShowRelationshipLabels(event.target.checked)} /> Relationship labels</label>
@@ -1245,17 +1246,17 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
             <button onClick={() => { void session.command({ operation: "create-idea", ideaId: crypto.randomUUID(), title: "New idea", body: "Write your idea here." }).catch(() => {}); }}>New idea</button>
             <button onClick={() => { void session.command({ operation: "set-viewpoint", expectedRevision: savedGraph!.viewpoint.revision, ...viewport }).catch(() => {}); }}>Save view</button>
             <button onClick={() => open("explore")}>Develop alternatives</button>
-            <details className="layout-menu"><summary>Layout</summary>
-              <p>Undo/redo covers the last 50 card positions and sizes in this session, one card at a time.</p>
-              <button disabled={!layoutUndo.length} onClick={() => { void restoreLayout(false).catch(() => {}); }}>Undo layout</button>
-              <button disabled={!layoutRedo.length} onClick={() => { void restoreLayout(true).catch(() => {}); }}>Redo layout</button>
+            <details className="layout-menu layout-icon-menu"><TooltipButton as="summary" aria-label="Layout" title="Arrange layout"><Image src="/images/layout-medallion.png" width={48} height={48} alt="" /></TooltipButton>
+              <div className="layout-popover"><h3>Layout</h3><p>Undo up to 50 card moves or resizes.</p><div className="layout-actions">
+              <button disabled={!layoutUndo.length} onClick={() => { void restoreLayout(false).catch(() => {}); }}><Undo2 size={16} aria-hidden="true" />Undo</button>
+              <button disabled={!layoutRedo.length} onClick={() => { void restoreLayout(true).catch(() => {}); }}><Redo2 size={16} aria-hidden="true" />Redo</button>
               <button onClick={() => { void (async () => {
                 for (const [index, node] of nodes.entries()) await saveLayout(node.id, { x: (index % 3) * 440, y: Math.floor(index / 3) * 380 });
-              })().catch(() => {}); }}>Arrange grid</button>
+              })().catch(() => {}); }}><LayoutGrid size={16} aria-hidden="true" />Arrange grid</button>
               <button onClick={() => { void (async () => {
                 for (const node of nodes) if (session.initial.layouts[node.id]) await saveLayout(node.id, session.initial.layouts[node.id], session.initial.layouts[node.id]);
-              })().catch(() => {}); }}>Reset to opened layout</button>
-              {layoutNotice && <p role="status">{layoutNotice}</p>}
+              })().catch(() => {}); }}>Restore initial layout</button>
+              </div>{layoutNotice && <p role="status">{layoutNotice}</p>}</div>
             </details>
           </>}
         </nav>
