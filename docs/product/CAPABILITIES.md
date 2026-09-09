@@ -111,8 +111,9 @@ not supplied a complete text-versus-atlas comparison or M1 acceptance.
 
 The hosted shell was previously verified at
 `0f8b1a16e1cd831774bcc09fcb61582a9c31a5de` on
-https://minerva-eight.vercel.app. This local atlas has not been published,
-reviewed, accepted or verified on that URL. The M6 demonstration window is closed.
+https://minerva-eight.vercel.app. The atlas is published through
+[PR #5](https://github.com/brandyn-s/minerva/pull/5); it has not been reviewed,
+accepted or behaviorally verified on that URL. The M6 demonstration window is closed.
 
 ## Next outcome
 

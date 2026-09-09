@@ -18,7 +18,8 @@ The next M2 milestone has not been authorized. No live services are simulated.
 - Branch: `feat/m1-atlas`.
 - Base HEAD: `1e2ae9c92b597040578949c9ad0af8f2343e74b0`.
 - Publication: owner authorized commit and squash merge after the interaction
-  corrections. This handoff accompanies that PR; its merged commit is the exact
+  corrections. This handoff accompanies [PR #5](https://github.com/brandyn-s/minerva/pull/5);
+  its merged commit is the exact
   M1 review candidate. The operator response supplies the full SHA. Resume `main`
   after merge, rather than the prior shell at the base HEAD above.
 - Seed provenance: `brandyn-s/minerva-template` at
@@ -120,8 +121,9 @@ owner experience acceptance.
 The hosted shell was last verified on 2026-09-09 at
 `0f8b1a16e1cd831774bcc09fcb61582a9c31a5de`, deployment
 `dpl_J428z3vwbDGfr8jbp19rEiBNr2mu`, on https://minerva-eight.vercel.app.
-This local atlas has not been deployed or verified on the stable URL; subsequent
-Git deployments may have moved that URL beyond the recorded shell revision.
+The corrected atlas has not been verified on the stable URL. Git integration
+builds previews on branch updates and production on merge; inspect deployment
+metadata before attributing hosted behavior to the recorded shell or M1 candidate.
 
 Existing Vercel project: `thalient/minerva`, ID `prj_LwZ9H81IBdwWEHZ5DEJfJNaeqfrb`,
 team `team_CPMDIZRXjSVqupCatDjsDq4Q`. Git integration uses `brandyn-s/minerva`,
