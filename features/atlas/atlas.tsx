@@ -217,16 +217,13 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
               </>}
             </div>
           )}
-          <div className="card-state">
-            {thought.decision === "unkept draft"
-              ? "○ Unkept draft"
-              : thought.decision === "kept"
+          {thought.decision !== "unkept draft" && <div className="card-state">
+            {thought.decision === "kept"
                 ? "● Kept example"
                 : thought.id === "brief"
                   ? "Shared context"
                   : "Independent starting idea"}
-            {thought.evidence === "unknown" && <span>Evidence unknown</span>}
-          </div>
+          </div>}
           <div className="card-actions">
             <button
               className="nodrag nopan"
@@ -1174,10 +1171,10 @@ function Studio({ session }: { session?: AtlasSession }) {
             <>
               <h2>{thought.title}</h2>
               {!session && <DownloadButton key={thought.id} card={thought} cards={nodes.map((node) => node.data.thought)} relationships={relationships} />}
-              <div className="status-line">
-                <span>{thought.decision}</span>
-                <span>Evidence: {thought.evidence}</span>
-              </div>
+              {(thought.decision !== "unkept draft" || thought.evidence !== "unknown") && <div className="status-line">
+                {thought.decision !== "unkept draft" && <span>{thought.decision}</span>}
+                {thought.evidence !== "unknown" && <span>Evidence: {thought.evidence}</span>}
+              </div>}
               <p className="body-copy">{thought.body}</p>
               {thought.generation && <details><summary>Generation context and mechanism</summary>
                 <p>{thought.generation.mechanism}</p>
