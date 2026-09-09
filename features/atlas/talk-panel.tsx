@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { TalkRequest } from "./generation";
 
-export default function TalkPanel({ open, close, cards }: {
-  open: boolean; close: () => void; cards: TalkRequest["cards"];
+export default function TalkPanel({ open, close, cards, selectedIds }: {
+  open: boolean; close: () => void; cards: TalkRequest["cards"]; selectedIds: string[];
 }) {
   const [messages, setMessages] = useState<TalkRequest["messages"]>([]);
   const [draft, setDraft] = useState("");
@@ -19,9 +19,9 @@ export default function TalkPanel({ open, close, cards }: {
   useEffect(() => { if (open) input.current?.focus(); }, [open]);
 
   async function send(retry = false) {
-    if (running.current || (!retry && !draft.trim())) return;
+    if (running.current || (!retry && (error || !draft.trim()))) return;
     const request = retry ? pending.current! : {
-      messages: [...messages, { role: "user" as const, content: draft.trim() }], cards,
+      messages: [...messages, { role: "user" as const, content: draft.trim() }], cards, selectedIds,
     };
     pending.current = request;
     running.current = true;
@@ -64,7 +64,7 @@ export default function TalkPanel({ open, close, cards }: {
     <div className="panel-heading"><span className="instrument-label">Think together</span>
       <button aria-label="Close panel" onClick={close}>×</button></div>
     <h2>Talk to Minerva</h2>
-    <p className="small-note">{cards.length ? `Using ${cards.length} selected card${cards.length === 1 ? "" : "s"}.` : "Select cards to include them in your next turn."} Conversation resets on reload.</p>
+    <p className="small-note">Using all {cards.length} canvas cards{selectedIds.length ? `; ${selectedIds.length} selected for focus` : ""}. Conversation resets on reload.</p>
     <div ref={transcript} className="talk-transcript" role="log" aria-live="polite">
       {messages.map((message, index) => <section key={index}>
         <h3>{message.role === "user" ? "You" : "Minerva"}</h3><p className="body-copy">{message.content}</p>
@@ -73,7 +73,13 @@ export default function TalkPanel({ open, close, cards }: {
     </div>
     {error && <div><p role="alert">{error}</p><button disabled={busy} onClick={() => void send(true)}>Retry</button></div>}
     <form onSubmit={(event) => { event.preventDefault(); void send(); }}>
-      <label>Message Minerva<textarea ref={input} rows={4} value={draft} onChange={(event) => setDraft(event.target.value)} /></label>
+      <label>Message Minerva<textarea ref={input} rows={4} value={draft} onChange={(event) => setDraft(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing && event.keyCode !== 229) {
+            event.preventDefault();
+            event.currentTarget.form?.requestSubmit();
+          }
+        }} /></label>
       <button disabled={busy || !!error || !draft.trim()} type="submit">{busy ? "Replying…" : "Send"}</button>
     </form>
   </aside>;

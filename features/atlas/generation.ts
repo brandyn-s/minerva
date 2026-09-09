@@ -39,5 +39,6 @@ export const contextCardSchema = sourceSchema.extend({
 export const talkRequestSchema = z.object({
   messages: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string() })).min(1),
   cards: z.array(contextCardSchema),
+  selectedIds: z.array(z.string()).default([]),
 });
 export type TalkRequest = z.infer<typeof talkRequestSchema>;
