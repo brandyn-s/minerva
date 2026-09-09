@@ -1293,8 +1293,8 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
             <>
               <h2>{thought.title}</h2>
               {!session && <DownloadButton key={thought.id} card={thought} cards={nodes.map((node) => node.data.thought)} relationships={relationships} />}
-              {(thought.decision !== "unkept draft" || thought.evidence !== "unknown") && <div className="status-line">
-                {thought.decision !== "unkept draft" && <span>{thought.decision}</span>}
+              {((thought.decision !== "unkept draft" && thought.decision !== "kept") || thought.evidence !== "unknown") && <div className="status-line">
+                {thought.decision !== "unkept draft" && thought.decision !== "kept" && <span>{thought.decision}</span>}
                 {thought.evidence !== "unknown" && <span>Evidence: {thought.evidence}</span>}
               </div>}
               <p className="body-copy">{thought.body}</p>
@@ -1459,9 +1459,9 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
               <div className="comparison-grid">
                 {selected.map((id) => (
                   <section key={id}>
-                    <span className="instrument-label">
+                    {byId.get(id)!.decision !== "kept" && <span className="instrument-label">
                       {byId.get(id)!.decision}
-                    </span>
+                    </span>}
                     <h3>{byId.get(id)!.title}</h3>
                     <p>{byId.get(id)!.contribution}</p>
                     <p className="body-copy">{byId.get(id)!.body}</p>
