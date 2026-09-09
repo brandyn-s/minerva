@@ -1,5 +1,10 @@
 # Starting a Minerva application
 
+This application was initialized from minerva-template at
+`248665c116fb0655e2b70f732ca1b9bffb5b5dcb`. Package 1's identity and test conversion
+are recorded in [HANDOFF](./HANDOFF.md). The repository-creation instructions
+below describe that setup; resume this existing application for subsequent work.
+
 The template is a shell, not an implemented studio. Generate the public
 `brandyn-s/minerva` repository only when authorized; never overwrite, rename or
 delete an existing repository to claim that identity. Carry forward the MIT

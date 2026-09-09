@@ -1,6 +1,6 @@
 # Minerva: product intent
 
-Status: active greenfield product contract. This template contains a runnable
+Status: active greenfield product contract. This application currently contains a runnable
 shell and specifications, not the implemented product.
 
 ## Purpose
@@ -87,7 +87,7 @@ novelty, feasibility or quality. Stagnation and partial failure are real outcome
 Use one Next.js/TypeScript modular monolith with server-owned Postgres state,
 immutable content revisions, explicit commands, and durable Vercel workflows.
 The browser owns transient interaction, not canonical product truth or job
-lifetime. Code lives in a public GitHub repository generated from this template;
+lifetime. Code lives in the public GitHub repository generated from minerva-template;
 credentials, workspace data and paid operations stay server-side, and the public
 deployment is open only for the demonstration window. No data migration is required.
 

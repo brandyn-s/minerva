@@ -1,17 +1,18 @@
 # Minerva
 
-[![CI](https://github.com/brandyn-s/minerva-template/actions/workflows/ci.yml/badge.svg)](https://github.com/brandyn-s/minerva-template/actions/workflows/ci.yml)
+[![CI](https://github.com/brandyn-s/minerva/actions/workflows/ci.yml/badge.svg)](https://github.com/brandyn-s/minerva/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
-A thin runnable starter and product contract for a single-user, browser-only
+An application under development for a single-user, browser-only
 **spatial creative prototype** with no sign-in. Minerva is a living atlas of
 ideas: visible inheritance, three views, contextual creative moves, Weave,
 Wander, Agent Drive, concurrent voice and usable outputs.
 
 **Implemented:** the Next.js shell, original identity and CI/document checks.
 **To build:** the fifteen capabilities in [SPEC](./docs/product/SPEC.md).
-Keep this template content-free; implement the application in its generated
-repository.
+Initialized from [minerva-template](https://github.com/brandyn-s/minerva-template)
+at `248665c116fb0655e2b70f732ca1b9bffb5b5dcb`. Package 1 establishes application
+identity and portable checks. See [the handoff](./docs/HANDOFF.md) for the next outcome.
 
 The application will ship with editable demo data for **What to do with a dead
 shopping mall**, demonstrating every tool alongside fully functional capabilities
@@ -77,13 +78,13 @@ npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run check
 `check` runs lint, typecheck, tests and build. Portable tests check document
 structure, references, matching IDs and actual configuration behavior;
 they do not prove semantic consistency or product behavior.
-`tests/seed-only.test.mjs` asserts that this repository is still the empty seed.
-Package 1 deletes that file and adapts the retained checks for application
-development. Review prose against its owning contract and add behavior coverage
+Package 1 removed the empty-seed restrictions. The retained checks allow
+application dependencies, files and capability progress. Review prose against
+its owning contract and add behavior coverage
 as capabilities arrive.
 ESLint 9 matches the installed Next.js plugin peer ranges; upgrade them together
 when compatible, without suppressing peer errors or removing lint rules.
 
-Use a branch and PR; merge only after required CI. Generated repositories need
-their own settings and corrected identity URLs; follow [setup](./docs/setup.md).
+Use a branch and PR; merge only after required CI. Repository setup and operating
+instructions are in [setup](./docs/setup.md).
 Report vulnerabilities privately under [SECURITY.md](./SECURITY.md).
