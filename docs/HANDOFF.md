@@ -2,7 +2,7 @@
 
 Branch: `feat/light-selection-dock`.
 Worktree: `/Users/brandyn.schult/code/minerva-light-selection-dock`.
-Integrated with origin/main `221c23e`; catalogue and relationship updates preserved.
+Integrated with origin/main `a194627`; catalogue and relationship updates preserved.
 
 ## Outcome
 Root atlas selection toolbar matches the chosen light dock: parchment surface,
