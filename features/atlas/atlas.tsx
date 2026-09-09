@@ -39,17 +39,20 @@ import { wanderSchema, weaveSchema, moveCardSchema, type ContextualMove, type Ge
 import TalkPanel from "./talk-panel";
 import DownloadButton from "./download-button";
 import MovesPanel from "./moves-panel";
+import { overviewDiameter, overviewLabels, overviewName } from "./overview";
 import ExplorationPanel, { ProposalDecisions } from "../exploration/panel";
 
 type CardNode = Node<{ thought: Thought; geometry?: { width: number; height: number; circular: boolean } }, "thought">;
 // Keep screen-sized overview markers separated at the farthest zoom-out.
-const MIN_ZOOM = 0.24;
+const MIN_ZOOM = 0.03;
 
 type Panel = "talk" | "inspect" | "compare" | "moves" | "index" | "text" | "explore" | null;
 const Interaction = createContext<{
   live?: { sources: Thought[]; feature: LiveFeature; move?: ContextualMove; error?: string };
   busy?: boolean;
   retry?: () => void;
+  scalable?: boolean;
+  labels?: Set<string>;
   overview: boolean;
   zoom: number;
   compact: boolean;
@@ -85,7 +88,7 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
       const geometry = {
         width: visible.offsetWidth / scale,
         height: visible.offsetHeight / scale,
-        circular: ui.overview && ui.compact,
+        circular: ui.overview && (ui.scalable || ui.compact),
       };
       const signature = JSON.stringify(geometry);
       if (measuredGeometry.current !== signature) {
@@ -97,7 +100,7 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
     const observer = new ResizeObserver(measure);
     observer.observe(visible);
     return () => observer.disconnect();
-  }, [id, ui.overview, ui.compact, ui.zoom, updateNodeData]);
+  }, [id, ui.overview, ui.compact, ui.zoom, ui.scalable, updateNodeData]);
   const pendingOpen = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(
     () => () => {
@@ -145,7 +148,8 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
       compact: ui.compact,
     };
   }, [id, ui.zoom, ui.overview, ui.compact, updateNodeInternals]);
-  const anchorY = ui.overview ? (ui.compact ? 24 : 35) / ui.zoom : undefined;
+  const diameter = ui.scalable ? overviewDiameter(ui.zoom) : ui.compact ? 48 : 170;
+  const anchorY = ui.overview ? (ui.scalable ? diameter / 2 : ui.compact ? 24 : 35) / ui.zoom : undefined;
   const marker =
     (
       {
@@ -175,17 +179,17 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
         position={Position.Right}
         style={{
           top: anchorY,
-          left: ui.overview ? (ui.compact ? 48 : 170) / ui.zoom : undefined,
+          left: ui.overview ? diameter / ui.zoom : undefined,
         }}
       />
       {ui.overview ? (
         <button
           aria-label={`Open ${thought.title}`}
           title="Click to open; double-click to focus; drag or use arrow keys to move"
-          className={`overview-target card-grip nopan ${ui.compact ? "compact-target" : ""}`}
-          style={{ transform: `scale(${1 / ui.zoom})` }}
+          className={`overview-target card-grip nopan ${ui.scalable ? "scale-target" : ui.compact ? "compact-target" : ""}`}
+          style={{ transform: `scale(${1 / ui.zoom})`, ...(ui.scalable ? { width: diameter, height: diameter, minHeight: diameter } : {}) }}
         >
-          {ui.compact ? marker : thought.title}
+          {ui.scalable ? <><span className="overview-code">{diameter >= 30 ? marker : ""}</span>{ui.labels?.has(id) && <span className="overview-name">{overviewName(thought)}</span>}</> : ui.compact ? marker : thought.title}
         </button>
       ) : (
         <>
@@ -359,6 +363,10 @@ function Studio({ session }: { session?: AtlasSession }) {
     else { setLayoutUndo(history.slice(0, -1)); setLayoutRedo((h) => [...h, entry]); }
   }
   const stackingOrder = useRef(0);
+  const [focusedId, setFocusedId] = useState<string | null>(null);
+  const [connectionKind, setConnectionKind] = useState("parents");
+  const [connectionPage, setConnectionPage] = useState(0);
+  const [branchId, setBranchId] = useState<string | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [active, setActive] = useState("repair");
   const [panel, setPanel] = useState<Panel>(null);
@@ -385,12 +393,16 @@ function Studio({ session }: { session?: AtlasSession }) {
   const [live, setLive] = useState<{ sources: Thought[]; feature: LiveFeature; move?: ContextualMove; error?: string }>();
   const [busy, setBusy] = useState(false);
   const generating = useRef(false);
+  const focusedRelations = focusedId ? relationshipsFor(focusedId, relationships).filter(e => connectionKind === "associations" ? e.kind === "association" : connectionKind === "context" ? e.kind === "context" : e.kind !== "association" && e.kind !== "context" && e.direction === (connectionKind === "parents" ? "incoming" : "outgoing")) : [];
+  const relationPage = focusedRelations.slice(connectionPage * 6, connectionPage * 6 + 6);
+  const highlighted = new Set((branchId ? relationPage.filter(e => e.id === branchId) : relationPage).map(e => e.id));
+  const labels = overviewLabels(nodes, viewport, [...(focusedId ? [focusedId] : []), ...selected]);
   const edges = relationships.map((edge) => ({
     id: edge.id,
     source: edge.from,
     target: edge.to,
     type: "floating",
-    label: overview ? undefined : edge.label,
+    label: overview || (!session && focusedId && !highlighted.has(edge.id)) ? undefined : edge.label,
     markerEnd:
       edge.kind === "association" || edge.kind === "context"
         ? undefined
@@ -398,11 +410,12 @@ function Studio({ session }: { session?: AtlasSession }) {
             type: MarkerType.ArrowClosed,
             color: "#28686a",
             markerUnits: "userSpaceOnUse",
-            width: 16 / viewport.zoom,
-            height: 16 / viewport.zoom,
+            width: (overview && !session ? 10 : 16) / viewport.zoom,
+            height: (overview && !session ? 10 : 16) / viewport.zoom,
           },
     className: `thread ${edge.kind} ${panel === "inspect" && (edge.from === active || edge.to === active) ? "emphasized" : ""}`,
     style: {
+      opacity: session ? 1 : edge.kind === "association" && !highlighted.has(edge.id) ? .08 : focusedId ? (highlighted.has(edge.id) ? 1 : .12) : overview ? .7 : 1,
       stroke:
         edge.kind === "association"
           ? "#755584"
@@ -410,7 +423,7 @@ function Studio({ session }: { session?: AtlasSession }) {
             ? "#645f51"
             : "#28686a",
       strokeWidth:
-        (panel === "inspect" && (edge.from === active || edge.to === active)
+        (!session && overview ? (highlighted.has(edge.id) ? 2 : 1) : panel === "inspect" && (edge.from === active || edge.to === active)
           ? 3
           : edge.kind === "recombination"
             ? 2.5
@@ -517,18 +530,22 @@ function Studio({ session }: { session?: AtlasSession }) {
     open("inspect");
   }
   function select(id: string) {
+    if (!session) { setFocusedId(id); setConnectionPage(0); setBranchId(null); }
     bringForward(id);
     setSelected((ids) =>
       ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id],
     );
   }
   function focus(id: string) {
+    if (!session) { setFocusedId(id); setConnectionPage(0); setBranchId(null); }
     bringForward(id);
     const node = flow.getNode(id);
-    if (node)
-      void flow.setCenter(node.position.x + 145, node.position.y + 130, {
-        zoom: 1,
-      });
+    if (node) {
+      const bounds = field.current?.getBoundingClientRect();
+      // Reserve space below the readable card for mobile connection navigation.
+      const offsetY = !session && bounds && bounds.width <= 600 ? Math.max(0, bounds.height / 2 - 220) : 0;
+      void flow.setCenter(node.position.x + 145, node.position.y + 130 + offsetY, { zoom: 1 });
+    }
     setActive(id);
     setPanel(null);
     requestAnimationFrame(() =>
@@ -652,7 +669,7 @@ function Studio({ session }: { session?: AtlasSession }) {
       if (pinch && event.touches.length >= 2) {
         const p = point(event.touches);
         const z = Math.max(
-          MIN_ZOOM,
+          session ? .24 : MIN_ZOOM,
           Math.min(
             1.6,
             (pinch.viewport.zoom * p.distance) / Math.max(1, pinch.distance),
@@ -720,9 +737,9 @@ function Studio({ session }: { session?: AtlasSession }) {
       element.removeEventListener("click", click, true);
       element.removeEventListener("pointerdown", down, true);
     };
-  }, [flow]);
+  }, [flow, session]);
   return (
-    <main className="studio">
+    <main className={`studio ${session ? "" : "scalable-atlas"}`}>
       <a className="skip-link" href="#atlas-tools">
         Skip to atlas controls
       </a>
@@ -770,6 +787,8 @@ function Studio({ session }: { session?: AtlasSession }) {
             live,
             busy,
             retry: () => { if (live) void generate(live.feature, live.sources, live.move); },
+            scalable: !session,
+            labels,
             overview,
             compact,
             zoom: viewport.zoom,
@@ -793,7 +812,7 @@ function Studio({ session }: { session?: AtlasSession }) {
             fitView={!savedGraph?.viewpoint.revision}
             defaultViewport={session?.initial.viewpoint}
             fitViewOptions={{ padding: 0.18, maxZoom: 1 }}
-            minZoom={MIN_ZOOM}
+            minZoom={session ? .24 : MIN_ZOOM}
             maxZoom={1.6}
             nodesConnectable={false}
             nodesFocusable={false}
@@ -911,6 +930,16 @@ function Studio({ session }: { session?: AtlasSession }) {
             </details>
           </>}
         </nav>
+        {!session && focusedId && <section className="focus-navigation" aria-label="Focused card connections">
+          <div className="focus-heading"><strong>{byId.get(focusedId)?.title}</strong><button aria-label="Close focused connections" onClick={() => setFocusedId(null)}>×</button></div>
+          <button onClick={() => focus(focusedId)}>Focus card</button>
+          <label>Show connections <select value={connectionKind} onChange={e => { setConnectionKind(e.target.value); setConnectionPage(0); setBranchId(null); }}>
+            <option value="parents">Parents</option><option value="children">Children</option><option value="associations">Associations</option><option value="context">Shared brief</option>
+          </select></label>
+          <p className="small-note">{focusedRelations.length} connections · up to 6 shown at a time. Follow a link to bring that card into view.</p>
+          <ul>{relationPage.map(edge => <li key={edge.id}><button className="relative-link" onClick={() => focus(edge.otherId)}>{byId.get(edge.otherId)?.title} ↗</button><button aria-label={`Highlight only ${byId.get(edge.otherId)?.title}`} aria-pressed={branchId === edge.id} onClick={() => setBranchId(branchId === edge.id ? null : edge.id)}>Trace</button></li>)}</ul>
+          {focusedRelations.length > 6 && <div><button disabled={!connectionPage} onClick={() => { setConnectionPage(p => p - 1); setBranchId(null); }}>Previous connections</button><button disabled={(connectionPage + 1) * 6 >= focusedRelations.length} onClick={() => { setConnectionPage(p => p + 1); setBranchId(null); }}>Next connections</button></div>}
+        </section>}
         <div className="legend">
           <span>
             <i className="legend-line inheritance" aria-hidden="true" />
@@ -954,7 +983,7 @@ function Studio({ session }: { session?: AtlasSession }) {
             </details>}
             <button
               aria-label="Clear selection"
-              onClick={() => setSelected([])}
+              onClick={() => { setSelected([]); setFocusedId(null); }}
             >
               ×
             </button>
