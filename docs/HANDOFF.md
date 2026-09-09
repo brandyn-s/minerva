@@ -5,7 +5,7 @@ Scope ends after merge and deployment to https://minerva-eight.vercel.app/; one 
 
 ## Behavior
 Working-zoom cards have resize handles; positions and sizes are saved per card and perspective.
-Layout controls name the next action: Undo/Redo move, resize or arrange.
+Layout uses a four-tile medallion with a shared tooltip and compact Undo, Redo and Arrange grid controls.
 Each perspective retains its last 50 layout changes across reloads, including its redo stack.
 Ctrl/Cmd+Z and Shift+Z work in the field; text controls retain their native editing shortcuts.
 Card text edits, generation, import and reset clear layout history and cannot be undone.
@@ -42,3 +42,9 @@ Explore freely is the primary action, with source context and collapsible
 suggestions. Loading placeholders, fallback and retry are preserved.
 Implementation f1db13c; local checks and browser fixture checks passed.
 No paid provider calls; live generation quality was not retested.
+
+## Layout icon and menu
+Branch: `feat/layout-icon`; worktree: `/Users/brandyn.schult/code/minerva-regroup-selection`.
+Shared hover/focus tooltip, native disclosure and shorter history copy implemented.
+Full `npm run check` passed; local browser appearance and disclosure verified on port 4320.
+Next: verify the authorized release, then await owner direction.
