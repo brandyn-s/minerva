@@ -1015,6 +1015,7 @@ try {
     "double click selects overview card without moving the camera",
   );
   assert.ok(await page.locator('[data-id="food"] .thought.chosen').isVisible(), "double click selects the card");
+  assert.equal(await page.locator('[data-id="food-repair"]').evaluate(e => Number(getComputedStyle(e).opacity)), 1, "selection highlights outgoing relationships, not just parents");
   assert.equal(
     await page.getByRole("dialog").count(),
     0,
@@ -1022,6 +1023,7 @@ try {
   );
   await page.locator('[data-id="food"] .overview-target').dblclick();
   assert.equal(await page.locator('[data-id="food"] .thought.chosen').count(), 0, "double click again deselects the card");
+  assert.equal(await page.getByRole("region", { name: "Focused card connections" }).count(), 0, "deselecting the last card clears stale relationship focus");
   await page.locator('[data-id="food"] .overview-target').focus();
   await page.keyboard.press("Enter");
   assert.equal(await page.getByRole("dialog").count(), 1);
