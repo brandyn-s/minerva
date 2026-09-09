@@ -48,7 +48,11 @@ const button = (name) => page.getByRole("button", { name, exact: true });
 const transform = () =>
   page.locator(".react-flow__viewport").getAttribute("style");
 const settle = () => page.waitForTimeout(350);
+const openAtlasMenu = async () => {
+  if (await page.locator(".atlas-menu").getAttribute("open") === null) await page.locator(".atlas-menu summary").click();
+};
 const resetFixture = async () => {
+  await openAtlasMenu();
   page.once("dialog", dialog => dialog.accept());
   await button("Reset to fixture").click();
   await page.waitForFunction(() => document.querySelectorAll(".thought").length === 6);
@@ -860,13 +864,13 @@ try {
   await page.getByRole("region", { name: "What this expedition suggests" }).waitFor();
   assert.equal(await page.getByText(/Stale reading/).count(), 0, "restoring unchanged cards does not stale the reading"); await close();
   const backupDownload = page.waitForEvent("download").catch(() => null);
-  try { await button("Export atlas").click({ timeout: 5000 }); }
+  try { await openAtlasMenu(); await button("Export atlas").click({ timeout: 5000 }); }
   catch (error) { await page.screenshot({ path: `${artifacts}/export-failure.png` }); throw error; }
   assert.equal(await page.locator('.atlas-storage [role="alert"]').count(), 0, await page.locator('.atlas-storage').innerText());
   const backup = await backupDownload; assert.ok(backup, "JSON backup download starts"); assert.equal(backup.suggestedFilename(), "minerva-atlas.json");
   const backupBytes = await readFile(await backup.path()); const backupState = JSON.parse(backupBytes);
   await resetFixture(); assert.equal(await page.locator(".thought").count(), 6);
-  const upload = async buffer => page.getByLabel("Import atlas", { exact: true }).setInputFiles({ name: "atlas.json", mimeType: "application/json", buffer });
+  const upload = async buffer => { await openAtlasMenu(); await page.getByLabel("Import atlas file", { exact: true }).setInputFiles({ name: "atlas.json", mimeType: "application/json", buffer }); };
   await upload(backupBytes); page.once("dialog", d => d.accept()); await button("Replace").click();
   await page.waitForFunction(() => document.querySelectorAll(".thought").length === 10); await settle();
   const replacedSave = await storedSave();
