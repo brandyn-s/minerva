@@ -857,3 +857,5 @@ summary {
 .expedition-links { display: inline-flex; flex-wrap: wrap; }
 .expedition-reading { border-top: 1px solid #aaa084; margin-top: 18px; }
 .expedition-stop { font-weight: 600; }
+
+.brand-owl { mix-blend-mode: multiply; object-fit: contain; }
