@@ -44,6 +44,7 @@ import TalkPanel from "./talk-panel";
 import RegroupPanel from "./regroup-panel";
 import { applyRegroup } from "./regroup-layout";
 import DownloadButton from "./download-button";
+import ThoughtCatalogue from "./thought-catalogue";
 import MovesPanel from "./moves-panel";
 import ExpeditionPanel from "./expedition-panel";
 import TooltipButton from "./tooltip-button";
@@ -362,7 +363,6 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
   const [showRelationshipLabels, setShowRelationshipLabels] = useState(false);
   const [overview, setOverview] = useState((initial?.cameras[initial.perspective]?.zoom ?? 1) < .62);
   const [viewport, setViewport] = useState<Viewport>(initial?.cameras[initial.perspective] ?? { x: 0, y: 0, zoom: 1 });
-  const [query, setQuery] = useState("");
   const [compact, setCompact] = useState((initial?.cameras[initial.perspective]?.zoom ?? 1) < .45);
   const [pinching, setPinching] = useState(false);
   const field = useRef<HTMLDivElement>(null);
@@ -571,7 +571,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           },
     className: `thread ${edge.kind} ${panel === "inspect" && (edge.from === active || edge.to === active) ? "emphasized" : ""}`,
     style: {
-      opacity: perspective === "Constellation" ? 1 : session ? 1 : edge.kind === "association" && !highlighted.has(edge.id) ? .08 : highlighting ? (highlighted.has(edge.id) ? 1 : .12) : overview ? .7 : 1,
+      opacity: perspective === "Constellation" ? 1 : session ? 1 : highlighting ? (highlighted.has(edge.id) ? 1 : .12) : overview ? .7 : 1,
       stroke:
         edge.kind === "association"
           ? "#755584"
@@ -581,7 +581,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
       strokeWidth:
         (!session && overview ? (highlighted.has(edge.id) ? 2 : 1) : panel === "inspect" && (edge.from === active || edge.to === active)
           ? 3
-          : edge.kind === "recombination"
+          : edge.kind === "recombination" || edge.kind === "association"
             ? 2.5
             : 2) / viewport.zoom,
       strokeDasharray:
@@ -1248,7 +1248,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
         <aside
           ref={panelRef}
           tabIndex={-1}
-          className={`detail-panel ${panel === "text" ? "text-reader" : ""} ${panel === "compare" || panel === "text" ? "wide-panel" : ""}`}
+          className={`detail-panel ${panel === "index" ? "catalogue-panel" : ""} ${panel === "text" ? "text-reader" : ""} ${panel === "compare" || panel === "text" ? "wide-panel" : ""}`}
           role="dialog"
           aria-modal="false"
           aria-label={
@@ -1269,7 +1269,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
             }
           }}
         >
-          <div className="panel-heading">
+          {panel !== "index" && <div className="panel-heading">
             <span className="instrument-label">
               {panel === "inspect"
                 ? "Thought / source material"
@@ -1277,14 +1277,12 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
                   ? (session ? "Prepared move / no model call" : "Wander")
                   : panel === "text"
                     ? `Read as text · ${nodes.length} ideas`
-                    : panel === "index"
-                      ? "Find your place"
-                      : "Selected contributions"}
+                    : "Selected contributions"}
             </span>
             <button aria-label="Close panel" onClick={close}>
               ×
             </button>
-          </div>
+          </div>}
           {panel === "explore" && session && <ExplorationPanel workspaceId={savedGraph!.workspaceId}
             sources={selected.map((id) => byId.get(id)!).filter(Boolean)} inspect={inspect} />}
           {panel === "inspect" && (
@@ -1446,55 +1444,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
               </nav>
             </div>
           </div>}
-          {panel === "index" && (
-            <>
-              <h2>
-                {panel === "index"
-                  ? "Every thought has a place."
-                  : "What to do with a dead shopping mall"}
-              </h2>
-              {panel === "index" && (
-                <>
-                {!session && <DownloadButton cards={nodes.map((node) => node.data.thought)} relationships={relationships} />}
-                <label>
-                  Find a thought
-                  <input
-                    autoComplete="off"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search titles"
-                  />
-                </label>
-                </>
-              )}
-              <div className="reference-list">
-                {nodes
-                  .filter(
-                    (n) =>
-
-                      n.data.thought.title.toLowerCase().includes(query.toLowerCase()),
-                  )
-                  .map((n) => (
-                    <section key={n.id}>
-                      <span className="instrument-label">
-                        {n.data.thought.kind} · {n.data.thought.decision}
-                      </span>
-                      <h3>{n.data.thought.title}</h3>
-                      <div className="panel-actions">
-                        <button onClick={() => focus(n.id)}>Focus ↗</button>
-                        <button onClick={() => inspect(n.id)}>Inspect</button>
-                        <button
-                          aria-pressed={selected.includes(n.id)}
-                          onClick={() => select(n.id)}
-                        >
-                          {selected.includes(n.id) ? "Selected ✓" : "Select"}
-                        </button>
-                      </div>
-                    </section>
-                  ))}
-              </div>
-            </>
-          )}
+          {panel === "index" && <ThoughtCatalogue cards={nodes.map(n => n.data.thought)} relationships={relationships} selected={selected} select={select} focus={focus} close={close} downloadable={!session} />}
           {panel === "compare" && (
             <>
               <h2>Hold the differences in view.</h2>
