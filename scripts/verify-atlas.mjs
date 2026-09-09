@@ -364,6 +364,9 @@ try {
     else if (talkAttempts === 4) await route.fulfill({ contentType: "application/x-ndjson", body:
       JSON.stringify({ text: "Interrupted draft" }) + "\n" + JSON.stringify({ error: "Stream test failure" }) + "\n" });
     else if (live && talkAttempts === 2) await route.continue();
+    // Playwright cannot rewrite an HTTPS request to the local HTTP streaming fixture.
+    else if (base.startsWith("https:")) await route.fulfill({ contentType: "application/x-ndjson",
+      body: JSON.stringify({ text: talkText }) + "\n" + JSON.stringify({ done: true }) + "\n" });
     else await route.continue({ url: mockStreamUrl });
   });
   await button("Talk to Minerva").click();
@@ -374,7 +377,7 @@ try {
   const talkResponse = page.waitForResponse((r) => r.url().endsWith("/api/talk") && r.status() === 200, { timeout: 90000 });
   await button("Retry").click();
   const replyResponse = await talkResponse;
-  if (!live) {
+  if (!live && base.startsWith("http:")) {
     await page.getByText(talkText.slice(0, 20), { exact: true }).waitFor();
     assert.ok(await button("Replying…").isVisible(), "partial reply renders while the stream is still open");
   }
