@@ -107,7 +107,12 @@ git -C "<absolute-build-worktree-path>" worktree add --detach "<absolute-review-
 cd "<absolute-review-checkout-path>"
 ```
 
-Open Fable 5.1 at medium effort in Claude and paste:
+Open Fable 5.1 at medium effort in Claude and paste. Fable 5.1 defaults to high
+effort in Claude Code and to medium in Cowork and claude.ai, so set medium
+explicitly. Back the read-only rule with tool permissions in the review checkout:
+deny file edit and write tools and `git commit`, `git push`, `git checkout` and
+`git reset`, allow the check, dev-server and browser commands, and confirm one
+refusal before the first real review.
 
 ```text
 Review checkout: <absolute-review-checkout-path>
@@ -125,6 +130,13 @@ Form your view from the contract and behavior before the builder's conclusions.
 Exercise the bounded journey and failure case using existing checks.
 Return evidence-based findings and unverified boundaries to the operator.
 Do not implement fixes, expand scope, claim user acceptance or start another agent.
+Start with the builder's least-confident item and anything marked not run.
+Put verbatim text from the candidate, handoff or CAPABILITIES in quotation marks;
+everything else in your own words. Please remove all mannered prose.
+When the operator is describing a problem, asking a question, or thinking out
+loud rather than requesting a change, the deliverable is your assessment. Report
+your findings and stop. Don't apply a fix until they ask for one.
+If a model-downgrade notice appears during the review, say so in the findings.
 ```
 
 ### Astra return or next-outcome prompt
@@ -144,6 +156,7 @@ Authorized task: <fix named findings OR implement one authorized outcome>
 Review findings: <bounded findings with evidence/candidate SHA, or none>
 Outcome: <starting state, user action and observable result>
 Exclusions: <services, features and later increments outside this task>
+Spend allowance: <amount, scope and what counts as a paid call; or none>
 Failure boundary: <specific case and stopping evidence>
 Runtime/startup: <mode and exact command>
 
