@@ -1365,7 +1365,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           id={panel === "guide" ? "atlas-guide" : undefined}
           ref={panelRef}
           tabIndex={-1}
-          className={`detail-panel ${panel === "guide" ? "guide-panel" : ""} ${panel === "index" ? "catalogue-panel" : ""} ${panel === "text" ? "text-reader" : ""} ${panel === "compare" || panel === "text" ? "wide-panel" : ""}`}
+          className={`detail-panel ${panel === "moves" ? "wander-panel" : ""} ${panel === "guide" ? "guide-panel" : ""} ${panel === "index" ? "catalogue-panel" : ""} ${panel === "text" ? "text-reader" : ""} ${panel === "compare" || panel === "text" ? "wide-panel" : ""}`}
           role="dialog"
           aria-modal="false"
           aria-label={

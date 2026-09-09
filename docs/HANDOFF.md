@@ -37,7 +37,8 @@ Next: operator-started Fable 5.1 at low effort, exact released candidate, read-o
 Use docs/setup.md's bounded launch prompt, a separate checkout/port and fresh synthetic browser data.
 No paid model calls. No further batch is authorized; stop after this release.
 
-Evidence-label cleanup: inspector, reader Details, and comparison omit visible Evidence labels.
-Evidence data, Markdown downloads, and main's kept-label cleanup remain intact.
-Release branch: fix/remove-evidence-labels; worktree: /Users/brandyn.schult/code/minerva-wander-toolbar.
-Local npm run check and browser inspection passed; user authorized commit, merge, deploy.
+## Wander exploration-first pane
+Explore freely is the primary action, with source context and collapsible
+suggestions. Loading placeholders, fallback and retry are preserved.
+Implementation f1db13c; local checks and browser fixture checks passed.
+No paid provider calls; live generation quality was not retested.
