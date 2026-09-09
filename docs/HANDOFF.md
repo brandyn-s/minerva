@@ -25,7 +25,7 @@ The existing Gateway project budget is the only spend control for these features
 
 ## Verification and actual returned cards
 
-Local `npm run check` passes: lint, TypeScript, 14 inherited tests and production build.
+Local `npm run check` passes: lint, TypeScript, inherited tests and production build.
 Extended only `scripts/verify-atlas.mjs`: selection, card error/retry, counts, lineage, contributions and reload reset.
 Three-parent browser error/retry, edges, contributions and reload checks passed; one real three-parent Weave call returned HTTP 200.
 Live evidence: `/tmp/minerva-weave-three-live.json`; original Wander: `/tmp/minerva-live-wander-weave/wander-weave.json`.

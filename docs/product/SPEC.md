@@ -1,9 +1,15 @@
 # Minerva: observable product specification
 
-This is the authoritative required scope. The seed implements a shell, not
-these application capabilities. C01-C15 are required before prototype
-completion; milestones are demonstrations of progress, not smaller products.
-Implementation and composition may improve without a pixel-for-pixel replica.
+This is the authoritative scope of the complete product. The default build
+target is the demonstration in [AGENTS](../../AGENTS.md#current-direction);
+C01-C15 describe where the product goes after that, and a task message opens
+each capability when the owner wants it. Implementation and composition may
+improve without a pixel-for-pixel replica.
+
+Demonstration scope: sentences in this file about receipts, admission,
+reservations, quota, revision-scoped freshness, durable runs, reconciliation
+and export apply to the complete product. They are not required for the
+demonstration unless the task message names them.
 
 The central loop is explore, observe, challenge, intervene, inspect the result.
 A person can discuss possible recurrence while manipulating the field, inspect
