@@ -243,7 +243,14 @@ that budget is exceeded. Spend Management is the backstop: it checks every few
 minutes and does not cover Marketplace databases. Do not add Gateway API keys or
 bring-your-own provider keys, which the project budget does not meter.
 Application admission keeps
-its own bounded attempt and spend allowances with headroom. Consult current
+its own bounded attempt and spend allowances with headroom.
+
+Text and voice do not share a spend unit. Text generation meters by tokens,
+while realtime voice models are priced by connected session time, so a voice
+allowance is a duration budget and the 25-minute session cap is also a per-session
+cost ceiling. Allocate and report the two separately rather than converting one
+into the other; confirm the per-model rate and the usage a closed session
+actually reports when configuring the runtime profiles. Consult current
 official Vercel documentation when configuring these services. Voice never
 places a long-lived key in the browser. Use runtime credentials, not captured
 build tokens.
