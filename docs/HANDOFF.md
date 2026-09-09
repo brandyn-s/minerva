@@ -1,7 +1,7 @@
 # Root atlas demo handoff
 Root `/` now includes Lineage, Evolution, Constellation and inspection inheritance/provenance.
 Owner scope ends after merge and deployment to https://minerva-eight.vercel.app/; one operator-started Fable review follows.
-- Branch: `demo/perspectives-inheritance`; base: refreshed `origin/main` at `118b095`.
+- Branch: `demo/perspectives-inheritance`; base: `118b095`; integrated main through `c61e843` (Talk smoothing).
 - Worktree: `/Users/brandyn.schult/code/minerva`; released SHA and hosted result are in the operator response.
 - No persistence, admission/budget logic, dependencies, database, workspace or Workflow changes.
 
