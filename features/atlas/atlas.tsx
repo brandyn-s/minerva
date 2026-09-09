@@ -889,7 +889,6 @@ function Studio({ session }: { session?: AtlasSession }) {
           </button>
           <button onClick={() => open("text")}>Read as text</button>
           {!session && <button onClick={() => open("talk")}>Talk to Minerva</button>}
-          {!session && <span className="demo-note">Select 1 to Wander · 2+ to Weave · Reload resets</span>}
           {session && <>
             <button onClick={() => { void session.command({ operation: "seed-mall" }).catch(() => {}); }} disabled={nodes.length > 0}>Load prepared mall</button>
             <button onClick={() => { void session.command({ operation: "create-idea", ideaId: crypto.randomUUID(), title: "New idea", body: "Write your idea here." }).catch(() => {}); }}>New idea</button>
