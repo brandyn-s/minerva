@@ -1293,9 +1293,8 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
             <>
               <h2>{thought.title}</h2>
               {!session && <DownloadButton key={thought.id} card={thought} cards={nodes.map((node) => node.data.thought)} relationships={relationships} />}
-              {(thought.decision !== "unkept draft" || thought.evidence !== "unknown") && <div className="status-line">
-                {thought.decision !== "unkept draft" && <span>{thought.decision}</span>}
-                {thought.evidence !== "unknown" && <span>Evidence: {thought.evidence}</span>}
+              {thought.decision !== "unkept draft" && <div className="status-line">
+                <span>{thought.decision}</span>
               </div>}
               <p className="body-copy">{thought.body}</p>
               {thought.generation && <details><summary>Generation context and mechanism</summary>
@@ -1434,7 +1433,6 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
                 <div className="body-copy">{(thought.body.startsWith(thought.summary) ? thought.body.slice(thought.summary.length).trim() : thought.body).split("\n\n").filter(Boolean).map((paragraph, i) => <p key={i}>{paragraph}</p>)}</div>
                 <details className="reader-details"><summary>Details</summary>
                   <p>Contribution: {thought.contribution}</p>
-                  <p>Evidence: {thought.evidence}</p>
                   <ul>{relationshipsFor(thought.id, relationships).map(e => <li key={e.id}><button onClick={() => setActive(e.otherId)}>{byId.get(e.otherId)?.title}</button> · {e.contribution || e.label}</li>)}</ul>
                 </details>
                 <div className="reader-actions">
@@ -1465,7 +1463,6 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
                     <h3>{byId.get(id)!.title}</h3>
                     <p>{byId.get(id)!.contribution}</p>
                     <p className="body-copy">{byId.get(id)!.body}</p>
-                    <p>Evidence: {byId.get(id)!.evidence}</p>
                     <button onClick={() => inspect(id)}>Inspect sources</button>
                   </section>
                 ))}
