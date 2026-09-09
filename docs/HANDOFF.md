@@ -14,7 +14,7 @@ Export atlas downloads `minerva-atlas.json` in the same integer-versioned shape.
 Import validates the complete shape and references with zod before offering Replace or Merge.
 Replace restores the backup. Merge hashes title/summary/body, gives distinct cards and edges new IDs, remaps references and skips duplicates.
 Merge keeps local cameras, grouping and Talk, and retains imported expedition history. Markdown downloads are unchanged.
-Constellation fits after measured nodes commit, including the whole tall column. Group timestamps include the date.
+Constellation fits after measured nodes commit, including the whole tall column. Group timestamps include the date. Toolbar tooltips open below controls so they cannot cover Export.
 Stop says which in-flight step was cancelled. New expedition keeps prior runs available in Expedition history.
 No new dependencies, server persistence, identity, admission or budget logic. No database, /workspaces or Workflow changes.
 
