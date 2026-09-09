@@ -2,6 +2,17 @@
 
 These are the shared working rules for building and reviewing Minerva.
 
+## Current direction
+
+The owner's goal is a functional demonstration on the stable Vercel URL, not a
+production application. This section supersedes the milestones and packages in
+docs/build-prompts.md and any next outcome named in docs/HANDOFF.md until the
+owner removes it. Build only what the current task message names, in memory on
+the existing atlas, with live model calls through Vercel AI Gateway. Do not
+extend the workspaces, Postgres, Workflow or admission code. Do not add
+persistence, recovery, ledgers, export, budgets, reservations or voice unless
+the task message asks. Keep docs/HANDOFF.md under 60 lines.
+
 ## Sources and scope
 
 [README](./README.md#documentation) indexes the documents. AGENTS owns working
@@ -25,12 +36,12 @@ in [SPEC](./docs/product/SPEC.md#shipped-demo-and-human-judgment).
 
 ## Execute one connected outcome
 
-Complete the authorized outcome, including its connected chunks. Stop at the next
-required owner or review boundary, or when further work exceeds that authorization.
+Complete the current task message, then stop. Do not continue into the next
+package, milestone or handoff outcome without a new task message from the owner.
 
 Make routine reversible decisions within that scope. Ask only when missing
 information materially changes the result or an action requires authority not
-already granted. Existing authorization persists across chunks and handoffs.
+already granted.
 
 - Respect advice/review requests as read-only. For implementation, state the user
   action, exclusions and stopping evidence. Integrate the smallest UI/service path
@@ -91,17 +102,16 @@ approval or waive required behavior. User experience acceptance is separate.
 
 ## Handoff
 
-Use CAPABILITIES and a short application `docs/HANDOFF.md` for scope, findings,
-dispositions, evidence and the next outcome. Distinguish written, integrated,
-locally/live demonstrated, reviewed, accepted and hosted facts by revision.
-Do not add diaries, status engines or parallel per-model records.
+Use CAPABILITIES and a short application `docs/HANDOFF.md`, at most 60 lines,
+for scope, evidence and the next outcome. State what works, what was verified
+live, and what is not implemented. Do not add diaries, status engines or
+parallel per-model records.
 
 Emit the operator handoff in the final response, not just a link: outcome/state,
 candidate SHA, branch, absolute worktree, startup mode, handoff path and next
 role. Supply the applicable bounded launch instructions from
-[setup](./docs/setup.md#standard-checkpoint-output). Apply the authorized-outcome
-stopping rule above; a handoff neither grants new authority nor creates a review
-gate per increment.
+[setup](./docs/setup.md#standard-checkpoint-output). A handoff neither grants new
+authority nor names work the next session may start on its own.
 
 ## Run and contribute
 
