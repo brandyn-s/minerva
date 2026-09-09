@@ -1,0 +1,26 @@
+# Dependencies and Next.js output
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# Operating-system and editor files
+.DS_Store
+*.swp
+*.swo
+
+# Local platform and environment state
+.vercel/
+.minerva/
+.local/
+test-results/
+playwright-report/
+.env*
+!.env.example
+
+# Local test output
+coverage/
+
+# Content-bearing evaluation evidence is never tracked
+evaluation-artifacts/
