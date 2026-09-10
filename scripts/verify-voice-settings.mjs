@@ -22,6 +22,7 @@ try {
  await dialog.getByRole('combobox',{name:'Voice',exact:true}).selectOption('cedar');
  await dialog.getByLabel('Response length').selectOption('Detailed');
  await dialog.getByLabel('Custom instructions').fill('Challenge my assumptions with concrete examples.');
+ await dialog.getByText('Listening & microphone', {exact:true}).click();
  await dialog.getByLabel('End-of-turn detection').selectOption('semantic-vad');
  assert.ok(await dialog.getByRole('slider').first().isDisabled());
  await dialog.getByRole('button',{name:'Preview voice',exact:true}).click();
@@ -36,6 +37,19 @@ try {
  assert.equal(await dialog.getByLabel('Response length').inputValue(),'Detailed');
  await page.screenshot({path:'/tmp/minerva-voice-settings-mobile.png'});
  assert.ok(await dialog.evaluate(el=>el.getBoundingClientRect().width<=innerWidth));
+ await dialog.getByText('Listening & microphone', {exact:true}).click();
+ for (const width of [390, 1280]) {
+  await page.setViewportSize({width,height:844});
+  const geometry=await dialog.evaluate(el=>{
+   const body=el.querySelector('.voice-settings-body');
+   return {overflow:body.scrollWidth>body.clientWidth, checks:[...el.querySelectorAll('.voice-settings-check')].map(label=>{
+    const input=label.querySelector('input').getBoundingClientRect(); const box=label.getBoundingClientRect();
+    return {width:input.width, inside:input.left>=box.left && input.right<=box.right};
+   })};
+  });
+  assert.equal(geometry.overflow,false,`No horizontal overflow at ${width}px`);
+  for(const check of geometry.checks) {assert.ok(check.width<=20);assert.ok(check.inside);}
+ }
  await dialog.getByRole('button',{name:'Reset defaults'}).click();
  assert.equal(await dialog.getByRole('combobox',{name:'Voice',exact:true}).inputValue(),'marin');
  await page.keyboard.press('Escape');assert.equal(await dialog.count(),0);

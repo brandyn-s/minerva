@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useSyncExternalStore } from "react";
+import FieldGuideHeading from "./field-guide-heading";
 import { Settings2 } from "lucide-react";
 import { defaultVoiceSettings, parseVoiceSettings, voiceOptions, type VoiceSettings } from "./voice-settings";
 
@@ -30,8 +31,10 @@ export default function VoiceSettingsPanel({ settings, update, busy, preview, st
   const text = (key: "language" | "accent" | "transcriptionLanguage", label: string, maxLength: number) => <label>{label}<input value={settings[key]} maxLength={maxLength} pattern={key === "transcriptionLanguage" ? "[a-z]{2}|" : undefined} onChange={e => set(key, key === "transcriptionLanguage" ? e.target.value.toLowerCase().replace(/[^a-z]/g, "") : e.target.value)} /></label>;
   return <>
     <button type="button" className="composer-icon" aria-label="Voice settings" onClick={() => dialog.current?.showModal()}><Settings2 size={20} aria-hidden="true" /></button>
-    <dialog ref={dialog} className="voice-settings-dialog" aria-labelledby="voice-settings-heading">
-      <header><div><h2 id="voice-settings-heading">Minerva’s voice</h2><p>Realtime 2.1 · Make the conversation yours</p></div><button type="button" aria-label="Close voice settings" onClick={() => dialog.current?.close()}>×</button></header>
+    <dialog ref={dialog} className="voice-settings-dialog field-guide" aria-label="Minerva’s voice">
+      <FieldGuideHeading title="Minerva’s voice" image="/images/minerva-engraved-cameo.png" close={() => dialog.current?.close()} />
+      <div className="voice-settings-body">
+      <p className="voice-settings-intro">Make the conversation yours.</p>
       {error && <p role="alert">{error}</p>}
       {busy && <p role="status">End the current voice session before changing settings. <button type="button" onClick={stop}>Stop voice</button></p>}
       <fieldset disabled={busy}><legend>Voice and conversation</legend>
@@ -50,7 +53,7 @@ export default function VoiceSettingsPanel({ settings, update, busy, preview, st
         <button type="button" onClick={preview}>Preview voice</button>
         <p className="voice-settings-note">Preview plays a short generated sample without opening your microphone.</p>
       </fieldset>
-      <fieldset disabled={busy}><legend>Listening</legend>
+      <details className="voice-listening"><summary>Listening &amp; microphone</summary><fieldset disabled={busy}><legend>Listening</legend>
         {select("detection", "End-of-turn detection", ["server-vad", "semantic-vad"])}
         <p className="voice-settings-note">Server detection uses silence. Semantic detection listens for a completed thought. Hold-to-talk always waits for release.</p>
         <fieldset disabled={settings.detection !== "server-vad"}><legend>Silence detection tuning</legend>
@@ -64,8 +67,10 @@ export default function VoiceSettingsPanel({ settings, update, busy, preview, st
         {(["echoCancellation", "noiseSuppression", "autoGainControl"] as const).map((key, i) => <label className="voice-settings-check" key={key}><input type="checkbox" checked={settings[key]} onChange={e => set(key, e.target.checked)} />{["Reduce speaker echo", "Suppress background noise", "Automatically adjust microphone gain"][i]}</label>)}
         <p className="voice-settings-note">Microphone processing depends on your browser and device.</p>
       </fieldset>
-      <footer><button type="button" disabled={busy} onClick={() => update({ ...defaultVoiceSettings })}>Reset defaults</button><button type="button" onClick={() => dialog.current?.close()}>Done</button></footer>
-      <p className="voice-settings-note">Preferences apply to your next voice session and are saved in this browser when storage is available.</p>
+      </details>
+      </div>
+      <footer><button type="button" disabled={busy} onClick={() => update({ ...defaultVoiceSettings })}>Reset defaults</button><button type="button" className="voice-settings-done" onClick={() => dialog.current?.close()}>Done</button></footer>
+      <p className="voice-settings-note">Saved in this browser when available. Applies to your next voice session.</p>
     </dialog>
   </>;
 }
