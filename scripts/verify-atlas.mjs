@@ -1178,6 +1178,8 @@ try {
   await page.setViewportSize({ width: 1280, height: 600 });
   await fit();
   const targets = page.locator(".overview-target");
+  // Fit can retain full cards when compact geometry fits the viewport.
+  for (let step = 0; step < 4 && !await targets.count(); step++) { await cameraKey("-"); await settle(); }
   assert.ok((await targets.count()) > 0);
   for (const target of await targets.all()) {
     const b = await target.boundingBox();
