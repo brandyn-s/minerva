@@ -14,7 +14,7 @@ function cardMarkdown(card: Thought, allCards: Thought[], edges: Relationship[],
   const parents = edges.filter(e => e.to === card.id && (e.kind === "derivation" || e.kind === "recombination"));
   const inheritance = parents.length ? `\n${heading}# Inheritance\n\n${parents.map(e => `- ${title(allCards.find(c => c.id === e.from)?.title ?? e.from)}: ${e.contribution || "Not specified"}${card.provenance?.moveTitle ? `\n  Move: ${card.provenance.moveTitle}` : ""}`).join("\n") }\n` : "";
   const provenance = card.provenance ? `\n${heading}# Provenance\n\nFeature: ${card.provenance.feature}\n\nTag: ${card.provenance.tag}\n\nSources at generation: ${card.provenance.sourceTitles.map(title).join("; ")}\n` : "";
-  return `${heading} ${title(card.title)}\n\n${heading}# Summary\n\n${card.summary}\n\n${heading}# Body\n\n${card.body}\n\n${heading}# Decision\n\n${card.decision}\n\n${heading}# Evidence\n\n${card.evidence}\n\n${heading}# Contribution\n\n${card.contribution}\n\n${heading}# Relationships\n\n${relationships || "None"}\n${inheritance}${provenance}`;
+  return `${heading} ${title(card.title)}\n\n${heading}# Summary\n\n${card.summary}\n\n${heading}# Body\n\n${card.body}\n\n${heading}# Contribution\n\n${card.contribution}\n\n${heading}# Relationships\n\n${relationships || "None"}\n${inheritance}${provenance}`;
 }
 
 export default function DownloadButton({ cards, relationships, card }: {

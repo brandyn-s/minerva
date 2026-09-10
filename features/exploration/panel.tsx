@@ -72,17 +72,3 @@ export default function ExplorationPanel({ workspaceId, sources, inspect }: { wo
     </section>)}
   </>;
 }
-export function ProposalDecisions({ workspaceId, thought }: { workspaceId: string; thought: Thought }) {
-  const [unreviewed, setUnreviewed] = useState(false);
-  const [historical, setHistorical] = useState(false);
-  const { message, busy, pending, act } = useCommand();
-  return <section><h3>Your decision</h3>
-    <label><input type="checkbox" checked={unreviewed} onChange={(e) => setUnreviewed(e.target.checked)} />I acknowledge this revision may be unreviewed.</label>
-    <label><input type="checkbox" checked={historical} onChange={(e) => setHistorical(e.target.checked)} />Keep a separate branch from historical source revisions.</label>
-    <div className="panel-actions">{[["kept", "Keep this revision"], ["set aside", "Set aside"], ["unkept draft", "Undo decision"]].map(([decision, label]) =>
-      <button key={decision} disabled={busy || !!pending} onClick={() => { void act({ operation: "decide", commandId: crypto.randomUUID(), workspaceId, ideaId: thought.id,
-        revision: thought.revision, decision, historicalContext: historical, acknowledgeUnreviewed: unreviewed }); }}>{label}</button>)}
-      {!!pending && <button disabled={busy} onClick={() => { void act(pending); }}>Retry same decision</button>}</div>
-    {message && <p role="status">{message}</p>}
-  </section>;
-}

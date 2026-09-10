@@ -1,50 +1,25 @@
-# Root atlas: layout controls and graph navigation
-Branch: `demo-layout-navigation`, from `origin/main` at `83844e4`, integrated through `16f39b7`.
-Worktree: `/Users/brandyn.schult/code/minerva-layout-navigation`.
-Scope ends after merge and deployment to https://minerva-eight.vercel.app/; one operator-started Fable review follows.
+# Remove card decision and evidence metadata
 
-## Behavior
-Working-zoom cards have resize handles; positions and sizes are saved per card and perspective.
-Layout uses a four-tile medallion with a shared tooltip and compact Undo, Redo and Arrange grid controls.
-Each perspective retains its last 50 layout changes across reloads, including its redo stack.
-Ctrl/Cmd+Z and Shift+Z work in the field; text controls retain their native editing shortcuts.
-Card text edits, generation, import and reset clear layout history and cannot be undone.
-Ancestors and descendants follow only derivation/recombination edges, transitively, with cycle protection.
-Focus highlights the chain and dims other cards/edges; links list the origin, then nearest to farthest relatives.
-A second press clears the focus; Clear chain also clears it while following links.
-Fold descendants hides the full descendant set and incident edges in every perspective, with a counted marker.
-Folded thoughts remain searchable, inspectable and selectable in Thoughts; the index names every folding ancestor and offers Unfold.
-Unfold restores the original positions. Folding is local, persisted and included in JSON export/import.
-Version 2 adds sizes, per-perspective layout history and folded roots; version 1 saves/files migrate with empty values.
-Merge remaps imported sizes/folds, clears history and reports added/skipped card counts in one line.
-Reset and Replace use in-page Confirm/Keep current atlas buttons in Menu.
-Current main header, Wander toolbar, compact card preview, regroup preview, text reader, plain overview nodes, association styling and thought catalogue are preserved.
-Recovery copies have a list in the import area with Export and Discard; dev-mode restore shares one pending read.
-No model routes, /workspaces, database or Workflow code changed. No dependencies added.
+Branch: `fix/remove-card-metadata`, based on `origin/main` at `f184531`.
+Worktree: `/Users/brandyn.schult/code/minerva-card-metadata-release`.
+
+## Outcome
+Cards no longer carry decision/evidence status fields. Catalogue, inspection,
+comparison, and Markdown downloads omit them; decision controls are removed.
+Provenance, contributions, relationships, and current layout/navigation remain.
+Old browser saves migrate and discard retired fields without losing provenance.
+Shared card producers and graph readers match the simplified type; no DB migration.
 
 ## Verification
-`npm run check` and complete mocked replays passed through `npm run dev` and `next start`.
-Final operator handoff supplies the exact release SHA and hosted verification.
-Browser artifacts: `/tmp/minerva-layout-dev` and `/tmp/minerva-layout-start`.
-Existing `scripts/verify-atlas.mjs` covers layout, transitive focus/folds, migration, merge counts and confirmations.
-All model responses in replay are mocked; no live model calls authorized or made.
+`npm run check` passed: lint, typecheck, 15 tests, and production build.
+`scripts/verify-card-metadata.mjs` passed against the production build: legacy
+restore, catalogue, inspection, download, provenance, and cleaned browser save.
+No live model calls are needed for this change.
 
-## Startup and next role
-Use `npx --yes --package=node@24.20.0 --package=npm@12.0.2` before npm commands.
-Dev: `npm run dev -- --port 3050`; production: `npm run build`, then `npm run start -- --port 3061`.
-Replay: `MINERVA_URL=http://127.0.0.1:3061 npm run test:browser` (3050 for dev).
-Next: operator-started Fable 5.1 at low effort, exact released candidate, read-only, C02/C03 and named carry-overs.
-Use docs/setup.md's bounded launch prompt, a separate checkout/port and fresh synthetic browser data.
-No paid model calls. No further batch is authorized; stop after this release.
-
-## Wander exploration-first pane
-Explore freely is the primary action, with source context and collapsible
-suggestions. Loading placeholders, fallback and retry are preserved.
-Implementation f1db13c; local checks and browser fixture checks passed.
-No paid provider calls; live generation quality was not retested.
-
-## Layout icon and menu
-Branch: `feat/layout-icon`; worktree: `/Users/brandyn.schult/code/minerva-regroup-selection`.
-Shared hover/focus tooltip, native disclosure and shorter history copy implemented.
-Full `npm run check` passed; local browser appearance and disclosure verified on port 4320.
-Next: verify the authorized release, then await owner direction.
+## Release and next role
+Owner authorized commit, merge, and production deployment.
+Use the PR checks before merging; verify the stable URL after deployment.
+Production: https://minerva-eight.vercel.app/.
+Local start: prefix commands with `npx --yes --package=node@24.20.0 --package=npm@12.0.2`,
+then run `npm run build` and `npm run start -- --port 54426`.
+Next role: owner inspects the released cards; no critic requested.

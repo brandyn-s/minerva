@@ -50,7 +50,7 @@ import ExpeditionPanel from "./expedition-panel";
 import GuideContent from "./guide-content";
 import TooltipButton from "./tooltip-button";
 import { overviewDiameter, overviewLabels, overviewName } from "./overview";
-import ExplorationPanel, { ProposalDecisions } from "../exploration/panel";
+import ExplorationPanel from "../exploration/panel";
 
 type CardNode = Node<{ thought: Thought; geometry?: { width: number; height: number; circular: boolean } }, "thought" | "theme">;
 // Keep screen-sized overview markers separated at the farthest zoom-out.
@@ -715,7 +715,6 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           id, type: "thought", position: { x, y: y + index * 380 }, dragHandle: ".card-grip", ariaLabel: card.title,
           data: { thought: { ...card, id, revision: 1,
             kind: feature === "wander" ? "exploration" : "recombination",
-            decision: "unkept draft", evidence: "unknown",
             provenance: { feature: contextualMove?.title ?? (feature === "wander" ? "Wander" : "Weave"), tag: `feature:${feature}`, sourceTitles: sources.map(s => s.title), moveTitle: contextualMove?.title },
             contribution: feature === "wander" ? `Derived from ${sources[0].title}.` : contributions.join(" "),
             move: { title: "Explore this direction", question: "Where could this idea lead?", preview: card.summary },
@@ -744,7 +743,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
   function addExpeditionCard(card: GeneratedCard, parent: Thought, step: number, rationale: string): Thought {
     clearHistory();
     const id = crypto.randomUUID();
-    const thought: Thought = { ...card, id, revision: 1, kind: "exploration", decision: "unkept draft", evidence: "unknown",
+    const thought: Thought = { ...card, id, revision: 1, kind: "exploration",
       contribution: rationale, provenance: { feature: `Expedition · step ${step}`, tag: "feature:expedition", sourceTitles: [parent.title] },
       move: { title: "Explore this direction", question: "Where could this idea lead?", preview: card.summary } };
     setNodes(current => {
@@ -1421,9 +1420,6 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
               <h2>{thought.title}</h2>
               {!session && <GraphNavigation id={thought.id} chain={chain} chainIds={chainIds} descendantCount={trace(thought.id, "descendants").length} byId={byId} folds={folds} setChain={setChain} setFolds={setFolds} focus={focus} />}
               {!session && <DownloadButton key={thought.id} card={thought} cards={nodes.map((node) => node.data.thought)} relationships={relationships} />}
-              {thought.decision !== "unkept draft" && thought.decision !== "kept" && <div className="status-line">
-                <span>{thought.decision}</span>
-              </div>}
               <p className="body-copy">{thought.body}</p>
               {thought.generation && <details><summary>Generation context and mechanism</summary>
                 <p>{thought.generation.mechanism}</p>
@@ -1442,7 +1438,6 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
               {!session && thought.provenance && <section aria-label="Provenance"><h3>Provenance</h3><p>{thought.provenance.feature} · {thought.provenance.tag}</p><p>Sources at generation: {thought.provenance.sourceTitles.join("; ")}</p></section>}
               <h3>Contribution</h3>
               <p>{thought.contribution}</p>
-              {session && thought.kind !== "brief" && <ProposalDecisions key={`${thought.id}-${thought.revision}`} workspaceId={savedGraph!.workspaceId} thought={thought} />}
               <h3>Relationships</h3>
               <p className="small-note">
                 Shared brief is context, not parentage. Associations do not
@@ -1575,9 +1570,6 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
               <div className="comparison-grid">
                 {selected.map((id) => (
                   <section key={id}>
-                    {byId.get(id)!.decision !== "kept" && <span className="instrument-label">
-                      {byId.get(id)!.decision}
-                    </span>}
                     <h3>{byId.get(id)!.title}</h3>
                     <p>{byId.get(id)!.contribution}</p>
                     <p className="body-copy">{byId.get(id)!.body}</p>
