@@ -801,6 +801,10 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
     setPanel(next);
     setPreview(false);
   }
+  function togglePanel(next: Panel) {
+    if (panel === next) close();
+    else open(next);
+  }
   function close() {
     setPanel(null);
     restoringFocus.current = true;
@@ -1254,14 +1258,14 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           id="atlas-tools"
           aria-label="Atlas controls"
         >
-          <TooltipButton className="expedition-control thoughts-control" aria-label={`Thoughts ${nodes.length}`} title="Browse thoughts" aria-haspopup="dialog" aria-expanded={panel === "index"} onClick={() => open("index")}>
+          <TooltipButton className="expedition-control thoughts-control" aria-label={`Thoughts ${nodes.length}`} title="Browse thoughts" aria-haspopup="dialog" aria-expanded={panel === "index"} onClick={() => togglePanel("index")}>
             <Image className="thoughts-medallion" src="/images/thoughts-olive.png" width={44} height={44} alt="" />
             <span className="thought-count" aria-hidden="true">{nodes.length}</span>
           </TooltipButton>
-          <TooltipButton className="expedition-control" aria-label="Read as text" title="Read as text" aria-haspopup="dialog" aria-expanded={panel === "text"} onClick={() => open("text")}>
+          <TooltipButton className="expedition-control" aria-label="Read as text" title="Read as text" aria-haspopup="dialog" aria-expanded={panel === "text"} onClick={() => togglePanel("text")}>
             <Image className="scroll-medallion" src="/images/read-scroll.png" width={44} height={44} alt="" />
           </TooltipButton>
-          {!session && <TooltipButton className="expedition-control" aria-label="Expedition panel" title="Open expedition panel" aria-haspopup="dialog" aria-expanded={panel === "expedition"} onClick={() => open("expedition")}><Image src="/images/expedition-compass.png" width={44} height={44} alt="" /></TooltipButton>}
+          {!session && <TooltipButton className="expedition-control" aria-label="Expedition panel" title="Open expedition panel" aria-haspopup="dialog" aria-expanded={panel === "expedition"} onClick={() => togglePanel("expedition")}><Image src="/images/expedition-compass.png" width={44} height={44} alt="" /></TooltipButton>}
 
           {!session && <details className="layout-menu layout-icon-menu" onKeyDown={event => { if (event.key === "Escape") { event.stopPropagation(); event.currentTarget.open = false; event.currentTarget.querySelector<HTMLElement>("summary")?.focus(); } }}><TooltipButton as="summary" aria-label="Layout" title="Arrange layout"><Image src="/images/layout-medallion.png" width={48} height={48} alt="" /></TooltipButton>
             <div className="layout-popover field-guide"><FieldGuideHeading title="Layout" image="/images/layout-medallion.png" close={() => { const menu = document.querySelector<HTMLDetailsElement>(".layout-icon-menu[open]"); if (menu) { menu.open = false; menu.querySelector<HTMLElement>("summary")?.focus(); } }} /><p>Undo up to 50 layout changes in this view.</p><div className="layout-actions">
