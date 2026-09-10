@@ -116,3 +116,33 @@ test("selected regroup reuses vacated theme slots without moving others", () => 
   assert.equal(result.groups[0].name,'C');
   assert.deepEqual(result.layout.b,nodes[1].position);
 });
+
+const { constellationLayout, constellationHeading } = load("../features/atlas/constellation-layout.ts");
+test("Constellation packs uneven themes without overlapping cards or headings", () => {
+  const groups = [1,4,1].map((count,i) => ({name:`Theme ${i}`,reason:"Fixture",memberIds:Array.from({length:count},(_,j)=>`${i}-${j}`)}));
+  const ids = groups.flatMap(g=>g.memberIds);
+  const layout = constellationLayout(groups,ids);
+  assert.equal(Object.keys(layout).length,6);
+  assert.ok(new Set(groups[1].memberIds.map(id=>layout[id].x)).size > 1,"four ideas form a cluster, not a tall column");
+  assert.ok(Math.max(...Object.values(layout).map(p=>p.y)) < 700,"fixture stays within two card rows");
+  const rects = [...ids.map(id=>({...layout[id],width:290,height:240})),...groups.map(g=>({...constellationHeading(g.memberIds,layout),height:100}))];
+  rects.forEach((a,i)=>rects.slice(i+1).forEach(b=>assert.ok(a.x+a.width<=b.x||b.x+b.width<=a.x||a.y+a.height<=b.y||b.y+b.height<=a.y,"card and heading rectangles must not overlap")));
+});
+test("Constellation lays out ungrouped ideas and wraps large theme sets", () => {
+  const groups = Array.from({length:8},(_,i)=>({name:`Theme ${i}`,reason:"Fixture",memberIds:Array.from({length:9},(_,j)=>`${i}-${j}`)}));
+  const ids=[...groups.flatMap(g=>g.memberIds),'new'];
+  const layout=constellationLayout(groups,ids);
+  assert.equal(Object.keys(layout).length,73);
+  assert.ok(layout.new);
+  assert.ok(Math.max(...Object.values(layout).map(p=>p.x+290))<=1500);
+  assert.deepEqual(layout,constellationLayout(groups,ids),"stable positions for unchanged content");
+});
+
+test("compact regroup respects deliberate positions and leaves room between affected cards", () => {
+  const current=[{name:'One',reason:'Fixture',memberIds:['a','b','c']}];
+  const nodes=[{id:'a',position:{x:0,y:120}},{id:'b',position:{x:330,y:120}},{id:'c',position:{x:900,y:900}}];
+  const planned=constellationLayout(current,['a','b','c']);
+  const result=applyRegroup(current,[{...current[0],memberIds:['a','b']}],['a','b'],nodes,planned);
+  assert.deepEqual(result.layout.c,nodes[2].position);
+  assert.ok(Math.abs(result.layout.a.x-result.layout.b.x)>=330||Math.abs(result.layout.a.y-result.layout.b.y)>=260);
+});

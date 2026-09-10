@@ -1551,6 +1551,15 @@ summary {
   .scalable-atlas .thought.thought-overview { animation: none; }
 }
 
+/* Constellation shares Studio materials; theme labels sit quietly above clusters. */
+.constellation-atlas .theme-heading { width: 100%; height: 100px; background: transparent; padding: 0 0 14px; border-bottom: 1px solid #aaa084; color: var(--ink); }
+.constellation-atlas .theme-heading h2 { font: 24px/1.15 Georgia, serif; letter-spacing: -.4px; }
+.constellation-atlas .theme-heading p { margin: 8px 0 0; font-size: 14px; line-height: 1.4; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.overview-target.constellation-preview { border: 1px solid #b7ad94; border-left: 3px solid var(--thought-accent); border-radius: 3px; padding: 8px; background: var(--thought-surface); text-align: left; display: flex; flex-direction: column; justify-content: flex-start; gap: 5px; overflow: hidden; }
+.constellation-preview-title { font: 14px/1.2 Georgia, serif; overflow-wrap: normal; }
+.constellation-preview-summary { font: 11px/1.3 Georgia, serif; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: var(--muted); }
+.constellation-atlas .themes-status { inset: auto auto 18px 20px; max-width: calc(100% - 120px); background: var(--card); border-color: var(--line); }
+@media(max-width:600px) { .constellation-atlas .themes-status { left: 10px; bottom: 10px; padding: 6px 8px; font-size: 12px; } }
 .voice-settings-dialog { width: min(640px, calc(100vw - 24px)); max-height: 86dvh; overflow: auto; padding: 24px; border: 1px solid #aa9168; border-radius: 12px; background: var(--paper); color: var(--ink); box-shadow: 0 20px 80px #273a3540; }
 .voice-settings-dialog::backdrop { background: #18292580; }
 .voice-settings-dialog header, .voice-settings-dialog footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
@@ -1629,3 +1638,4 @@ summary {
   .card-pane-actions .card-pane-primary { font-size: 16px; }
   .card-pane-actions > .small-note { display: none; }
 }
+

@@ -26,3 +26,14 @@ Startup: `npm run dev -- --port 3198` (Node 24.20.0 / npm 12.0.2).
 Integrated main: the compact card inspector retains Content, Connections and
 History tabs, editing, session revision history, and draft preservation.
 Voice dismissal, transcript handling, and live focus updates remain intact.
+
+## Constellation clusters
+Branch: `fix/constellation-clusters`, based on `main` at `779e2b9`.
+Worktree: `/Users/brandyn.schult/code/minerva-constellation-release`.
+Compact theme shelves and readable zoom previews share the current Studio styling.
+Association edges join ideas; headings follow moved members. Regroup keeps untouched positions.
+Current folding, resizing, chain inspection and voice behavior are preserved.
+Verification: `npm run check` passed (25 tests, lint, types, build); browser fixture smoke passed.
+Theme responses were mocked for visual verification; no paid provider calls.
+Startup: use Node 24.20.0 / npm 12.0.2, then `npm run start -- --port 56020`.
+Next role: owner; no additional implementation or critic requested.
