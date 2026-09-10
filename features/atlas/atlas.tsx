@@ -1352,11 +1352,10 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
           }}
         >
           {panel === "text" && <FieldGuideHeading title="Read as text" image="/images/read-scroll.png" close={close} />}
-          {panel !== "index" && panel !== "text" && <div className="panel-heading">
+          {panel === "moves" && <FieldGuideHeading title="Wander" close={close} />}
+          {panel !== "index" && panel !== "text" && panel !== "moves" && <div className="panel-heading">
             <span className="instrument-label">
-              {panel === "guide" ? "Guide" : panel === "moves"
-                  ? ("Wander")
-                  : "Selected contributions"}
+              {panel === "guide" ? "Guide" : "Selected contributions"}
             </span>
             <Button aria-label="Close panel" onClick={close}>
               ×
