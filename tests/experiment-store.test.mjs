@@ -32,7 +32,8 @@ test('durable transactions preserve identity and reserve budget atomically acros
   assert.equal(second.finish(a.id,'wrong'),false);assert.equal(s.finish(a.id,'one'),true);assert.equal(s.finish(a.id,'one'),false);
   s.put('assessment','assessment-1',id,{judgment:'unclear'});assert.throws(()=>s.put('assessment','assessment-1',id,{judgment:'supported'}));s.put('assessment','assessment-2',id,{judgment:'supported'});
   s.close();s=new ExperimentStore(path);assert.equal(s.get(id).calls,1);assert.equal(s.all(id,'assessment').length,2);
-  const b={...a,id:randomUUID(),operation:{...op,id:randomUUID()},leaseUntil:1};assert.equal(s.reserve(b),true);s.recover(Date.now());assert.equal(s.attempt(b.id).status,'uncertain');assert.equal(s.get(id).reservedMicros,10);
-  assert.equal(s.reserve({...a,id:randomUUID()}),false);assert.equal(s.get(id).status,'completed');
+  assert.equal(s.reserve({...a,id:randomUUID()}),false,"Stale plan sequence must be rejected");
+  const b={...a,sequence:2,id:randomUUID(),operation:{...op,id:randomUUID()},leaseUntil:1};assert.equal(s.reserve(b),true);s.recover(Date.now());assert.equal(s.attempt(b.id).status,'uncertain');assert.equal(s.get(id).reservedMicros,10);
+  assert.equal(s.reserve({...a,sequence:3,id:randomUUID()}),false);assert.equal(s.get(id).status,'completed');
  }finally{s.close();second.close();rmSync(dir,{recursive:true,force:true});}
 });

@@ -707,7 +707,7 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
       })))]);
       setLive(undefined);
       setPanel(null);
-      setSelected(added.map((node) => node.id));
+      // Keep the user’s current selection after generation completes.
     } catch (error) {
       setLive({ feature, sources, move: contextualMove, error: error instanceof Error ? error.message : String(error) });
       if (!contextualMove) focus(sources[0].id);
@@ -752,6 +752,11 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
     setRegroupIds(null);
     setPanel(next);
     setPreview(false);
+  }
+  function clearSelection() {
+    setSelected([]); setVoiceFocusId(null); setFocusedId(null);
+    if (panel === "moves") setPanel(null);
+    field.current?.focus({ preventScroll: true });
   }
   function togglePanel(next: Panel) {
     if (panel === next) close();
@@ -1125,6 +1130,7 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
               );
             }}
             onKeyDown={(event) => {
+              if (event.key === "Escape" && !panel && !regroupIds) { event.preventDefault(); clearSelection(); return; }
               if (
                 (event.target as HTMLElement).closest("button,input,textarea")
               ) {
@@ -1259,20 +1265,27 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
           </div>}
         </div>
         {selected.length > 0 && !regroupIds && (
-          <div className={`selection-bar${" light-selection-dock"}`}>
-            <span className="selection-count">{selected.length} selected</span>
-            {selected.length === 1 && <Button onClick={() => focus(selected[0])}><Crosshair aria-hidden="true" />Focus</Button>}
-            {selected.length === 1 && <Button onClick={() => { setActive(selected[0]); setPanel("develop"); }}>Develop</Button>}
-            {!busy && selected.length === 1 && <Button className="wander-action" onClick={() => move(selected)}><GitFork aria-hidden="true" />Wander</Button>}
-            <Button onClick={() => open("compare")}><Copy aria-hidden="true" />Compare</Button>
-            {selected.length === 1 && <Button onClick={() => open("expedition")}><Compass aria-hidden="true" />Expedition</Button>}
-            {!busy && selected.length >= 2 && <Button onClick={() => void generate("weave", selected.map((id) => byId.get(id)!))}><Shuffle aria-hidden="true" />Weave</Button>}
+          <div className="selection-bar light-selection-dock" role="toolbar" aria-label="Selected thoughts" onKeyDown={event => {
+            if (event.key === "Escape" && !panel && !regroupIds) { event.preventDefault(); clearSelection(); }
+          }}>
+            <span className="selection-count" aria-live="polite">{selected.length} selected</span>
+            <Button onClick={() => selected.length === 1 ? focus(selected[0]) : void flow.fitView({ nodes: selected.map(id => ({ id })), padding: .25, maxZoom: 1 })}><Crosshair aria-hidden="true" />{selected.length === 1 ? "Focus" : selected.length === 2 ? "Focus both" : "Focus selection"}</Button>
+            {selected.length === 1 && <>
+              <Button onClick={() => { setActive(selected[0]); setPanel("develop"); }}>Develop</Button>
+              {!busy && <Button className="wander-action" onClick={() => move(selected)}><GitFork aria-hidden="true" />Wander</Button>}
+              {!busy && <Button onClick={() => open("expedition")}><Compass aria-hidden="true" />Expedition</Button>}
+            </>}
+            {selected.length === 2 && <>
+              <Button onClick={() => open("compare")}><Copy aria-hidden="true" />Compare</Button>
+              {!busy && <Button className="wander-action" onClick={() => void generate("weave", selected.map((id) => byId.get(id)!))}><Shuffle aria-hidden="true" />Weave</Button>}
+            </>}
+
 
             <Button
               className="selection-close"
               aria-label="Clear selection"
               title="Clear selection"
-              onClick={() => { setSelected([]); setVoiceFocusId(null); setFocusedId(null); if (panel === "moves") setPanel(null); }}
+              onClick={clearSelection}
             >
               {<X aria-hidden="true" />}
             </Button>
@@ -1298,7 +1311,7 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
         <span className="minerva-launcher-label" aria-hidden="true">Talk to Minerva</span>
       </Button>}
       {<TalkPanel focusedId={voiceFocusId && byId.has(voiceFocusId) ? voiceFocusId : null} messages={messages} setMessages={update => { clearHistory(); setMessages(update); }} open={panel === "talk"} close={close} selectedIds={selected} cards={nodes.map(({ id, data }) => ({ ...data.thought, relationships: relationshipsFor(id, relationships) }))} />}
-      <ExpeditionPanel entries={expeditions} open={panel === "expedition"} close={close} source={selected.length === 1 ? byId.get(selected[0]) : undefined} inspect={inspectExperiment} />
+      <ExpeditionPanel entries={expeditions} open={panel === "expedition"} close={close} sources={selected.map(id=>byId.get(id)).filter((thought): thought is Thought=>!!thought)} brief={[...byId.values()].find(thought=>thought.kind==="brief")?.body??""} inspect={inspectExperiment} />
       {panel === "inspect" && <CardPane key={thought.id}
         card={thought} cards={nodes.map(n => n.data.thought)} relationships={relationships}
         draft={cardDrafts[thought.id]} setDraft={draft => setCardDrafts(current => ({ ...current, [thought.id]: draft }))}

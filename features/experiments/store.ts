@@ -1,3 +1,4 @@
+import { stableJson } from "../atlas/stable-json";
 import { DatabaseSync } from "node:sqlite";
 import { mkdirSync, chmodSync } from "node:fs";
 import { dirname } from "node:path";
@@ -21,13 +22,13 @@ export class ExperimentStore {
   close() { this.db.close(); }
   transaction<T>(fn: () => T): T {
     this.db.exec("BEGIN IMMEDIATE");
-    try { const result = fn(); this.db.exec("COMMIT"); return result; } catch (e) { this.db.exec("ROLLBACK"); throw e; }
+    try { const result = fn(); if (result instanceof Promise) return result.then(value=>{this.db.exec("COMMIT");return value;},error=>{this.db.exec("ROLLBACK");throw error;}) as T; this.db.exec("COMMIT"); return result; } catch (e) { this.db.exec("ROLLBACK"); throw e; }
   }
   create(config: RunConfig) {
     const valid = runConfigSchema.parse(config);
     return this.transaction(() => {
       const existing = this.get(valid.id);
-      if (existing) { for (const key of Object.keys(valid) as (keyof RunConfig)[]) if (JSON.stringify(existing[key]) !== JSON.stringify(valid[key])) throw new Error("Run identity reused with different configuration"); return existing; }
+      if (existing) { for (const key of Object.keys(valid) as (keyof RunConfig)[]) if (stableJson(existing[key]) !== stableJson(valid[key])) throw new Error("Run identity reused with different configuration"); return existing; }
       const run: Run = { ...valid, version: 1, status: "running", calls: 0, reservedMicros: 0, active: [], createdAt: new Date().toISOString() };
       this.db.prepare("INSERT INTO runs VALUES (?,?)").run(run.id, JSON.stringify(run)); return run;
     });
@@ -73,6 +74,7 @@ export class ExperimentStore {
   reserve(attempt: Attempt): boolean {
     return this.transaction(() => {
       const r = this.get(attempt.runId); if (!r || r.status !== "running" || this.attempt(attempt.id)) return false;
+      if (attempt.sequence !== r.calls + 1 || (attempt.maxCallsAtPlanning !== undefined && attempt.maxCallsAtPlanning !== r.maxCalls)) return false;
       // One in-flight call per run; different runs can execute concurrently.
       if (this.attempts(r.id).some(a => a.status === "reserved")) return false;
       if (r.calls >= r.maxCalls || r.reservedMicros + attempt.reservedMicros > r.maxCostMicros) { r.status = "completed"; r.reason = "Call or conservative spend allowance exhausted"; this.save(r); return false; }
