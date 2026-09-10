@@ -1,33 +1,33 @@
-# Expedition theme standard
+# Voice lifecycle and transcript correction
 
-Branch: `feat/expedition-theme`.
-Worktree: `/Users/brandyn.schult/code/minerva-expedition-theme`.
-Theme commit: `1139771`; integrated with main `41660a0`.
+Branch: `fix/voice-survives-dismiss`, integrated with `main` at `f64fbed`.
+Worktree: `/Users/brandyn.schult/code/minerva-card-metadata-release`.
+Voice change commit: `f607e7b`. Owner authorized commit and merge.
 
 ## Outcome
-Expedition is the shared visual standard for Layout, Read as text and Browse
-thoughts. `FieldGuideHeading` supplies each instrument's medallion, mono title
-and close control. `field-guide` and `--guide-*` tokens share paper, borders,
-inputs, primary actions and selection accents. DESIGN owns this convention.
-The reader retains contents/article navigation; Browse retains filtering,
-selection, disclosure and downloads; Layout retains arrange/undo/redo.
-Open Layout stays above selected-card previews on narrow screens.
-Typography uses shared role tokens: titles 20px, body 15px, inputs/actions 16px,
-labels 12px and notes/header names 11px. Compact widths: Expedition/Browse 440px,
-Layout 340px, reader 880px. Desktop controls 36px; touch targets remain 44px.
-Header icons, control heights and responsive spacing follow the same scale.
-No backend changes or paid model calls. Owner authorized commit and merge.
-Latest main metadata removal, voice continuity and node/card fade are preserved.
+Current main pane styling and node/card transitions are preserved.
+Talk's close button and Escape hide the window without clearing active Voice.
+Reopening retains the same session, transcript, and mute state.
+End voice mode still stops capture and releases the session.
+Normal teardown on page unload and connection failure remains.
+Separate speech text parts render as paragraphs; empty transcriptions add no blank messages.
+Push-to-talk checks captured audio before committing or requesting a response.
+A missing microphone callback now shows a retry status instead of sending an empty turn.
+The historical repeated wording is not reproduced: saved text cannot establish
+whether audio repeated or the provider emitted repeated text.
 
 ## Verification
-`npm run check`: lint, TypeScript, 15 tests and production build passed.
-In-app browser: search, selection, disclosure, reader contents/next navigation,
-Layout arrange/undo/redo, close and Escape checked using the local fixture.
-Desktop 1280x720 and narrow 390x844 visual checks; see `design-qa.md`.
-No browser console warnings or errors observed. Provider behavior was not retested.
+`npm run check` passed: lint, typecheck, 15 tests, production build.
+The focused mocked voice replay covers close/Escape, replies while hidden,
+reopening without a new microphone, retained mute state, and explicit End.
+Replay also checks repeated final transcript events, multi-part speech, empty
+input transcripts, and that text events cannot schedule audio playback.
+These are mocked protocol/PCM tests, not a live-provider or acoustic-echo diagnosis.
+No paid voice calls or deployment in this task.
 
 ## Startup and next role
-Development preview: http://127.0.0.1:3077/.
-Use `npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run dev -- --port 3077`
-with the same launcher.
-Next role: owner visual acceptance. No further feature or critic work queued.
+Local production preview: http://127.0.0.1:56007.
+Prefix commands with `npx --yes --package=node@24.20.0 --package=npm@12.0.2`.
+Startup: `npm run build`, then `npm run start -- --port 56007`.
+Replay: `MINERVA_VOICE_ONLY=1 MINERVA_URL=http://127.0.0.1:56007 node scripts/verify-atlas.mjs`.
+Next role: owner inspects the local result; no critic requested.
