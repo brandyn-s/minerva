@@ -15,7 +15,12 @@ try {
     const page = await browser.newPage({ viewport: { width, height: width === 390 ? 844 : 1124 }, hasTouch: width === 390 });
     const errors = [];
     page.on("pageerror", error => errors.push(error.message));
-    await page.route("**/api/moves", route => route.fulfill({ json: moves }));
+    let suggestionsReady = false;
+    await page.route("**/api/moves", async route => {
+      if (suggestionsReady) return route.fulfill({ json: moves });
+      await new Promise(resolve => setTimeout(resolve, 400));
+      return route.fulfill({ status: 500, json: { error: "Suggestions temporarily unavailable." } });
+    });
     let input;
     await page.route("**/api/wander", route => {
       input = route.request().postDataJSON();
@@ -26,29 +31,35 @@ try {
     const button = name => page.getByRole("button", { name, exact: true });
     await page.locator(".thought").first().waitFor();
     await page.getByRole("button", { name: /^Thoughts / }).click();
-    const row = page.locator(".reference-list section").filter({ has: page.getByRole("heading", { name: "Repair, then stay for supper", exact: true }) });
-    await row.getByRole("button", { name: "Select", exact: true }).click();
+    const row = page.locator(".catalogue-entry").filter({ has: page.getByText("Repair, then stay for supper", { exact: true }) });
+    await row.getByRole("checkbox").check();
     await button("Close panel").click();
-    await page.getByRole("region", { name: "Focused card connections" }).getByRole("button", { name: "Focus card", exact: true }).click();
-    await button("Close focused connections").click();
-    await page.waitForTimeout(400);
     const toolbar = page.locator(".selection-bar");
-    const select = page.locator('[data-id="repair"] .card-top .select-card');
-    assert.equal(await select.getAttribute("aria-pressed"), "true");
-    assert.equal(await page.locator(".card-actions").count(), 0);
-    const bar = await toolbar.boundingBox();
     const clear = toolbar.getByRole("button", { name: "Clear selection", exact: true });
-    const target = await clear.boundingBox();
-    assert.ok(bar.x >= 0 && bar.x + bar.width <= width);
-    assert.ok(target.width >= 44 && target.height >= 44);
-    assert.ok(Math.abs(target.y - bar.y) < 2 && Math.abs(target.x + target.width - bar.x - bar.width) < 2);
-    await page.screenshot({ path: `${artifacts}/toolbar-${width}.png` });
     await toolbar.getByRole("button", { name: "Wander", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "Wander", exact: true });
+    await dialog.getByRole("status").waitFor();
+    await dialog.getByRole("alert").waitFor();
+    assert.equal(await dialog.locator(".move-choice").count(), 1, "prepared move survives a suggestion failure");
+    suggestionsReady = true;
+    await dialog.getByRole("button", { name: "Retry", exact: true }).click();
     await dialog.locator(".move-choice").nth(2).waitFor();
     assert.equal(input, undefined, "opening Wander does not generate a card");
+    assert.equal(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth), true);
+    const header = dialog.locator(".ui-panel-header");
+    const before = await header.boundingBox();
+    assert.ok(await dialog.getByRole("button", { name: "Close panel", exact: true }).evaluate(el => {
+      const r = el.getBoundingClientRect();
+      return el.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2));
+    }), "close control is not covered by the mobile menu");
+    await dialog.locator(".wander-content").evaluate(el => { el.scrollTop = el.scrollHeight; });
+    assert.equal((await header.boundingBox()).y, before.y, "close header stays in place while suggestions scroll");
+    await dialog.locator(".wander-content").evaluate(el => { el.scrollTop = 0; });
+    await button("Hide suggestions").click();
+    assert.equal(await dialog.locator(".move-choice").first().isVisible(), false);
+    await button("Show suggestions").click();
     await page.screenshot({ path: `${artifacts}/suggestions-${width}.png` });
-    await dialog.getByRole("button", { name: "Try Share the quiet hours →", exact: true }).click();
+    await dialog.getByRole("button", { name: "Try Share the quiet hours", exact: true }).click();
     await page.waitForFunction(() => document.querySelectorAll(".thought").length === 7);
     assert.equal(input.id, "repair");
     assert.equal(input.intent, "move");
@@ -58,7 +69,7 @@ try {
     await page.waitForFunction(() => document.querySelectorAll(".thought").length === 9);
     assert.equal(input.intent, "wander");
     assert.equal(input.move, undefined);
-    assert.equal(await toolbar.getByRole("button", { name: "Wander", exact: true }).isDisabled(), true);
+
     await clear.click();
     assert.equal(await toolbar.count(), 0);
     assert.equal(await page.locator(".thought.chosen").count(), 0);

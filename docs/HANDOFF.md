@@ -1,8 +1,8 @@
 # Expedition: simple start and hosted execution
 
-Branch: `feat/expedition-simple-start`, base `3d1dfc9`.
+Branch: `feat/expedition-simple-start`, integrated main `33402bf`.
 Worktree: `/Users/brandyn.schult/code/minerva-scorebook-transition`.
-This follow-up is uncommitted; the prior population extension is merged in PR #92.
+The prior population extension is merged in PR #92.
 
 Select ideas, optionally add a direction, then Start. Source revisions and the
 workspace brief are automatic. Policy, execution provider and call accounting
@@ -32,3 +32,11 @@ Next role: owner reviews the delivered experience; no new research scope is open
 
 Three context-tailored LLM suggestion buttons fill the editable direction;
 custom input remains available. Local checks and live verification pass.
+
+## Wander pane follow-up
+Local branch `fix/wander-pane` in `/Users/brandyn.schult/code/minerva-revision-labels`.
+Compact title-first Wander uses the shared header, secondary suggestion actions,
+and a scrolling body with an accessible fixed close control on mobile.
+Focused mocked desktop/mobile replay covers suggestions, failure/retry, hide/show,
+free exploration and chosen moves. Repository and desktop/touch UI checks pass.
+No paid calls. Owner authorized commit and merge after required CI.
