@@ -389,6 +389,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
   const [connectionPage, setConnectionPage] = useState(0);
   const [branchId, setBranchId] = useState<string | null>(null);
   const [selected, setSelected] = useState<string[]>(initial?.selected ?? []);
+  const [voiceFocusId, setVoiceFocusId] = useState<string | null>(null);
   const [active, setActive] = useState(initial?.active ?? "repair");
   const [panel, setPanel] = useState<Panel>(null);
   const [moveSources, setMoveSources] = useState<string[]>([]);
@@ -789,6 +790,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
   function inspect(id: string) {
     if (!byId.has(id)) return;
     bringForward(id);
+    setVoiceFocusId(id);
     setActive(id);
     open("inspect");
   }
@@ -797,8 +799,10 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
     if (!session) { setFocusedId(next.at(-1) ?? null); setConnectionPage(0); setBranchId(null); }
     bringForward(id);
     setSelected(next);
+    setVoiceFocusId(next.at(-1) ?? null);
   }
   function focus(id: string) {
+    setVoiceFocusId(id);
     if (!session) { setFocusedId(id); setConnectionPage(0); setBranchId(null); }
     bringForward(id);
     const node = flow.getNode(id);
@@ -1285,7 +1289,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           {themeBusy && <span role="status">Grouping themes…</span>}
           {themeError && <><span role="alert">{themeError}</span><button disabled={themeBusy} onClick={() => void groupThemes(themeRetryFull.current)}>Retry</button></>}
           <button data-regroup-trigger aria-busy={themeBusy} title={themeBusy ? "Finding themes…" : selected.length ? `Regroup ${selected.length} selected ideas` : "Regroup all ideas"} disabled={themeBusy || !themeCache} onClick={() => { setPanel(null); setFocusedId(null); setRegroupIds(selected.length ? selected : nodes.map(n => n.id)); }}><ArrowClockwise size={18} className={themeBusy ? "composer-spinner" : undefined} aria-hidden="true" />{themeBusy ? "Finding themes…" : "Regroup"}{!themeBusy && selected.length > 0 ? ` ${selected.length} selected` : ""}</button>
-          {selected.length > 0 && <button onClick={() => setSelected([])}>Clear selection</button>}
+          {selected.length > 0 && <button onClick={() => { setSelected([]); setVoiceFocusId(null); }}>Clear selection</button>}
           {regroupedIds.length > 0 && <><span role="status">Regrouped {regroupedIds.length} ideas</span><button onClick={() => void flow.fitView({ nodes: [...regroupedIds, ...themeCache!.groups.flatMap((g, i) => g.memberIds.some(id => regroupedIds.includes(id)) ? [`theme-${i}`] : [])].map(id => ({ id })), padding: .3, maxZoom: 1 })}>View regrouped ideas</button></>}
           {themeUndo && <button onClick={() => { clearHistory(); setThemeCache(themeUndo.cache); setPositions(themeUndo.positions); void flow.setViewport(themeUndo.viewport); setThemeUndo(undefined); setRegroupedIds([]); }}>Undo regroup</button>}
         </section>}
@@ -1348,7 +1352,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
               className="selection-close"
               aria-label="Clear selection"
               title="Clear selection"
-              onClick={() => { setSelected([]); setFocusedId(null); if (panel === "moves") setPanel(null); }}
+              onClick={() => { setSelected([]); setVoiceFocusId(null); setFocusedId(null); if (panel === "moves") setPanel(null); }}
             >
               {session ? "×" : <X size={24} aria-hidden="true" />}
             </button>
@@ -1373,7 +1377,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
         <Image src="/images/minerva-engraved-cameo.png" alt="" width={64} height={64} sizes="64px" />
         <span className="minerva-launcher-label" aria-hidden="true">Talk to Minerva</span>
       </button>}
-      {!session && <TalkPanel messages={messages} setMessages={update => { clearHistory(); setMessages(update); }} open={panel === "talk"} close={close} selectedIds={selected} cards={nodes.map(({ id, data }) => ({ ...data.thought, relationships: relationshipsFor(id, relationships) }))} />}
+      {!session && <TalkPanel focusedId={voiceFocusId && byId.has(voiceFocusId) ? voiceFocusId : null} messages={messages} setMessages={update => { clearHistory(); setMessages(update); }} open={panel === "talk"} close={close} selectedIds={selected} cards={nodes.map(({ id, data }) => ({ ...data.thought, relationships: relationshipsFor(id, relationships) }))} />}
       {!session && <ExpeditionPanel entries={expeditions} setEntries={update => { clearHistory(); setExpeditions(update); }} activeEntry={activeExpedition} setActiveEntry={setActiveExpedition} open={panel === "expedition"} close={close} source={selected.length === 1 ? byId.get(selected[0]) : undefined}
         cards={nodes.map(n => n.data.thought)} add={addExpeditionCard} focus={id => { focus(id); setPanel("expedition"); }} />}
       {!session && panel === "inspect" && <CardPane key={thought.id}

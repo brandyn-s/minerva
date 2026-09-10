@@ -2,7 +2,7 @@
 
 Branch: `feat/compact-card-pane`.
 Worktree: `/Users/brandyn.schult/code/minerva-compact-card-pane`.
-Base: `f64fbed` (current main when integration began).
+Integrated with main `6155709`, including voice lifecycle and live canvas context.
 
 ## Outcome
 Root-atlas inspection uses the approved compact manuscript pane: Content,
@@ -15,6 +15,8 @@ new revision; generation provenance survives, stale revision assessments do not.
 Unsaved drafts survive dismissal and other card inspections within the session.
 Current text uses existing browser persistence; earlier history is session-only.
 Managed-workspace inspection and unrelated worktrees are unchanged.
+Voice dismissal/transcript fixes and active-session focus/selection updates from
+main are preserved; this integration does not alter their protocol.
 
 ## Verification
 `npm run check`: lint, TypeScript, 17 tests and production build passed.

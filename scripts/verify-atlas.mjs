@@ -1550,6 +1550,14 @@ try {
         }
         return stream;
       };
+      const createProcessor = AudioContext.prototype.createScriptProcessor;
+      AudioContext.prototype.createScriptProcessor = function (...args) {
+        const processor = createProcessor.apply(this, args);
+        let handler;
+        Object.defineProperty(processor, "onaudioprocess", { get: () => handler, set: value => { handler = value; } });
+        processor.addEventListener("audioprocess", event => { if (!window.dropCapturedAudio) handler?.(event); });
+        return processor;
+      };
       const create = AudioContext.prototype.createBufferSource;
       AudioContext.prototype.createBufferSource = function () {
         const source = create.call(this);
@@ -1623,7 +1631,13 @@ try {
     await vb(real ? "Hold to talk" : "Retry").focus();
     await voicePage.keyboard.down("Space");
     await voicePage.getByText("Listening… release to send.", { exact: true }).waitFor({ timeout: 60000 });
-    await voicePage.waitForTimeout(real ? 7000 : 600);
+    if (real) await voicePage.waitForTimeout(7000);
+    else {
+      const deadline = Date.now() + 10000;
+      while (!events.some(event => event.type === "input-audio-append") && Date.now() < deadline) await voicePage.waitForTimeout(100);
+      assert.ok(events.some(event => event.type === "input-audio-append"), "microphone must deliver audio before releasing the test press");
+      await voicePage.waitForTimeout(300);
+    }
     await voicePage.keyboard.up("Space");
     await voicePage.waitForFunction(() => document.querySelector(".talk-transcript")?.textContent.includes("You") || document.querySelector(".voice-control [role=alert]"), undefined, { timeout: 60000 });
     assert.equal(await voicePage.locator(".voice-control [role=alert]").count(), 0, await voicePage.locator(".voice-control").innerText());
@@ -1635,7 +1649,7 @@ try {
       const config = events.find((event) => event.type === "session-update").config;
       assert.equal(config.turnDetection, null);
       assert.ok(config.instructions.includes("A shared tool library"), "voice receives the full canvas with no selection");
-      assert.ok(config.instructions.includes("Selected IDs: []"));
+      assert.ok(config.instructions.includes('"selectedIds":[]'));
       assert.deepEqual(config.providerOptions.gateway.tags, ["feature:voice"]);
       // A fresh press must stop queued output immediately, including a late reply.
       await vb("Hold to talk").focus();
@@ -1687,12 +1701,41 @@ try {
         emit({ type: "response-done", responseId: `handsfree-${i}`, status: "completed" });
         await voicePage.getByText(`Voice answer ${i}`, { exact: true }).waitFor();
       }
+      // Final transcript snapshots must not append text or replay audio.
+      const playbackBeforeSnapshots = await voicePage.evaluate(() => window.voiceStats.playbackStarts);
+      const messagesBeforeSnapshots = await voicePage.locator(".talk-transcript section").count();
+      for (let repeat = 0; repeat < 3; repeat++) emit({ type: "audio-transcript-done", itemId: "handsfree-1", responseId: "handsfree-1", transcript: "Voice answer 1" });
+      emit({ type: "input-transcription-completed", itemId: "empty-turn", transcript: "   " });
+      emit({ type: "response-created", responseId: "segmented" });
+      emit({ type: "audio-transcript-delta", itemId: "segment-a", responseId: "segmented", delta: "First segment." });
+      emit({ type: "audio-transcript-done", itemId: "segment-a", responseId: "segmented", transcript: "First segment." });
+      emit({ type: "audio-transcript-delta", itemId: "segment-b", responseId: "segmented", delta: "Second segment." });
+      emit({ type: "audio-transcript-done", itemId: "segment-b", responseId: "segmented", transcript: "Second segment." });
+      emit({ type: "response-done", responseId: "segmented", status: "completed" });
+      await voicePage.getByText("Second segment.", { exact: true }).waitFor();
+      const segmented = voicePage.locator(".talk-message-assistant").last();
+      assert.equal(await segmented.locator(".body-copy p").count(), 2, "separate speech items have separate paragraphs");
+      assert.equal(await voicePage.locator(".talk-transcript section").count(), messagesBeforeSnapshots + 1, "blank input and repeated final events add no phantom turns");
+      assert.equal(await voicePage.getByText("Voice answer 1", { exact: true }).count(), 1);
+      assert.equal(await voicePage.evaluate(() => window.voiceStats.playbackStarts), playbackBeforeSnapshots, "transcript snapshots never schedule audio playback");
       const stopsBeforeInterrupt = await voicePage.evaluate(() => window.voiceStats.playbackStops);
       emit({ type: "audio-delta", itemId: "handsfree-1", responseId: "handsfree-1", delta: Buffer.alloc(24000 * 2 * 4).toString("base64") });
       await voicePage.getByText("Minerva is speaking…", { exact: true }).waitFor();
       const tracksBeforeNavigation = await voicePage.evaluate(() => window.voiceStats.stoppedTracks);
       await voicePage.locator('[data-id="food"] .card-title').click();
       await voicePage.locator("#minerva-talk").waitFor({ state: "hidden" });
+      await voicePage.waitForTimeout(100);
+      const focusedConfig = events.filter(event => event.type === "session-update").at(-1).config;
+      assert.ok(focusedConfig.instructions.includes('"focusedId":"food"'), "active voice receives the inspected card as the referent for this one");
+      assert.ok(focusedConfig.instructions.includes('"selectedIds":[]'), "inspection focus is independent of multi-selection");
+      assert.ok(focusedConfig.instructions.includes('"id":"food"'), "updated focus includes the card content");
+      assert.equal(focusedConfig.turnDetection, undefined, "context updates preserve the existing voice configuration");
+      await voicePage.locator('[data-id="food"] .select-card').click();
+      await voicePage.waitForTimeout(100);
+      assert.ok(events.filter(event => event.type === "session-update").at(-1).config.instructions.includes('"selectedIds":["food"]'), "selection changes reach the active voice session");
+      await voicePage.locator('[data-id="food"] .select-card').click();
+      await voicePage.waitForTimeout(100);
+      assert.ok(events.filter(event => event.type === "session-update").at(-1).config.instructions.includes('"focusedId":null'), "deselecting clears the voice referent");
       assert.equal(await voicePage.locator(".voice-control").count(), 1, "card inspection retains the voice session");
       await voicePage.waitForTimeout(300);
       assert.equal(await voicePage.evaluate(() => window.voiceStats.playbackStops), stopsBeforeInterrupt, "card interaction preserves queued audio");
@@ -1724,9 +1767,37 @@ try {
       await voicePage.screenshot({ path: artifacts + "/composer-typing.png" });
       await vb("Start voice mode").click();
       await voicePage.getByText("Listening…", { exact: true }).waitFor();
+      const beforeDismiss = await voicePage.evaluate(() => ({ ...window.voiceStats }));
+      for (const dismissal of ["close", "escape"]) {
+        if (dismissal === "close") await vb("Close panel").click();
+        else { await vb("Unmute microphone").focus(); await voicePage.keyboard.press("Escape"); }
+        await voicePage.locator("#minerva-talk").waitFor({ state: "hidden" });
+        assert.equal(await voicePage.locator(".voice-control").count(), 1, `${dismissal} preserves the voice component`);
+        emit({ type: "audio-transcript-delta", itemId: `hidden-${dismissal}`, responseId: `hidden-${dismissal}`, delta: `Reply after ${dismissal}.` });
+        emit({ type: "audio-transcript-done", itemId: `hidden-${dismissal}`, responseId: `hidden-${dismissal}`, transcript: `Reply after ${dismissal}.` });
+        await voicePage.waitForFunction(text => document.querySelector(".talk-transcript")?.textContent.includes(text), `Reply after ${dismissal}.`);
+        assert.deepEqual(await voicePage.evaluate(() => ({ ...window.voiceStats })), beforeDismiss, `${dismissal} preserves microphone and playback without reconnecting`);
+        await vb("Talk to Minerva").click();
+        await voicePage.locator("#minerva-talk").waitFor({ state: "visible" });
+        assert.ok((await voicePage.locator(".talk-transcript").innerText()).includes(`Reply after ${dismissal}.`));
+        assert.ok(await vb("End voice mode").isVisible());
+        if (dismissal === "close") await vb("Mute microphone").click();
+        assert.ok(await vb("Unmute microphone").isVisible(), "muting survives reopening");
+      }
+      await vb("End voice mode").click();
+      assert.ok(await voicePage.evaluate(() => window.voiceStats.stoppedTracks) > beforeDismiss.stoppedTracks, "only explicit End stops the microphone");
+      assert.ok(await voicePage.getByLabel("Message Minerva").isEnabled());
       await vb("Close panel").click();
-      await voicePage.keyboard.up("Space");
       assert.equal(await voicePage.locator(".voice-control").count(), 0);
+      await vb("Talk to Minerva").click();
+      await voicePage.evaluate(() => { window.dropCapturedAudio = true; });
+      const requestsBeforeEmpty = events.filter(event => event.type === "response-create" || event.type === "input-audio-commit").length;
+      await vb("Hold to talk").focus(); await voicePage.keyboard.down("Space");
+      await voicePage.getByText("Listening… release to send.", { exact: true }).waitFor();
+      await voicePage.waitForTimeout(500); await voicePage.keyboard.up("Space");
+      await voicePage.getByText("No microphone audio arrived. Please try again.", { exact: true }).waitFor();
+      assert.equal(events.filter(event => event.type === "response-create" || event.type === "input-audio-commit").length, requestsBeforeEmpty, "missing audio must not request a model reply");
+      await voicePage.evaluate(() => { window.dropCapturedAudio = false; });
       await voicePage.reload();
       await vb("Talk to Minerva").click();
       assert.ok(await voicePage.locator(".talk-transcript section").count() > 0, "voice transcript survives reload");
