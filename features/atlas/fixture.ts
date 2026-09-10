@@ -14,8 +14,6 @@ function thought(
     contribution,
     revision: 1,
     kind: "proposal",
-    decision: "starting material",
-    evidence: "prepared example",
     body:
       summary +
       "\n\nThis is synthetic starting material for exploring the mall brief. No site survey, demand study or financial assessment has been performed.",
@@ -87,8 +85,6 @@ export function mallFixture(): AtlasFixture {
       "Tool lending becomes a hosted repair session; shared tables connect the visit to food.",
       {
         kind: "recombination",
-        decision: "unkept draft",
-        evidence: "unknown",
         body: "Bring a broken household object to a staffed repair table, then share a meal while the work continues.\n\nInherited from the food hall: shared tables and independent kitchens. Inherited from the tool library: tools and practical peer learning. Changed: borrowing becomes a hosted repair session. New: an evening repair-and-meal format.\n\nUnknown: whether repair work can safely coexist with food service, who would staff it, and whether anyone would attend. This prepared draft is not endorsed or assessed.",
         move: {
           title: "Separate the risky activities",
@@ -103,7 +99,7 @@ export function mallFixture(): AtlasFixture {
       "A shopfront for six weeks",
       "Let a small maker test an idea before taking on a permanent shop.",
       "Retains independent operators; changes the commitment to a short trial.",
-      { kind: "exploration", decision: "kept", evidence: "unknown" },
+      { kind: "exploration" },
     ),
   ];
   const relationships: AtlasFixture["relationships"] = [

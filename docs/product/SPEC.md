@@ -11,6 +11,11 @@ reservations, quota, revision-scoped freshness, durable runs, reconciliation
 and export apply to the complete product. They are not required for the
 demonstration unless the task message names them.
 
+Demo cards have no decision or evidence status fields, review badges, or decision
+controls. Inspection, comparison, text view, and Markdown downloads retain
+content, contributions, relationships, and provenance. Older browser saves load
+with the retired fields discarded.
+
 The central loop is explore, observe, challenge, intervene, inspect the result.
 A person can discuss possible recurrence while manipulating the field, inspect
 evidence, request a change, recombine useful contributions and see both parents

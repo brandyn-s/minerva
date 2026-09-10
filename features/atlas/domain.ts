@@ -5,8 +5,6 @@ export type Thought = {
   summary: string;
   body: string;
   kind: "brief" | "proposal" | "recombination" | "exploration";
-  decision: "starting material" | "kept" | "unkept draft" | "set aside";
-  evidence: "prepared example" | "unknown" | "pending" | "unavailable" | "supported" | "contradicted" | "unclear";
   contribution: string;
   provenance?: { feature: string; tag: string; sourceTitles: string[]; moveTitle?: string };
   generation?: { model: string; manifestId: string; mechanism: string; prerequisites: string[]; uncertainties: string[]; requestedChange: string; observedChange: string };
