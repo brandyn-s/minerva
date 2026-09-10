@@ -46,3 +46,10 @@ Listening controls expand on demand; checkbox widths and textarea focus are isol
 Checks: 25 tests, lint, types, build; mocked settings replay at 390px and 1280px.
 Local production preview: `npm run start -- --port 56023` with Node 24/npm 12.
 Next role: owner reviews the UI; no live audio calls in this task.
+# Voice pane refinement
+Worktree: `/Users/brandyn.schult/code/minerva-voice-pane`; branch `improve/voice-settings-pane`.
+Four main preferences remain visible; conversation and microphone options expand on demand.
+Preview and Done stay in the footer. Reset is a quieter secondary action.
+`npm run check` passed. In-app browser verified desktop/mobile layouts, editing, reload persistence and reset.
+No live preview/provider call was made. Changes are uncommitted and not deployed.
+Local production preview: http://127.0.0.1:3310; start with `npm run start -- --port 3310`.
