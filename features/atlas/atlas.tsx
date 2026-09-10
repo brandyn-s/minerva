@@ -46,7 +46,8 @@ import RegroupPanel from "./regroup-panel";
 import { applyRegroup } from "./regroup-layout";
 import { constellationLayout, constellationHeading } from "./constellation-layout";
 import CardPane from "./card-pane";
-import { reviseCard, type CardEdit } from "./card-revisions";
+import DevelopPanel from "./develop-panel";
+import { firstRevision, revertCard, reviseCard, type CardEdit } from "./card-revisions";
 import FieldGuideHeading from "./field-guide-heading";
 import ThoughtCatalogue from "./thought-catalogue";
 import MovesPanel from "./moves-panel";
@@ -58,7 +59,7 @@ type CardNode = Node<{ thought: Thought; geometry?: { width: number; height: num
 // Keep screen-sized overview markers separated at the farthest zoom-out.
 const MIN_ZOOM = 0.03;
 
-type Panel = "guide" | "expedition" | "talk" | "inspect" | "compare" | "moves" | "index" | "text" | null;
+type Panel = "develop" | "guide" | "expedition" | "talk" | "inspect" | "compare" | "moves" | "index" | "text" | null;
 const Interaction = createContext<{
   live?: { sources: Thought[]; feature: LiveFeature; move?: ContextualMove; error?: string };
   busy?: boolean;
@@ -198,6 +199,7 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
           style={{ transform: `scale(${1 / ui.zoom})`, ...(preview ? { width: 290 * ui.zoom, height: "auto", minHeight: 44 } : ui.scalable ? { width: diameter, height: diameter, minHeight: diameter } : {}) }}
         >
           {preview ? <><span className="constellation-preview-title">{overviewName(thought)}</span><span className="constellation-preview-summary">{thought.summary}</span></> : ui.scalable ? ui.labels?.has(id) && <span className="overview-name">{overviewName(thought)}</span> : ui.compact ? null : thought.title}
+          {thought.revisions.length > 1 && <span className="revision-badge">{thought.revisions.length} revisions</span>}
         </Button>
       ) : (
         <div className="card-content">
@@ -221,6 +223,7 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
             </Button>
           </div>
           <Button variant="card-title" className="card-title nodrag">{thought.title}</Button>
+          {thought.revisions.length > 1 && <span className="revision-badge">{thought.revisions.length} revisions</span>}
           <p className="card-summary">{thought.summary}</p>
           {ui.live?.sources.some((source) => source.id === id) && (
             <div className="generation-status nodrag nopan" aria-live="polite">
@@ -331,7 +334,7 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
   const fixture = useMemo(() => initial ? { thoughts: initial.thoughts, relationships: initial.relationships, positions: initial.positions.Lineage } : mallFixture(), [initial]);
   const [nodes, setNodes] = useState<CardNode[]>(() => presentNodes(initial && { thoughts: initial.thoughts, relationships: initial.relationships, positions: initial.positions.Lineage }));
   const [cardDrafts, setCardDrafts] = useState<Record<string, CardEdit | undefined>>({});
-  const [cardRevisions, setCardRevisions] = useState<Thought[]>([]);
+  const [intents, setIntents] = useState(initial?.intents ?? []);
   const stackingOrder = useRef(0);
   const [focusedId, setFocusedId] = useState<string | null>(initial?.focusedId ?? null);
   const [connectionKind, setConnectionKind] = useState("parents");
@@ -547,13 +550,13 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
   useEffect(() => { void recoveryCopies().then(setRecoveries).catch(() => {}); }, []);
   const savingPaused = useRef(false);
   const snapshot = useMemo<AtlasSave>(() => ({
-    version: 2, sizes, layoutHistory: history, folds, thoughts: nodes.map(n => n.data.thought), relationships,
+    version: 3, intents, sizes, layoutHistory: history, folds, thoughts: nodes.map(n => n.data.thought), relationships,
     positions: { Lineage: Object.fromEntries(nodes.map(n => [n.id, n.position])), Evolution: positions.Evolution ?? {}, Constellation: positions.Constellation ?? {} },
     cameras: { ...cameras, [perspective]: viewport }, perspective, selected, active, focusedId,
     themeCache, messages, expeditions, activeExpedition,
   // Relationships derive from the fixture and live edges, which are stable dependencies.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [nodes, fixture, liveEdges, sizes, history, folds, positions, cameras, perspective, viewport, selected, active, focusedId, themeCache, messages, expeditions, activeExpedition]);
+  }), [intents, nodes, fixture, liveEdges, sizes, history, folds, positions, cameras, perspective, viewport, selected, active, focusedId, themeCache, messages, expeditions, activeExpedition]);
   const latestSave = useRef(snapshot);
   useLayoutEffect(() => { latestSave.current = snapshot; }, [snapshot]);
   useEffect(() => {
@@ -686,7 +689,7 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
         const id = crypto.randomUUID();
         return {
           id, type: "thought", position: { x, y: y + index * 380 }, dragHandle: ".card-grip", ariaLabel: card.title,
-          data: { thought: { ...card, id, revision: 1,
+          data: { thought: { ...card, id, revision: 1, revisions: [firstRevision(card, `generated by ${feature === "wander" ? "Wander" : "Weave"}`)],
             kind: feature === "wander" ? "exploration" : "recombination",
             provenance: { feature: contextualMove?.title ?? (feature === "wander" ? "Wander" : "Weave"), tag: `feature:${feature}`, sourceTitles: sources.map(s => s.title), moveTitle: contextualMove?.title },
             contribution: feature === "wander" ? `Derived from ${sources[0].title}.` : contributions.join(" "),
@@ -716,7 +719,7 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
   function addExpeditionCard(card: GeneratedCard, parent: Thought, step: number, rationale: string): Thought {
     clearHistory();
     const id = crypto.randomUUID();
-    const thought: Thought = { ...card, id, revision: 1, kind: "exploration",
+    const thought: Thought = { ...card, id, revision: 1, revisions: [firstRevision(card, "generated by Expedition")], kind: "exploration",
       contribution: rationale, provenance: { feature: `Expedition · step ${step}`, tag: "feature:expedition", sourceTitles: [parent.title] },
       move: { title: "Explore this direction", question: "Where could this idea lead?", preview: card.summary } };
     setNodes(current => {
@@ -1257,6 +1260,7 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
             <span className="selection-count">{selected.length} selected</span>
             {selected.length === 1 && <Button onClick={() => focus(selected[0])}><Crosshair aria-hidden="true" />Focus</Button>}
             {<>
+              <Button disabled={selected.length !== 1} onClick={() => { setActive(selected[0]); setPanel("develop"); }}>Develop</Button>
               <Button className="wander-action" disabled={busy || selected.length !== 1} onClick={() => move(selected)} aria-busy={busy && live?.feature === "wander"}>{busy && live?.feature === "wander" ? <span className="generation-spinner" aria-hidden="true" /> : <GitFork aria-hidden="true" />}{busy && live?.feature === "wander" ? "Wandering…" : "Wander"}</Button>
               <Button onClick={() => open("compare")}><Copy aria-hidden="true" />Compare</Button>
               <Button disabled={selected.length !== 1} onClick={() => open("expedition")}><Compass aria-hidden="true" />Expedition</Button>
@@ -1296,19 +1300,31 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
       {<ExpeditionPanel entries={expeditions} setEntries={update => { clearHistory(); setExpeditions(update); }} activeEntry={activeExpedition} setActiveEntry={setActiveExpedition} open={panel === "expedition"} close={close} source={selected.length === 1 ? byId.get(selected[0]) : undefined}
         cards={nodes.map(n => n.data.thought)} add={addExpeditionCard} focus={id => { focus(id); setPanel("expedition"); }} />}
       {panel === "inspect" && <CardPane key={thought.id}
-        card={thought} cards={nodes.map(n => n.data.thought)} relationships={relationships} revisions={cardRevisions}
+        card={thought} cards={nodes.map(n => n.data.thought)} relationships={relationships}
         draft={cardDrafts[thought.id]} setDraft={draft => setCardDrafts(current => ({ ...current, [thought.id]: draft }))}
         save={edit => {
           const revised = reviseCard(thought, edit);
           clearHistory();
-          setCardRevisions(current => [...current, thought]);
           setNodes(current => current.map(n => n.id === thought.id ? { ...n, data: { ...n.data, thought: revised } } : n));
         }}
+        revert={number => {
+          const revised = revertCard(thought, number);
+          setNodes(current => current.map(n => n.id === thought.id ? { ...n, data: { ...n.data, thought: revised } } : n));
+        }}
+        develop={() => setPanel("develop")}
         inspect={inspect} focus={focus} explore={() => move([thought.id])} close={close}
         folded={folds.includes(thought.id)} descendantCount={trace(thought.id, "descendants").length}
         toggleFold={() => setFolds(current => current.includes(thought.id) ? current.filter(id => id !== thought.id) : [...current, thought.id])}
         showBranch={() => { setChain({ id: thought.id, direction: "descendants" }); setFolds(current => current.filter(id => id !== thought.id && !trace(thought.id, "descendants").includes(id))); focus(thought.id); }} />}
-      {panel && panel !== "talk" && panel !== "expedition" && (panel !== "inspect") && (
+      {panel === "develop" && <DevelopPanel key={thought.id} card={thought} intents={intents}
+        remember={text => setIntents(current => current.some(i => i.text === text) ? current : [...current, { id: crypto.randomUUID(), text }])}
+        commit={(previous, next) => {
+          const current = latestSave.current.thoughts.find(c => c.id === previous.id);
+          if (!current || current.revision !== previous.revision) throw new Error("The card changed. Start again from its current revision.");
+          latestSave.current = { ...latestSave.current, thoughts: latestSave.current.thoughts.map(c => c.id === next.id ? next : c) };
+          setNodes(nodes => nodes.map(n => n.id === next.id ? { ...n, ariaLabel: next.title, data: { ...n.data, thought: next } } : n));
+        }} close={close} />}
+      {panel && panel !== "develop" && panel !== "talk" && panel !== "expedition" && (panel !== "inspect") && (
         <aside
           key={panel === "guide" ? "guide" : "detail"}
           id={panel === "guide" ? "atlas-guide" : undefined}

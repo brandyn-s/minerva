@@ -7,7 +7,7 @@ function thought(
   contribution: string,
   extra: Partial<Thought> = {},
 ): Thought {
-  return {
+  const card = {
     id,
     title,
     summary,
@@ -25,6 +25,7 @@ function thought(
     },
     ...extra,
   };
+  return { ...card, kind: card.kind as Thought["kind"], revisions: [{ number: 1, time: "2026-09-09T00:00:00.000Z", cause: "starting material", title: card.title, summary: card.summary, body: card.body }] };
 }
 export function mallFixture(): AtlasFixture {
   const thoughts = [

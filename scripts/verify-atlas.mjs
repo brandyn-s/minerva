@@ -194,8 +194,116 @@ async function assertAttached() {
   });
   assert.ok(attached, "connection endpoints must follow visible card boundaries");
 }
+async function verifyDevelopment() {
+  console.log("Development: opening fixture");
+  await page.goto(base); await resetFixture();
+  const waitSave = async predicate => {
+    const end = Date.now() + 90000;
+    while (Date.now() < end) { const save = await storedSave(); if (save && predicate(save)) return save; await page.waitForTimeout(100); }
+    throw new Error("Development save did not reach expected state");
+  };
+  const card = (save, id) => save.thoughts.find(c => c.id === id);
+  const start = await waitSave(s => s.version === 3); console.log("Development: editing");
+  const original = card(start, "food");
+  await inspectFromIndex(original.title);
+  for (let edit = 1; edit <= 2; edit++) {
+    await button("Edit").click();
+    await page.getByLabel("Title", { exact: true }).fill(`A ${edit === 1 ? "small" : "winter"} food hall`);
+    await page.getByLabel("Summary", { exact: true }).fill(`Summary ${edit}`);
+    await page.getByLabel("Body", { exact: true }).fill(edit === 1 ? "A small warm hall." : "A small winter hall.");
+    await button("Save changes").click();
+    await waitSave(s => card(s, "food").revision === edit + 1);
+  }
+  await page.getByRole("tab", { name: "History", exact: true }).click();
+  const third = page.getByRole("region", { name: "Revision 3", exact: true });
+  assert.equal(await third.locator('[aria-label="Title changes"] ins').innerText(), "winter");
+  assert.equal(await third.locator('[aria-label="Title changes"] del').innerText(), "small");
+  assert.equal(await third.locator('[aria-label="Body changes"] ins').innerText(), "winter");
+  assert.equal(await third.locator('[aria-label="Body changes"] del').innerText(), "warm");
+  await button("Revert to revision 1").click();
+  const reverted = await waitSave(s => card(s, "food").revision === 4);
+  assert.equal(card(reverted, "food").revisions.length, 4);
+  for (const key of ["title", "summary", "body"]) assert.equal(card(reverted, "food")[key], original[key]);
+  assert.equal(card(reverted, "food").revisions[3].cause, "reverted to revision 1");
+  assert.ok(reverted.relationships.some(e => e.from === "food" && e.to === "repair" && e.sourceRevision === 1));
+  await close(); await inspectFromIndex("Repair, then stay for supper");
+  await page.getByRole("tab", { name: /^Connections/ }).click();
+  await page.getByText(/derived from revision 1 of A food hall · Parent has moved on/).waitFor();
+  await close();
+  console.log("Development: generation and reuse");
+  const requests = [];
+  const intent = "Make this cheaper to pilot";
+  await page.route("**/api/develop", async route => {
+    const input = route.request().postDataJSON(); requests.push(input);
+    await route.fulfill({ json: { title: `${input.card.title} ${input.step}`, summary: `Pilot step ${input.step}`, body: `Run a smaller pilot at step ${input.step}.`, note: `Reduced scope in step ${input.step} to test cheaply.` } });
+  });
+  await inspectFromIndex("Independent retail shops"); await button("Develop").click();
+  await page.getByLabel("Intent", {exact:true}).fill(intent); await page.getByLabel("Steps", {exact:true}).selectOption("2");
+  await button("Start development").click(); await page.getByText("2 steps completed. Revisions are kept in History.", {exact:true}).waitFor();
+  let developed = await waitSave(s => card(s, "retail").revision === 3);
+  assert.equal(card(developed,"retail").revisions.length, 3);
+  assert.equal(card(developed,"retail").revisions[2].cause, `branch step 2 of ${intent}`);
+  assert.equal(requests[1].card.revision, 2); assert.equal(requests[1].priorSteps.length, 1);
+  assert.equal(await page.locator('[data-id="retail"] .revision-badge').innerText(), "3 revisions");
+  await close(); await inspectFromIndex("A shared tool library"); await button("Develop").click();
+  await button(`Reuse intent: ${intent}`).click();
+  developed = await waitSave(s => card(s, "tools").revision === 2);
+  assert.equal(card(developed,"tools").revisions[1].cause, `branch step 1 of ${intent}`);
+  assert.equal(requests[2].intent, intent); assert.equal(developed.intents.length, 1);
+  console.log("Development: round trips");
+  await close(); await page.reload(); await waitSave(s => card(s,"food").revisions.length === 4);
+  await openAtlasMenu(); const download = page.waitForEvent("download"); await button("Export atlas").click();
+  const bytes = await readFile(await (await download).path()); const exported = JSON.parse(bytes);
+  assert.deepEqual(exported.thoughts, developed.thoughts); assert.deepEqual(exported.intents, developed.intents);
+  await page.getByRole("button", {name:/^Thoughts /}).click(); await page.locator(".catalogue-menu > summary").click();
+  const markdownDownload = page.waitForEvent("download"); await button("Download all cards").click();
+  const markdown = await readFile(await (await markdownDownload).path(), "utf8");
+  assert.ok(markdown.includes("reverted to revision 1")); assert.ok(markdown.includes(`branch step 2 of ${intent}`));
+  await close();
+  const upload = async data => { await openAtlasMenu(); await page.getByLabel("Import atlas file", {exact:true}).setInputFiles({name:"history.json",mimeType:"application/json",buffer:Buffer.from(JSON.stringify(data))}); await button("Replace").click(); await button("Confirm Replace").click(); };
+  await resetFixture(); await upload(exported);
+  const imported = await waitSave(s => card(s,"retail").revision === 3);
+  assert.deepEqual(imported.thoughts, exported.thoughts); assert.deepEqual(imported.intents, exported.intents);
+  const v2 = structuredClone(exported); v2.version = 2; delete v2.intents; for (const c of v2.thoughts) delete c.revisions;
+  await upload(v2);
+  const migrated = await waitSave(s => s.version === 3 && s.thoughts.every(c => c.revision === 1));
+  assert.equal(migrated.intents.length, 0);
+  for (const c of migrated.thoughts) { assert.equal(c.revisions.length,1); assert.equal(c.revisions[0].body,c.body); assert.equal(c.revisions[0].title,c.title); }
+  await page.unroute("**/api/develop");
+  // A late response after Stop must never create another revision.
+  await resetFixture(); let release;
+  await page.route("**/api/develop", async route => {
+    if (route.request().postDataJSON().step === 1) return route.fulfill({json:{title:"First step",summary:"Kept",body:"Completed step",note:"A completed change"}});
+    await new Promise(resolve => { release = resolve; });
+    await route.fulfill({json:{title:"Late",summary:"Late",body:"Late",note:"Late"}}).catch(()=>{});
+  });
+  await inspectFromIndex("A food hall"); await button("Develop").click(); await page.getByLabel("Intent",{exact:true}).fill("Test Stop");
+  await page.getByLabel("Steps",{exact:true}).selectOption("2");
+  await button("Start development").click(); while (!release) await page.waitForTimeout(20);
+  await button("Stop").click(); release(); await settle(); assert.equal(card(await storedSave(),"food").revision,2);
+  await close(); await page.unroute("**/api/develop");
+  if (process.env.MINERVA_LIVE === "1") {
+    await resetFixture();
+    await inspectFromIndex("A food hall"); await button("Develop").click();
+    await page.getByLabel("Intent",{exact:true}).fill(intent); await page.getByLabel("Steps",{exact:true}).selectOption("2");
+    await button("Start development").click();
+    await page.getByText("2 steps completed. Revisions are kept in History.",{exact:true}).waitFor({timeout:150000});
+    const live = await waitSave(s => card(s,"food").revision === 3);
+    await writeFile(`${artifacts}/develop-live.json`,JSON.stringify({intent,revisions:card(live,"food").revisions},null,2));
+    await page.screenshot({path:`${artifacts}/develop-live.png`}); await close();
+  }
+  await resetFixture();
+  console.log("C04/C05: edits, word diffs, revert, source revision, Develop, reuse, Stop, reload, JSON/Markdown and v2 migration passed.");
+}
+if (process.env.MINERVA_DEVELOP_ONLY === "1") {
+  try { await verifyDevelopment(); assert.deepEqual(errors, []); }
+  finally { await browser.close(); await new Promise(resolve => streamServer.close(resolve)); }
+  process.exit(0);
+}
+
 try {
   if (process.env.MINERVA_VOICE_ONLY !== "1") {
+  await verifyDevelopment();
   await page.goto(base);
   await page.locator(".thought").first().waitFor();
   await settle();
@@ -530,7 +638,7 @@ try {
       await inspection.getByRole("tab", { name: /^Connections/ }).click();
       const links = inspection.locator(".card-pane-lineage > section").first().locator(".card-pane-relation");
       assert.equal(await links.count(), feature === "wander" ? 1 : 3);
-      assert.match(await links.first().innerText(), /source revision 1/i);
+      assert.match(await links.first().innerText(), /derived from revision 1/i);
       if (feature === "weave") {
         assert.equal(evidence.weaveInput.length, 3);
         assert.equal(output.contributions.length, 3);
@@ -667,7 +775,7 @@ try {
   await assertGenerationVisible();
   await inspectFromIndex("Morning repair table");
   await page.getByRole("tab", { name: /^Connections/ }).click();
-  assert.match(await page.locator(".card-pane-relation").innerText(), /source revision 1/i);
+  assert.match(await page.locator(".card-pane-relation").innerText(), /derived from revision 1/i);
   assert.ok((await page.locator(".card-pane-relation").innerText()).includes(chosenMove.title));
   assert.equal(moveCardAttempts, 2);
   await close();
@@ -1009,7 +1117,7 @@ try {
   assert.deepEqual((await storedSave()).expeditions, backupState.expeditions, "Merge skips duplicate expedition history");
   const uniqueImport = structuredClone(backupState);
   const incomingCard = uniqueImport.thoughts.find(c => c.id === durableId);
-  incomingCard.title = "Imported distinct repair card";
+  incomingCard.title = "Imported distinct repair card"; incomingCard.revisions.at(-1).title = incomingCard.title;
   await upload(Buffer.from(JSON.stringify(uniqueImport))); await button("Merge").click();
   await page.waitForFunction(() => document.querySelectorAll(".thought").length === 11); await settle();
   await page.getByText("Merge complete: 1 added, 9 skipped.", { exact: true }).waitFor();
@@ -1069,7 +1177,7 @@ try {
   await button("Replace").click(); await button("Keep current atlas").click();
   assert.equal(await button("Confirm Replace").count(), 0);
   await button("Replace").click(); await button("Confirm Replace").click(); await settle();
-  const migrated = await storedSave(); assert.equal(migrated.version, 2);
+  const migrated = await storedSave(); assert.equal(migrated.version, 3);
   assert.deepEqual(migrated.sizes, { Lineage: {}, Evolution: {}, Constellation: {} });
   assert.deepEqual(migrated.folds, []); assert.equal(migrated.layoutHistory.Lineage.undo.length, 0);
   await openAtlasMenu(); await button("Reset to fixture").click(); await button("Keep current atlas").click();

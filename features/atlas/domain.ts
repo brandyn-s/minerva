@@ -1,6 +1,14 @@
+export type CardRevision = {
+  number: number; time: string; cause: string;
+  title: string; summary: string; body: string;
+  note?: string;
+  branch?: { intent: string; step: number; runId: string };
+};
+export type DevelopmentIntent = { id: string; text: string };
 export type Thought = {
   id: string;
   revision: number;
+  revisions: CardRevision[];
   title: string;
   summary: string;
   body: string;
