@@ -37,13 +37,7 @@ test("mall roots share context; recombination retains exactly both source revisi
     ],
   );
   assert.ok(parents.every((e) => e.contribution));
-  assert.equal(
-    thoughts.find((t) => t.id === "repair").decision,
-    "unkept draft",
-  );
-  assert.equal(thoughts.find((t) => t.id === "repair").evidence, "unknown");
-  assert.equal(thoughts.find((t) => t.id === "rotation").decision, "kept");
-  assert.equal(thoughts.find((t) => t.id === "rotation").evidence, "unknown");
+
 });
 test("association is navigable from both ends without becoming parentage", () => {
   const { relationships } = mallFixture();

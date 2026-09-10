@@ -106,8 +106,8 @@ export async function executeStage(runId: string, slot: number, purpose: "genera
       if (purpose === "generate") {
         const proposal = artifact as ProposalArtifact;
         const content = { id: claimed.proposalId, revision: 1, title: proposal.title, body: proposal.body,
-          summary: proposal.mechanism.slice(0, 240), kind: "proposal" as const, decision: "unkept draft" as const,
-          evidence: "unknown" as const, contribution: proposal.contributions.map((c) => c.contribution).join("\n"),
+          summary: proposal.mechanism.slice(0, 240), kind: "proposal" as const,
+          contribution: proposal.contributions.map((c) => c.contribution).join("\n"),
           generation: { model: claimed.manifest.profile.id, manifestId: claimed.run.manifestId,
             mechanism: proposal.mechanism, prerequisites: proposal.prerequisites, uncertainties: proposal.uncertainties,
             requestedChange: proposal.requestedChange, observedChange: proposal.observedChange },

@@ -10,8 +10,6 @@ const view = z.enum(["Lineage", "Evolution", "Constellation"]);
 const thought = z.object({
   id, revision: z.number().int().nonnegative(), title: z.string(), summary: z.string(), body: z.string(),
   kind: z.enum(["brief", "proposal", "recombination", "exploration"]),
-  decision: z.enum(["starting material", "kept", "unkept draft", "set aside"]),
-  evidence: z.enum(["prepared example", "unknown", "pending", "unavailable", "supported", "contradicted", "unclear"]),
   contribution: z.string(), move: z.object({ title: z.string(), question: z.string(), preview: z.string() }),
   provenance: z.object({ feature: z.string(), tag: z.string(), sourceTitles: z.array(z.string()), moveTitle: z.string().optional() }).optional(),
   generation: z.object({ model: z.string(), manifestId: z.string(), mechanism: z.string(), prerequisites: z.array(z.string()), uncertainties: z.array(z.string()), requestedChange: z.string(), observedChange: z.string() }).optional(),
