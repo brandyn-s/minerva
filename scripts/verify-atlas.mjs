@@ -1635,7 +1635,7 @@ try {
       const config = events.find((event) => event.type === "session-update").config;
       assert.equal(config.turnDetection, null);
       assert.ok(config.instructions.includes("A shared tool library"), "voice receives the full canvas with no selection");
-      assert.ok(config.instructions.includes("Selected IDs: []"));
+      assert.ok(config.instructions.includes('"selectedIds":[]'));
       assert.deepEqual(config.providerOptions.gateway.tags, ["feature:voice"]);
       // A fresh press must stop queued output immediately, including a late reply.
       await vb("Hold to talk").focus();
@@ -1693,6 +1693,18 @@ try {
       const tracksBeforeNavigation = await voicePage.evaluate(() => window.voiceStats.stoppedTracks);
       await voicePage.locator('[data-id="food"] .card-title').click();
       await voicePage.locator("#minerva-talk").waitFor({ state: "hidden" });
+      await voicePage.waitForTimeout(100);
+      const focusedConfig = events.filter(event => event.type === "session-update").at(-1).config;
+      assert.ok(focusedConfig.instructions.includes('"focusedId":"food"'), "active voice receives the inspected card as the referent for this one");
+      assert.ok(focusedConfig.instructions.includes('"selectedIds":[]'), "inspection focus is independent of multi-selection");
+      assert.ok(focusedConfig.instructions.includes('"id":"food"'), "updated focus includes the card content");
+      assert.equal(focusedConfig.turnDetection, undefined, "context updates preserve the existing voice configuration");
+      await voicePage.locator('[data-id="food"] .select-card').click();
+      await voicePage.waitForTimeout(100);
+      assert.ok(events.filter(event => event.type === "session-update").at(-1).config.instructions.includes('"selectedIds":["food"]'), "selection changes reach the active voice session");
+      await voicePage.locator('[data-id="food"] .select-card').click();
+      await voicePage.waitForTimeout(100);
+      assert.ok(events.filter(event => event.type === "session-update").at(-1).config.instructions.includes('"focusedId":null'), "deselecting clears the voice referent");
       assert.equal(await voicePage.locator(".voice-control").count(), 1, "card inspection retains the voice session");
       await voicePage.waitForTimeout(300);
       assert.equal(await voicePage.evaluate(() => window.voiceStats.playbackStops), stopsBeforeInterrupt, "card interaction preserves queued audio");

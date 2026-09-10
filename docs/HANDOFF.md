@@ -25,6 +25,11 @@ then run `npm run build` and `npm run start -- --port 54426`.
 Next role: owner inspects the released cards; no critic requested.
 
 ## Voice canvas continuity release
+Live focus follow-up (`fix/voice-live-focus`, uncommitted): voice context updates
+when cards change or users inspect, focus, select or deselect cards; "this one"
+resolves to the current focus and "these" to the selection without reconnecting.
+Full checks and mocked browser context-update regression passed; `/tmp/minerva-live-focus`.
+Local production preview port 3301. This follow-up is not deployed.
 Active voice survives card inspection hiding Talk; reopening retains controls and transcript.
 Explicit Talk close, Escape and End voice mode still end the session.
 Branch `fix/voice-canvas-continuity`; worktree `/Users/brandyn.schult/code/minerva-voice-canvas`.
