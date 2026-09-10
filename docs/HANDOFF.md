@@ -48,3 +48,10 @@ Final cardinality validation remains in place for malformed provider responses.
 Regression tests cover SDK schema conversion, valid outputs and rejection paths.
 Verification uses synthetic providers; no paid generation calls.
 Worktree: `/Users/brandyn.schult/code/minerva-weave-count`, branch `fix/weave-output-count`.
+
+## Card footer
+Explore is primary, Develop secondary; the anchored overflow contains Edit and
+Download Markdown. History stays in its tab. Download controls have no tooltip.
+Desktop/touch checks cover menu bounds, targets, download, edit, Escape and History.
+The shared gallery baselines are unchanged. No provider calls are needed.
+Worktree: `/Users/brandyn.schult/code/minerva-card-footer`, branch `fix/card-footer-menu`.

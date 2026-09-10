@@ -1498,7 +1498,7 @@ label {
 .card-pane-header, .card-pane-footer { flex-shrink: 0; }
 .card-pane-header { padding-top: 8px; }
 .card-pane-top, .card-pane-top > div { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.card-inspector button { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 12px; font: 12px/1.4 ui-monospace, monospace; }
+.card-inspector button:not(.ui-menu-item) { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 12px; font: 12px/1.4 ui-monospace, monospace; }
 .card-inspector button svg { flex-shrink: 0; }
 .card-pane-top button { border: 0; background: transparent; }
 .card-pane-top button:last-child { width: 44px; padding: 8px; }
@@ -1525,13 +1525,10 @@ label {
 .card-pane-relationship-summary svg:last-child { margin-left: auto; }
 .card-pane-actions { display: flex; gap: 8px; align-items: center; padding: 12px 0; }
 .card-pane-actions > .small-note { margin-right: auto; }
-.card-pane-actions .card-pane-primary { background: #896a3e; color: #fffdf7; border-color: #896a3e; flex: 1; font: 17px/1.3 Georgia, serif; }
-.card-pane-actions .card-pane-primary:hover { background: #735632; }
-.card-pane-more { position: relative; }
+.card-pane-more { position: relative; margin-left: auto; }
 .card-pane-more > button { width: 44px; padding: 8px; }
-.card-pane-more > div { position: absolute; bottom: 52px; right: 0; width: 235px; background: var(--card); border: 1px solid var(--line); padding: 6px; z-index: 2; }
-.card-pane-more > div button { width: 100%; text-align: left; justify-content: flex-start; border: 0; background: transparent; }
-.card-pane-more .card-download { margin: 0; }
+.card-pane-more > div { position: absolute; bottom: calc(100% + 8px); right: 0; width: max-content; min-width: 190px; max-width: calc(100vw - 48px); background: var(--card); border: 1px solid var(--line); padding: 6px; z-index: 2; }
+.card-pane-more .ui-menu-item { justify-content: flex-start; }
 .card-pane-section-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
 .card-pane-section-heading h3 { margin: 0; }
 .card-pane-section-heading button { font-size: 11px; border: 0; background: transparent; }
@@ -1552,7 +1549,6 @@ label {
   .card-pane-header h2 { font-size: 26px; }
   .card-pane-tabs { gap: 20px; }
   .card-pane-top .card-pane-focus { font-size: 11px; padding-inline: 4px; }
-  .card-pane-actions .card-pane-primary { font-size: 16px; }
   .card-pane-actions > .small-note { display: none; }
 }
 

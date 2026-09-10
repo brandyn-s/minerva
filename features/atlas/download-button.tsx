@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "../../components/ui/controls";
+import { Button, MenuItem } from "../../components/ui/controls";
 
 import { actions } from "../../components/ui/actions";
 import { useState } from "react";
@@ -20,8 +20,8 @@ function cardMarkdown(card: Thought, allCards: Thought[], edges: Relationship[],
   return `${heading} ${title(card.title)}\n\n${heading}# Summary\n\n${card.summary}\n\n${heading}# Body\n\n${card.body}\n\n${heading}# Contribution\n\n${card.contribution}\n\n${heading}# Relationships\n\n${relationships || "None"}\n${inheritance}${provenance}${history}`;
 }
 
-export default function DownloadButton({ cards, relationships, card }: {
-  cards: Thought[]; relationships: Relationship[]; card?: Thought;
+export default function DownloadButton({ cards, relationships, card, menuItem = false }: {
+  cards: Thought[]; relationships: Relationship[]; card?: Thought; menuItem?: boolean;
 }) {
   const [error, setError] = useState(false);
   function download() {
@@ -41,8 +41,9 @@ export default function DownloadButton({ cards, relationships, card }: {
       if (url) setTimeout(() => URL.revokeObjectURL(url!), 1000);
     }
   }
-  return <div className="card-download">
+  const Control = menuItem ? MenuItem : Button;
+  return <div className={menuItem ? "card-download-menu" : "card-download"}>
     {error && <p role="alert">The download could not start. Please retry.</p>}
-    <Button onClick={download} title={card ? "Download this card as Markdown" : "Download all cards as Markdown"}><actions.download.Icon aria-hidden="true" /><span>{error ? "Retry download" : card ? actions.download.label : "Download all cards"}</span><span className="download-format" aria-hidden="true">.md</span></Button>
+    <Control onClick={download}><actions.download.Icon aria-hidden="true" /><span>{error ? "Retry download" : menuItem ? "Download Markdown" : card ? actions.download.label : "Download all cards"}</span>{!menuItem && <span className="download-format" aria-hidden="true">.md</span>}</Control>
   </div>;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Summary, Input, Textarea } from "../../components/ui/controls";
+import { Button, MenuItem, Summary, Input, Textarea } from "../../components/ui/controls";
 
 import { useEffect, useRef, useState } from "react";
 import {
@@ -443,7 +443,7 @@ export default function CardPane(props: Props) {
                 Cancel
               </Button>
               <Button
-                className="card-pane-primary"
+                variant="primary"
                 type="submit"
                 form="card-edit-form"
                 disabled={!dirty || !draft.title.trim()}
@@ -453,21 +453,11 @@ export default function CardPane(props: Props) {
             </>
           ) : (
             <>
-              <Button onClick={props.develop}>Develop</Button>
-              <Button className="card-pane-primary" onClick={props.explore}>
+              <Button variant="primary" onClick={props.explore}>
                 <Compass aria-hidden="true" />
-                Explore this idea
+                Explore
               </Button>
-              <Button
-                onClick={() => {
-                  setDraft(cardEdit(card));
-                  setTab("Content");
-                  setMenu(false);
-                }}
-              >
-                <PencilSimple aria-hidden="true" />
-                Edit
-              </Button>
+              <Button onClick={props.develop}>Develop</Button>
               <div className="card-pane-more">
                 <Button
                   ref={more}
@@ -478,20 +468,23 @@ export default function CardPane(props: Props) {
                   <DotsThree aria-hidden="true" />
                 </Button>
                 {menu && (
-                  <div ref={menuRef}>
+                  <div ref={menuRef} role="group" aria-label="Card actions">
+                    <MenuItem
+                      onClick={() => {
+                        setDraft(cardEdit(card));
+                        setTab("Content");
+                        setMenu(false);
+                      }}
+                    >
+                      <PencilSimple aria-hidden="true" />
+                      Edit
+                    </MenuItem>
                     <DownloadButton
+                      menuItem
                       card={card}
                       cards={cards}
                       relationships={relationships}
                     />
-                    <Button
-                      onClick={() => {
-                        setTab("History");
-                        setMenu(false);
-                      }}
-                    >
-                      View history
-                    </Button>
                   </div>
                 )}
               </div>
