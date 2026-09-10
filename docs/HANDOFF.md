@@ -1,35 +1,28 @@
-# Compact Card pane
+# Voice customization
 
-Branch: `feat/compact-card-pane`.
-Worktree: `/Users/brandyn.schult/code/minerva-compact-card-pane`.
-Integrated with main `6155709`, including voice lifecycle and live canvas context.
+Branch: `feat/voice-customization`.
+Worktree: `/Users/brandyn.schult/code/minerva-remove-node-tooltips`.
 
-## Outcome
-Root-atlas inspection uses the approved compact manuscript pane: Content,
-Connections and History tabs, persistent relationship summary, Explore and Edit.
-Real parent/child edges, associations and shared context remain separate.
-Source excerpts, contributions, generation details, provenance and Markdown
-export remain available. Explore opens the existing Wander flow for this card.
-Save updates current atlas text and creates a session revision. Restore makes a
-new revision; generation provenance survives, stale revision assessments do not.
-Unsaved drafts survive dismissal and other card inspections within the session.
-Current text uses existing browser persistence; earlier history is session-only.
-Managed-workspace inspection and unrelated worktrees are unchanged.
-Voice dismissal/transcript fixes and active-session focus/selection updates from
-main are preserved; this integration does not alter their protocol.
+Voice now uses `openai/gpt-realtime-2.1` for both token issuance and client sessions.
+Voice settings live beside the microphone in Talk: ten voices, generated preview,
+tone, approach, length, pace, expertise, follow-up style, language, accent,
+custom instructions, server/semantic turn detection, silence/threshold/padding,
+transcription language/vocabulary, and browser microphone processing.
+Settings persist per browser when storage is available, reset to defaults, and
+apply to the next session. Active sessions lock settings and offer Stop voice.
+Preview needs no microphone and does not enter the conversation history.
+The model follows the current atlas rather than a hardcoded shopping-mall topic;
+live focus/selection updates and context boundaries are preserved.
 
-## Verification
-`npm run check`: lint, TypeScript, 17 tests and production build passed.
-New unit coverage checks revision restoration, stale-edit rejection, assessment
-invalidation, multi-parent relationships and context/association separation.
-In-app browser: real cards, both parents, editing, dismiss/reopen draft, save,
-review/restore, Cancel, keyboard tabs and Wander entry verified. Narrow layout
-390x844 checked and Menu/close overlap fixed. No provider generation was run.
-Existing full atlas browser replay was not run; its older inspection selectors
-need a separate refresh before using that broad replay on this design.
-See `design-qa.md` for visual evidence and limitations.
+Verification: `npm run check`; `scripts/verify-voice-settings.mjs` verifies settings,
+persistence, reset, mobile dialog, and preview configuration with a mock socket.
+`tests/voice-settings.test.mjs` covers parsing and session configuration.
+Live Realtime 2.1 audio remains unverified: Gateway rejects OIDC token minting;
+the existing dedicated voice key is configured only in Preview and Production.
+Next role: owner reviews voice behavior on the preview/merged deployment.
+Commit and merge authorized; live audio validation is still pending.
+Startup: `npm run dev -- --port 3198` (Node 24.20.0 / npm 12.0.2).
 
-## Startup and next role
-Local preview: http://127.0.0.1:3081/.
-Start with `npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run dev -- --port 3081`.
-Next role: owner visual acceptance. Commit and merge are authorized.
+Integrated main: the compact card inspector retains Content, Connections and
+History tabs, editing, session revision history, and draft preservation.
+Voice dismissal, transcript handling, and live focus updates remain intact.
