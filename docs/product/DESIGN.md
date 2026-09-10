@@ -33,6 +33,29 @@ Avoid distressed parchment, ornamental columns, cartoon mascots, neon,
 permanent glowing, and mythological names for every tool. A night theme is
 optional, not a first-release obligation.
 
+## Expedition panel standard
+
+Expedition is the visual template for atlas instruments. Layout, Read as text,
+and Browse thoughts share its warm paper surface, fine borders, rounded frame,
+medallion header, uppercase monospaced instrument name and 44px close control.
+Use `FieldGuideHeading` and the `field-guide` class rather than separate header
+styles. Shared `--guide-*` tokens in `app/globals.css` own the palette and spacing.
+
+The shared type roles are 20px serif titles, 15px serif body text, 16px serif
+inputs and actions, 12px mono labels, and 11px mono notes/instrument names.
+Narrow layouts retain the same type scale. Use the `--guide-type-*`
+and `--guide-font-*` tokens; do not introduce pane-specific type scales. All
+headers use a 32px medallion, 36px close control and the same spacing. Primary
+and secondary actions share a 36px minimum height, type and radius; color
+indicates priority. Inputs share their type, padding and cream surface. Touch targets retain at least
+44px height. Panel padding is 14px; Expedition and Browse use 440px widths,
+Layout 340px, and the reader 880px to accommodate contents and article.
+
+Use deep green primary/selected controls and a teal left edge for selected or
+source material. Reuse each instrument's existing medallion. Keep the reader's
+contents/article layout and the catalogue's search, selection and previews;
+the shared template adapts to each task's content.
+
 ## Composition and direct interaction
 
 This is an atlas, not an admin dashboard. One compact header contains identity,

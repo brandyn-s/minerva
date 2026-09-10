@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import FieldGuideHeading from "./field-guide-heading";
 import { ArrowRight } from "lucide-react";
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import TooltipButton from "./tooltip-button";
@@ -98,10 +98,10 @@ export default function ExpeditionPanel({ open, close, source, cards, add, focus
       return <TooltipButton key={step} onClick={() => focus(entry.id)} title={cards.find(c => c.id === entry.id)?.title}>Step {step} ↗</TooltipButton>;
     })}</span>;
   }
-  return <aside ref={panelRef} tabIndex={-1} hidden={!open} className="detail-panel expedition-panel" role="dialog" aria-label="Expedition" onKeyDown={e => {
+  return <aside ref={panelRef} tabIndex={-1} hidden={!open} className="detail-panel field-guide expedition-panel" role="dialog" aria-label="Expedition" onKeyDown={e => {
     if (e.key === "Escape") { e.stopPropagation(); close(); }
   }}>
-    <div className="panel-heading expedition-heading"><div className="expedition-brand"><Image src="/images/expedition-compass.png" alt="" width={56} height={56} /><span className="instrument-label">Expedition</span></div><button aria-label="Close panel" onClick={close}>×</button></div>
+    <FieldGuideHeading title="Expedition" image="/images/expedition-compass.png" close={close} />
     {entries.length > 0 && <label>Expedition history<select aria-label="Expedition history" disabled={running || readingBusy} value={activeEntry ?? ""} onChange={e => { const index = e.target.value === "" ? null : Number(e.target.value); setActiveEntry(index); runIndex.current = index; }}>
       <option value="">New expedition</option>{entries.map((e, i) => <option key={i} value={i}>{i + 1}. {e.run.goal}</option>)}
     </select></label>}

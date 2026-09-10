@@ -1,10 +1,11 @@
 # Voice lifecycle and transcript correction
 
-Branch: `fix/voice-survives-dismiss`, based on `main` at `598fdf2`.
+Branch: `fix/voice-survives-dismiss`, integrated with `main` at `f64fbed`.
 Worktree: `/Users/brandyn.schult/code/minerva-card-metadata-release`.
-Changes are uncommitted.
+Voice change commit: `f607e7b`. Owner authorized commit and merge.
 
 ## Outcome
+Current main pane styling and node/card transitions are preserved.
 Talk's close button and Escape hide the window without clearing active Voice.
 Reopening retains the same session, transcript, and mute state.
 End voice mode still stops capture and releases the session.
