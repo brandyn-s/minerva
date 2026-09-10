@@ -1,6 +1,6 @@
 import type { ThemeGroup } from "./themes";
 
-export function applyRegroup(current: ThemeGroup[], incoming: ThemeGroup[], ids: string[], nodes: { id: string; position: { x: number; y: number } }[]) {
+export function applyRegroup(current: ThemeGroup[], incoming: ThemeGroup[], ids: string[], nodes: { id: string; position: { x: number; y: number } }[], planned?: Record<string, { x: number; y: number }>) {
   const affected = new Set(ids);
   // Preserve slots so untouched theme headings and cards keep their coordinates.
   const all = nodes.every(n => affected.has(n.id));
@@ -20,7 +20,9 @@ export function applyRegroup(current: ThemeGroup[], incoming: ThemeGroup[], ids:
     const remaining = group.memberIds.filter(id => !affected.has(id));
     let y = Math.max(-320, ...remaining.map(id => layout[id]?.y ?? -320)) + 480;
     for (const id of group.memberIds.filter(id => affected.has(id))) {
-      layout[id] = { x: index * 760, y }; y += 480;
+      const target = { ...(planned?.[id] ?? { x: index * 760, y }) };
+      while (Object.values(layout).some(p => Math.abs(p.x - target.x) < 330 && Math.abs(p.y - target.y) < 260)) target.y += 260;
+      layout[id] = target; y = target.y + 480;
     }
   });
   return { groups, layout };

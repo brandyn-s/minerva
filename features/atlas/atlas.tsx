@@ -43,6 +43,7 @@ import { atlasSaveSchema, emptyHistory, recoveryCopies, discardRecovery, fixture
 import TalkPanel from "./talk-panel";
 import RegroupPanel from "./regroup-panel";
 import { applyRegroup } from "./regroup-layout";
+import { constellationLayout, constellationHeading } from "./constellation-layout";
 import DownloadButton from "./download-button";
 import FieldGuideHeading from "./field-guide-heading";
 import ThoughtCatalogue from "./thought-catalogue";
@@ -63,6 +64,7 @@ const Interaction = createContext<{
   busy?: boolean;
   retry?: () => void;
   scalable?: boolean;
+  constellation?: boolean;
   labels?: Set<string>;
   overview: boolean;
   zoom: number;
@@ -88,6 +90,7 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
   const { thought } = data;
   const ui = useContext(Interaction);
   const surface = useRef<HTMLElement>(null);
+  const preview = !!ui.constellation && ui.zoom >= .3;
   const measuredGeometry = useRef("");
   const { updateNodeData } = useReactFlow<CardNode>();
   useLayoutEffect(() => {
@@ -100,7 +103,7 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
       const geometry = {
         width: visible.offsetWidth / scale,
         height: visible.offsetHeight / scale,
-        circular: ui.overview && (ui.scalable || ui.compact),
+        circular: ui.overview && !preview && (ui.scalable || ui.compact),
       };
       const signature = JSON.stringify(geometry);
       if (measuredGeometry.current !== signature || !data.geometry) {
@@ -112,7 +115,7 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
     const observer = new ResizeObserver(measure);
     observer.observe(visible);
     return () => observer.disconnect();
-  }, [id, ui.overview, ui.compact, ui.zoom, ui.scalable, updateNodeData, data.geometry]);
+  }, [id, ui.overview, ui.compact, ui.zoom, ui.scalable, preview, updateNodeData, data.geometry]);
   const pendingOpen = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(
     () => () => {
@@ -191,10 +194,10 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
         <TooltipButton
           aria-label={`Open ${thought.title}`}
           aria-description="Drag or use arrow keys to move"
-          className={`overview-target card-grip nopan ${ui.scalable ? "scale-target" : ui.compact ? "compact-target" : ""}`}
-          style={{ transform: `scale(${1 / ui.zoom})`, ...(ui.scalable ? { width: diameter, height: diameter, minHeight: diameter } : {}) }}
+          className={`overview-target card-grip nopan ${preview ? "constellation-preview" : ui.scalable ? "scale-target" : ui.compact ? "compact-target" : ""}`}
+          style={{ transform: `scale(${1 / ui.zoom})`, ...(preview ? { width: 290 * ui.zoom, height: "auto", minHeight: 44 } : ui.scalable ? { width: diameter, height: diameter, minHeight: diameter } : {}) }}
         >
-          {ui.scalable ? ui.labels?.has(id) && <span className="overview-name">{overviewName(thought)}</span> : ui.compact ? null : thought.title}
+          {preview ? <><span className="constellation-preview-title">{overviewName(thought)}</span><span className="constellation-preview-summary">{thought.summary}</span></> : ui.scalable ? ui.labels?.has(id) && <span className="overview-name">{overviewName(thought)}</span> : ui.compact ? null : thought.title}
         </TooltipButton>
       ) : (
         <div className="card-content">
@@ -280,7 +283,7 @@ function FloatingEdge(props: EdgeProps) {
 }
 const edgeTypes = { floating: FloatingEdge };
 function ThemeNode({ data }: NodeProps<CardNode>) {
-  return <section className="theme-heading"><Handle type="target" position={Position.Left} /><h2>{data.thought.title}</h2><p>{data.thought.summary}</p><Handle type="source" position={Position.Right} /></section>;
+  return <section className="theme-heading"><h2>{data.thought.title}</h2><p>{data.thought.summary}</p></section>;
 }
 const nodeTypes = { thought: ThoughtCard, theme: ThemeNode };
 function presentNodes(saved?: AtlasFixture): CardNode[] {
@@ -517,26 +520,44 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
   }
   const rows = new Map<number, number>();
   const groups = themeCache?.groups ?? [];
-  const groupFor = new Map(groups.flatMap((g, i) => g.memberIds.map(id => [id, i] as const)));
-  let ungrouped = 0;
+  const clustered = constellationLayout(groups, nodes.map(n => n.id));
   const renderedNodes = nodes.map<CardNode>((n) => {
     let position = n.position;
     if (perspective === "Evolution") {
       const column = depth(n.id), row = rows.get(column) ?? 0;
       rows.set(column, row + 1); position = { x: column * 440, y: row * 480 };
     } else if (perspective === "Constellation") {
-      const group = groupFor.get(n.id);
-      const row = group === undefined ? ungrouped++ : groups[group].memberIds.indexOf(n.id);
-      position = { x: (group ?? groups.length) * 760, y: 160 + row * 480 };
+      position = clustered[n.id];
     }
     return { ...n, ...(!session ? { width: overview ? undefined : sizes[perspective][n.id]?.width, height: overview ? undefined : sizes[perspective][n.id]?.height } : {}), hidden: !session && foldedUnder.has(n.id), className: chain ? (chainSet.has(n.id) ? "chain-highlighted" : "chain-dimmed") : undefined,
       position: perspective === "Lineage" ? position : positions[perspective]?.[n.id] ?? position,
       style: { ...n.style, ...(!session ? { width: overview ? undefined : sizes[perspective][n.id]?.width, height: overview ? undefined : sizes[perspective][n.id]?.height } : {}), pointerEvents: overview ? "none" : "all" } };
   });
-  const themeNodes: CardNode[] = perspective === "Constellation" ? groups.map((g, i) => ({ hidden: !g.memberIds.length, id: `theme-${i}`, type: "theme", className: chain ? "chain-dimmed" : undefined, position: { x: i * 760, y: -70 }, width: 440, height: 140, measured: { width: 440, height: 140 }, style: { width: 440, height: 140 }, draggable: false, data: { thought: { ...thought, title: g.name, summary: g.reason } } })) : [];
+  const constellationPositions = Object.fromEntries(renderedNodes.map(n => [n.id, n.position]));
+  const themeNodes: CardNode[] = perspective === "Constellation" ? groups.map((g, i) => {
+    const { x, y, width } = constellationHeading(g.memberIds, constellationPositions);
+    return { hidden: !g.memberIds.length, id: `theme-${i}`, type: "theme", className: chain ? "chain-dimmed" : undefined, position: { x, y }, width, height: 100, measured: { width, height: 100 }, style: { width, height: 100 }, draggable: false, selectable: false, data: { thought: { ...thought, title: g.name, summary: g.reason } } };
+  }) : [];
   const nodesInitialized = useNodesInitialized();
   useLayoutEffect(() => {
-    if (!fitPerspective.current || !nodesInitialized || themeBusy || (perspective === "Constellation" && !themeCache)) return;
+    if (!fitPerspective.current || themeBusy || (perspective === "Constellation" && !themeCache)) return;
+    if (perspective !== "Constellation" && !nodesInitialized) return;
+    if (perspective === "Constellation") {
+      const all = [...renderedNodes, ...themeNodes].filter(n => !n.hidden);
+      if (!all.length) return;
+      const bounds = all.map(n => ({ ...n.position,
+        width: n.type === "theme" ? n.width! : flow.getNode(n.id)?.measured?.width ?? 290,
+        height: n.type === "theme" ? 100 : Math.max(220, flow.getNode(n.id)?.measured?.height ?? 220),
+      }));
+      const x = Math.min(...bounds.map(n => n.x)), y = Math.min(...bounds.map(n => n.y)) - 60;
+      const frame = requestAnimationFrame(() => {
+        fitPerspective.current = false;
+        void flow.fitBounds({ x, y,
+          width: Math.max(...bounds.map(n => n.x + n.width)) - x,
+          height: Math.max(...bounds.map(n => n.y + n.height)) - y }, { padding: .14 });
+      });
+      return () => cancelAnimationFrame(frame);
+    }
     let frame = 0;
     const fitMeasured = () => {
       const all = [...renderedNodes, ...themeNodes].filter(n => !n.hidden);
@@ -641,11 +662,11 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
     : (branchId ? relationPage.filter(e => e.id === branchId) : relationPage).map(e => e.id));
   const highlighting = !!chain || selected.length > 0 || focusedId !== null;
   const labels = overviewLabels(renderedNodes, viewport, [...(focusedId ? [focusedId] : []), ...selected]);
-  const edges = relationships.filter(edge => !foldedUnder.has(edge.from) && !foldedUnder.has(edge.to)).filter(edge => perspective !== "Constellation" || chain || (edge.kind === "association" && groupFor.has(edge.from) && groupFor.has(edge.to) && groupFor.get(edge.from) !== groupFor.get(edge.to))).map((edge) => ({
+  const edges = relationships.filter(edge => !foldedUnder.has(edge.from) && !foldedUnder.has(edge.to)).filter(edge => perspective !== "Constellation" || chain || (edge.kind === "association")).map((edge) => ({
     id: edge.id,
-    source: perspective === "Constellation" && !chain ? `theme-${groupFor.get(edge.from)}` : edge.from,
-    target: perspective === "Constellation" && !chain ? `theme-${groupFor.get(edge.to)}` : edge.to,
-    type: perspective === "Constellation" && !chain ? "default" : "floating",
+    source: edge.from,
+    target: edge.to,
+    type: "floating",
     label: !showRelationshipLabels || overview || (!session && highlighting && !highlighted.has(edge.id)) ? undefined : edge.label,
     markerEnd:
       edge.kind === "association" || edge.kind === "context"
@@ -759,6 +780,11 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
     return thought;
   }
   function fit() {
+    if (perspective === "Constellation") {
+      fitPerspective.current = true;
+      setViewport({ ...flow.getViewport() });
+      return;
+    }
     void flow.fitView({
       padding: 0.18,
       maxZoom: 1,
@@ -1002,7 +1028,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
     };
   }, [flow, session]);
   return (
-    <main className={`studio ${session ? "" : "scalable-atlas"}`}>
+    <main className={`studio ${session ? "" : "scalable-atlas"} ${perspective === "Constellation" ? "constellation-atlas" : ""}`}>
       <a className="skip-link" href="#atlas-tools">
         Skip to atlas controls
       </a>
@@ -1079,6 +1105,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
             busy,
             retry: () => { if (live) void generate(live.feature, live.sources, live.move); },
             scalable: !session,
+            constellation: perspective === "Constellation",
             labels,
             overview,
             compact,
@@ -1296,7 +1323,8 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
             clearHistory();
             setThemeUndo({ cache: themeCache, positions, viewport: flow.getViewport() });
             setRegroupedIds(regroupIds);
-            const { groups: next, layout } = applyRegroup(themeCache.groups, incoming, regroupIds, renderedNodes);
+            const regrouped = applyRegroup(themeCache.groups, incoming, regroupIds, renderedNodes);
+            const { groups: next, layout } = applyRegroup(themeCache.groups, incoming, regroupIds, renderedNodes, constellationLayout(regrouped.groups, nodes.map(n => n.id)));
             setPositions(current => ({ ...current, Constellation: layout }));
             setThemeCache({ ...themeCache, groups: next, time: new Date().toLocaleString() });
             setRegroupIds(null);

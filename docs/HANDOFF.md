@@ -38,3 +38,14 @@ The instructions map "this one" to focus and "these" to selected cards without r
 Branch `fix/voice-live-focus`; worktree `/Users/brandyn.schult/code/minerva-voice-canvas`.
 Local startup: `npm run start -- --port 3302`; focused replay uses `MINERVA_VOICE_ONLY=1`.
 Owner authorized commit and merge; final response records integrated verification.
+
+## Constellation clusters
+Branch: `fix/constellation-clusters`, based on `main` at `6155709`.
+Worktree: `/Users/brandyn.schult/code/minerva-constellation-release`.
+Compact theme shelves and readable zoom previews share the current Studio styling.
+Association edges join ideas; headings follow moved members. Regroup keeps untouched positions.
+Current folding, resizing, chain inspection and voice behavior are preserved.
+Verification: `npm run check` passed (18 tests, lint, types, build); browser fixture smoke passed.
+Theme responses were mocked for visual verification; no paid provider calls.
+Startup: use the Node/npm prefix above, then `npm run start -- --port 56020`.
+Next role: owner; no additional implementation or critic requested.
