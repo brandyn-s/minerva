@@ -33,10 +33,14 @@ Next role: owner reviews the delivered experience; no new research scope is open
 Three context-tailored LLM suggestion buttons fill the editable direction;
 custom input remains available. Local checks and live verification pass.
 
-## Wander pane follow-up
-Local branch `fix/wander-pane` in `/Users/brandyn.schult/code/minerva-revision-labels`.
-Compact title-first Wander uses the shared header, secondary suggestion actions,
-and a scrolling body with an accessible fixed close control on mobile.
-Focused mocked desktop/mobile replay covers suggestions, failure/retry, hide/show,
-free exploration and chosen moves. Repository and desktop/touch UI checks pass.
-No paid calls. Owner authorized commit and merge after required CI.
+## Shared pane follow-up
+Local branch `fix/shared-pane-layout` in `/Users/brandyn.schult/code/minerva-revision-labels`,
+based on `e58da6a`; uncommitted, not deployed.
+Card, Wander, Develop and Expedition share a 540px frame; Compare uses 880px.
+Shared headers, close controls, typography, green primary actions and scrolling
+replace the distinct pane treatments. Card tabs and footer remain available.
+Repository checks and six desktop/touch UI tests pass, including all five panes.
+Mocked Wander and Develop replays pass; no paid provider calls were made.
+Local preview: `npm run dev -- --port 56114` using the pinned Node/npm prefix.
+Wander uses the same neutral treatment as neighboring toolbar actions.
+Next role: operator completes the owner-authorized commit and merge after CI.

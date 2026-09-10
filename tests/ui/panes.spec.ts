@@ -1,0 +1,50 @@
+import { test, expect } from "@playwright/test";
+
+test("five panes share a frame and retain their navigation", async ({ page }, testInfo) => {
+  await page.route("**/api/**", route => route.fulfill({ status: 503, json: { error: "Offline UI verification" } }));
+  await page.goto("/");
+  const button = (name: string) => page.getByRole("button", { name, exact: true });
+  await page.getByRole("button", { name: /^Thoughts / }).click();
+  const row = page.locator(".catalogue-entry").filter({ has: page.getByText("A food hall", { exact: true }) });
+  await row.getByRole("checkbox").check();
+  await row.locator(".catalogue-disclosure").click();
+  await row.getByRole("button", { name: "Show in atlas", exact: true }).click();
+  await button("Open card").click();
+  let baseline: unknown;
+  const check = async (name: string, wide = false) => {
+    const panel = page.locator(".unified-pane:visible").last();
+    await expect(panel).toBeVisible();
+    const frame = await panel.evaluate(el => {
+      const s = getComputedStyle(el);
+      return { top: s.top, bottom: s.bottom, padding: s.padding, background: s.backgroundColor, border: s.border, radius: s.borderRadius };
+    });
+    if (!baseline) baseline = frame;
+    else expect(frame).toEqual(baseline);
+    expect(await panel.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+    if (!wide && testInfo.project.name === "desktop") expect((await panel.boundingBox())!.width).toBe(540);
+    const close = panel.getByRole("button", { name: "Close panel", exact: true });
+    expect(await close.evaluate(el => { const r = el.getBoundingClientRect(); return el.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)); })).toBe(true);
+    const y = (await close.boundingBox())!.y;
+    const body = panel.locator(".pane-body, .wander-content, .card-pane-body").first();
+    await body.evaluate(el => { el.scrollTop = el.scrollHeight; });
+    expect((await close.boundingBox())!.y).toBe(y);
+    await body.evaluate(el => { el.scrollTop = 0; });
+    await page.screenshot({ path: testInfo.outputPath(`${name}.png`) });
+  };
+  await check("card");
+  await button("Develop").last().click();
+  await check("develop");
+  await page.getByLabel("Intent", { exact: true }).fill("Make this easier to try");
+  await expect(button("Start development")).toBeEnabled();
+  await button("Close panel").click();
+  await page.locator(".selection-bar").getByRole("button", { name: "Wander", exact: true }).click();
+  await check("wander");
+  await button("Close panel").click();
+  await page.locator(".selection-bar").getByRole("button", { name: "Compare", exact: true }).click();
+  await check("compare", true);
+  await button("Close panel").click();
+  await button("Expedition panel").click();
+  await check("expedition");
+  await page.getByLabel("Direction (optional)", { exact: true }).fill("Explore a short trial");
+  await expect(button("Start expedition")).toBeDisabled();
+});

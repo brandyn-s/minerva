@@ -958,12 +958,6 @@ label {
   justify-content: center;
   width: max-content;
 }
-.selection-bar .wander-action {
-  background: var(--card);
-  color: var(--ink);
-  font-weight: 700;
-}
-.selection-bar .wander-action:hover:not(:disabled) { background: #e4d8bc; }
 .selection-bar .selection-close {
   position: absolute;
   top: 0;
@@ -1094,8 +1088,6 @@ label {
 .light-selection-dock .selection-count { padding: 10px 18px 10px 6px; border-right: 1px solid #b7a681; font-size: 14px; }
 .selection-bar.light-selection-dock button { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; border: 0; color: #273e35; padding: 10px 14px; font-size: 14px; }
 .selection-bar.light-selection-dock button:hover:not(:disabled) { background: #e8dfc9; }
-.selection-bar.light-selection-dock .wander-action { background: #273e35; color: #fbf7ec; border-radius: 9px; }
-.selection-bar.light-selection-dock .wander-action:hover:not(:disabled) { background: #355747; }
 .selection-bar.light-selection-dock .selection-close { position: static; flex-shrink: 0; width: 44px; height: 44px; margin-left: 3px; padding: 10px; border-left: 1px solid #b7a681; border-radius: 0; }
 .light-selection-dock svg { flex-shrink: 0; }
 @media (max-width: 600px) {
@@ -1586,3 +1578,21 @@ label {
 .revision-diff { white-space: pre-wrap; overflow-wrap: anywhere; }
 .revision-diff ins { background: #dce9dc; text-decoration: underline; }
 .revision-diff del { background: #f0ddd5; }
+
+/* One reading frame for Card, Wander, Develop, Expedition and Compare. */
+.detail-panel.unified-pane { --pane-width: 540px; width: min(var(--pane-width), calc(100vw - 40px)); top: 76px; right: 20px; bottom: 20px; max-height: none; padding: 12px 24px 0; display: flex; flex-direction: column; overflow: hidden; background: var(--card); border: 1px solid var(--line); border-radius: 6px; }
+.detail-panel.unified-pane[hidden] { display: none; }
+.detail-panel.unified-pane.compare-panel { --pane-width: 880px; }
+.unified-pane > .ui-panel-header, .unified-pane .card-pane-header { flex-shrink: 0; margin: 0; padding: 0; }
+.unified-pane .pane-body, .unified-pane .wander-content { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding: 16px 0 24px; }
+.unified-pane .pane-body h2, .unified-pane .pane-title, .unified-pane .wander-source h3, .unified-pane .card-pane-header > h2 { font: 28px/1.15 Georgia, serif; letter-spacing: -.04em; margin: 0 0 12px; overflow-wrap: anywhere; }
+.unified-pane .card-pane-header > h2 { margin-top: 16px; }
+.unified-pane .pane-body h3:not(.pane-title) { font: 21px/1.2 Georgia, serif; margin: 20px 0 8px; }
+.unified-pane .pane-body p { font: 17px/1.5 Georgia, serif; margin: 8px 0 16px; overflow-wrap: anywhere; }
+.unified-pane .pane-body .small-note, .unified-pane .pane-body label { font: 12px/1.5 ui-monospace, monospace; }
+.unified-pane .pane-body label { display: block; margin: 16px 0; }
+.unified-pane .pane-body input, .unified-pane .pane-body textarea, .unified-pane .pane-body select { width: 100%; box-sizing: border-box; }
+.unified-pane .pane-body section[aria-label="Suggested directions"] { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+.unified-pane .comparison-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 24px; margin: 20px 0; }
+.unified-pane .comparison-grid section { min-width: 0; border-top: 1px solid var(--line); }
+@media(max-width:600px) { .detail-panel.unified-pane { top: 68px; right: 12px; bottom: 12px; width: calc(100vw - 24px); padding: 8px 18px 0; z-index: 31; } .unified-pane .pane-body h2, .unified-pane .pane-title, .unified-pane .wander-source h3, .unified-pane .card-pane-header > h2 { font-size: 26px; } }
