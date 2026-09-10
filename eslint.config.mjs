@@ -7,7 +7,6 @@ export default defineConfig([
   ...nextTypeScript,
   globalIgnores([
     ".next/**",
-    "app/.well-known/workflow/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
