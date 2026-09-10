@@ -21,6 +21,7 @@ try {
  const dialog=page.getByRole('dialog',{name:'Minerva’s voice'});
  await dialog.getByRole('combobox',{name:'Voice',exact:true}).selectOption('cedar');
  await dialog.getByLabel('Response length').selectOption('Detailed');
+ await dialog.locator('.voice-conversation summary').click();
  await dialog.getByLabel('Custom instructions').fill('Challenge my assumptions with concrete examples.');
  await dialog.getByText('Listening & microphone', {exact:true}).click();
  await dialog.getByLabel('End-of-turn detection').selectOption('semantic-vad');
