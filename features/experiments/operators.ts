@@ -22,9 +22,15 @@ export function planOperation(raw: Operation): CallPlan {
   };
 }
 export async function executeOperation(op: Operation, provider: Provider, signal?: AbortSignal, onUsage?: (usage: Usage) => void | Promise<void>): Promise<OperationOutput> {
-  const result = outputSchema.parse(await provider.call(planOperation(op), outputSchema, signal, onUsage));
-  if (signal?.aborted) throw new Error("Operation cancelled");
   const expected = op.kind === "wander" ? op.count : 1;
+  const schema = outputSchema.extend({
+    cards: outputSchema.shape.cards.length(expected),
+    contributions: op.kind === "weave"
+      ? outputSchema.shape.contributions.length(op.sources.length)
+      : outputSchema.shape.contributions,
+  });
+  const result = outputSchema.parse(await provider.call(planOperation(op), schema, signal, onUsage));
+  if (signal?.aborted) throw new Error("Operation cancelled");
   if (result.cards.length !== expected) throw new Error("Wrong number of generated cards");
   if (op.kind === "weave" && result.contributions.length !== op.sources.length) throw new Error("Missing source contributions");
   return result;
