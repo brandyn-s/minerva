@@ -1,12 +1,18 @@
+import type { Operation, OperationReceipt } from "../experiments/contracts";
 export type CardRevision = {
   number: number; time: string; cause: string;
   title: string; summary: string; body: string;
+  contribution?: string; // Absent on legacy revisions: unknown, never inferred.
+  prepared?: boolean;
+  receipt?: OperationReceipt;
+  experiment?: { candidateId: string; operation: Operation };
   note?: string;
   branch?: { intent: string; step: number; runId: string };
 };
 export type DevelopmentIntent = { id: string; text: string };
 export type Thought = {
   id: string;
+  importedFromId?: string;
   revision: number;
   revisions: CardRevision[];
   title: string;

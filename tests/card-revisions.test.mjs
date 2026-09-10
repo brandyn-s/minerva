@@ -110,7 +110,7 @@ test("Merge retains different histories even when current content matches", asyn
   incoming.thoughts[0] = revertCard(reviseCard(incoming.thoughts[0], { ...cardEdit(incoming.thoughts[0]), body: "An earlier experiment" }), 1);
   incoming.intents = [{id:"intent",text:"Make this cheaper to pilot"}];
   const result = await mergeAtlas(current, incoming);
-  assert.equal(result.added, 1); assert.equal(result.save.thoughts.length, 7);
+  assert.equal(result.added, 0); assert.equal(result.updated, 1); assert.equal(result.save.thoughts.length, 6);
   assert.equal(result.save.thoughts.find(c => c.revision === 3).revisions[1].body, "An earlier experiment");
   assert.equal(result.save.intents[0].text, incoming.intents[0].text);
   assert.equal((await mergeAtlas(result.save, incoming)).added, 0);

@@ -4,5 +4,5 @@ export const developmentResultSchema = cardSchema.extend({ note: z.string().min(
 export const developmentRequestSchema = z.object({
   intent: z.string().trim().min(1).max(500), step: z.number().int().min(1).max(3),
   card: cardSchema.extend({ id: z.string(), revision: z.number().int().positive() }),
-  priorSteps: z.array(developmentResultSchema.extend({ step: z.number().int().min(1).max(3) })),
+  priorSteps: z.array(developmentResultSchema.extend({ id:z.string().optional(), revision:z.number().int().positive().optional(), step: z.number().int().min(1).max(3) })),
 });

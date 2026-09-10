@@ -1,4 +1,5 @@
 "use client";
+import { boundContext } from "./context";
 
 import { Button, Textarea } from "../../components/ui/controls";
 
@@ -35,7 +36,7 @@ export default function TalkPanel({ focusedId, open, close, cards, selectedIds, 
   async function send(retry = false) {
     if (running.current || voiceBusy || (!retry && (error || !draft.trim()))) return;
     const request = retry ? pending.current! : {
-      messages: [...messages, { role: "user" as const, content: draft.trim() }], cards, selectedIds,
+      messages: [...messages, { role: "user" as const, content: draft.trim() }], ...boundContext(cards,selectedIds,focusedId),
     };
     followReply.current = true;
     setShowLatest(false);

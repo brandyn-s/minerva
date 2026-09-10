@@ -1,0 +1,87 @@
+{
+  "decision": "approve",
+  "decision_scope": "Revision history, Revert, frozen edge source revisions, Develop with reusable intents, and the save version 3 migration at 6f14824 (PR #91), served at https://minerva.thalient.ai. One real two-step Develop was run; the intent reuse used a stubbed route.",
+  "blocking_findings": [],
+  "nonblocking_findings": [
+    {
+      "file": "docs/setup.md",
+      "lines": "63-84",
+      "summary": "Checkouts that built before the Workflow removal keep a generated app/.well-known/workflow directory that breaks next build with four module-not-found errors.",
+      "failure_scenario": "In a clone that ran the build at any commit before #86, npm run check at 6f14824 fails in the build step on 'workflow/api', 'workflow/runtime' and 'workflow/internal/private'; deleting app/.well-known fixes it. The directory is gitignored, so git status shows nothing. Add one line to setup.md, or have the build script remove it.",
+      "confidence": "confirmed"
+    },
+    {
+      "file": "features/atlas/card-revisions.ts",
+      "lines": "13-30",
+      "summary": "Editing only the contribution field creates a revision whose title, summary and body are unchanged, so History shows an entry with an empty diff.",
+      "failure_scenario": "Edit contribution alone and save: a new revision appears with no visible change, because contribution is not part of the revision record or the diff. Either include contribution in revisions or skip the revision when the three tracked fields are unchanged.",
+      "confidence": "likely"
+    },
+    {
+      "file": "features/atlas/local-state.ts",
+      "lines": "153",
+      "summary": "Merge deduplicates cards by a hash that now includes the full revision history, so the same card with any differing history counts as new.",
+      "failure_scenario": "Export, edit one card once, import with Merge: that card is added as a second copy rather than skipped, since its revisions differ. Defensible (histories are content), but it changes the batch 7 behavior where an edited duplicate was skipped. Note it in the Merge line or hash only current content.",
+      "confidence": "likely"
+    },
+    {
+      "file": "features/atlas/fixture.ts",
+      "lines": "1-2",
+      "summary": "Fixture cards' revision 1 carries a fixed epoch timestamp that renders as the prior evening in US zones.",
+      "failure_scenario": "History shows 'Revision 1 \u00b7 9/8/2026, 7:00:00 PM \u00b7 starting material' for every fixture card in Chicago time. Cosmetic; show 'prepared' instead of a time for fixture revisions.",
+      "confidence": "confirmed"
+    }
+  ],
+  "prior_findings": [
+    {
+      "id_or_summary": "Batch 8: empty undo/redo labels read 'Undo layout'",
+      "status": "unresolved",
+      "note": "Not in this task's scope; unchanged."
+    },
+    {
+      "id_or_summary": "Batch 8: empty theme headings under folds; recovery section only when copies exist",
+      "status": "unresolved",
+      "note": "Not in scope; unchanged."
+    },
+    {
+      "id_or_summary": "Batch 2: invalid bodies return 500 with Zod issues",
+      "status": "unresolved",
+      "note": "The new develop route follows the same pattern."
+    },
+    {
+      "id_or_summary": "Batch 4: anonymous /api/voice token minting",
+      "status": "unresolved",
+      "note": "Accepted exposure, unchanged."
+    }
+  ],
+  "verified_claims": [
+    "Scope against the branch base 60bf8e6: card-revisions, development schema and route, develop panel, card pane, local-state, domain, fixture, download, atlas wiring, CSS, a unit test file and the replay; no dependency changes; the frozen workspace, Postgres and Workflow code is gone from the tree; gitleaks clean.",
+    "Local: npm ci and npm run check pass at 6f14824 (lint, typecheck, 28 tests, build) after clearing the stale generated directory; mocked replay exit 0 against npm run dev and against next start; /workspaces returns 404 on the production build.",
+    "Hosted revisions: two edits produced revisions 2 and 3 with word diffs marking 'rhythm, with an evening' added and the removed fixture sentence; Revert to revision 1 appended revision 4 carrying revision 1's title; the badge read '3 revisions' before the revert and '4 revisions' after reload.",
+    "Hosted lineage: the repair draft's connections read 'derived from revision 1 of A food hall \u00b7 Parent has moved on' after the parent changed, while the unchanged tool-library edge showed no flag.",
+    "Hosted Develop (real): intent 'Make this cheaper to pilot', two steps, 17 s; card revised in place to 'A shared tool library \u2014 volunteer-run pledge pop-up'; two model notes labelled 'Model claim'; three revisions with causes 'branch step 1 of\u2026' and 'branch step 2 of\u2026'; card count unchanged at 6; the intent saved and offered as 'Reuse intent'.",
+    "Reuse (stubbed route): one revision on Independent retail shops with badge '2 revisions'.",
+    "Persistence: titles, badges and revisions survived a reload; export is version 3 with an intents array and per-card revisions; a version 2 file imported and every card carried one revision with cause 'imported current content'; no console errors."
+  ],
+  "unverified_claims": [
+    {
+      "claim": "Stop mid-Develop keeps completed revisions and rejects the late response.",
+      "what_would_check_it": "A slow stubbed route and a Stop press; the focused replay covers it and passed, I did not repeat it on the hosted URL."
+    },
+    {
+      "claim": "Markdown download includes the revision history.",
+      "what_would_check_it": "Open a card download; I checked the JSON export only."
+    }
+  ],
+  "weakest_points": [
+    "One real Develop run; the in-place revision behavior with real content is a single sample.",
+    "The contribution-only-edit and Merge-hash findings are read from code, not observed.",
+    "My first production build failed for an environment reason, so the production replay result comes from a second run after a manual cleanup."
+  ],
+  "instructions_for_builder": [
+    "Add a setup.md line, or a prebuild step, that removes a leftover app/.well-known/workflow directory in checkouts that built before PR #86.",
+    "Skip creating a revision when title, summary and body are unchanged, or include contribution in the revision record.",
+    "Decide whether Merge should dedupe on current content or full history, and say which in the Merge line.",
+    "Show 'prepared' instead of a timestamp on fixture revision 1."
+  ]
+}

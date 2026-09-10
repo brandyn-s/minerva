@@ -1,0 +1,112 @@
+{
+  "capturedAt": "2026-09-10T11:14:47.940569+00:00",
+  "repository": "https://github.com/brandyn-s/scorebook-api",
+  "archived": true,
+  "finalRevision": "ed2a81c71ee827dc09271b9d007edb5f20788b95",
+  "previousRevision": "b22a1dd65b0ca3d0d85498c09edf6d34f0e19be4",
+  "privateLocation": "/Users/brandyn.schult/research/private/scorebook-preservation",
+  "recovered": {
+    "indexedProjects": 1,
+    "branches": 14,
+    "operationRecords": 12,
+    "referencedSearchlightRuns": 3,
+    "nativeSchemaRoundtrip": "passed for project, complete export and three run results",
+    "nativeExportTests": "5 passed"
+  },
+  "gitRestore": "final bundle verified; isolated clone HEAD matched final revision; fsck passed",
+  "ownerDisposition": "User instructed investigate and either fix or discard and move on. Recovered accessible data; remaining unknown historical coverage explicitly accepted for archival, not deleted.",
+  "unknownCoverage": [
+    "Unindexed immutable snapshots",
+    "Orphaned or otherwise unreferenced Searchlight runs",
+    "Unsynced browser state",
+    "Local raw evaluation receipts"
+  ],
+  "services": {
+    "deployedHealth": "HTTP 200, live-gateway at b22a1dd before archival",
+    "projectReadAPI": "HTTP 200, one indexed project",
+    "retired": false,
+    "costs": "not established; no billing access inspected"
+  },
+  "files": [
+    {
+      "name": "scorebook-api-final.bundle",
+      "bytes": 51876141,
+      "sha256": "a5f59f10eb769f567c8d5769ea823d8e4b39c6df885086621cb8a90704cceafa"
+    },
+    {
+      "name": "final-refs.txt",
+      "bytes": 3620,
+      "sha256": "e965dc53413fa32b3aca7bb11161905386c57297095fe8625ced5aca93e509e0"
+    },
+    {
+      "name": "final-bundle-verify.log",
+      "bytes": 3820,
+      "sha256": "e6417f31560d0b94172a759bae688aa7a3f680e59724eca7fbf55741aa006649"
+    },
+    {
+      "name": "final-fsck.log",
+      "bytes": 399,
+      "sha256": "b59d31f93ccb5ae854c716a225e2db34cf6b9e67394303c1d1685508cf73c8ba"
+    },
+    {
+      "name": "repository-final.json",
+      "bytes": 5756,
+      "sha256": "4ee624d43d2d53c2e6d738d88cd2bf73a53671e51958b60dc753efce9d8835c5"
+    },
+    {
+      "name": "archive-export-tests.log",
+      "bytes": 562,
+      "sha256": "1aab43672404b9e0eabd391b82264291872845460114806162316786fae87695"
+    },
+    {
+      "name": "health-before-archive.json",
+      "bytes": 258,
+      "sha256": "b64f2526c342d46d1c6624f3ff47ab71cbab7912fb5c1f0180507e28ec944377"
+    },
+    {
+      "name": "recovered-2026-09-10/projects-index.json",
+      "bytes": 221,
+      "sha256": "fdcb585b868347333dcd508f516f1cb50b7edc2a98d3aa3691a94533581c35e6"
+    },
+    {
+      "name": "recovered-2026-09-10/validate-recovery.mjs",
+      "bytes": 1190,
+      "sha256": "6a3ebb81a623e3a5d1862a8227e7cccea168eb5f0b7bb15ad49ff5f098ef9a14"
+    },
+    {
+      "name": "recovered-2026-09-10/365481d3-6630-43d1-8427-c374f7fa20d3.searchlight.json",
+      "bytes": 208873,
+      "sha256": "54b7554a75308836308f9dc6f0a63d0f4a9ad70289455c477bf7d5b256c99050"
+    },
+    {
+      "name": "recovered-2026-09-10/2ef4b268-81b2-44f2-af22-bd7af6aca9bb.complete.json",
+      "bytes": 919387,
+      "sha256": "6586b5b06a038d08d0ebd314dbec5d8b2a8b4ce0b4422b2471a6df5a67dee064"
+    },
+    {
+      "name": "recovered-2026-09-10/81c84b20-93b3-4c24-a8f6-9039eeadef56.searchlight.json",
+      "bytes": 633268,
+      "sha256": "de5de1da1ddbc495d7ce53d5990c902531e591627c9a85d6ec9da2fd86e73385"
+    },
+    {
+      "name": "recovered-2026-09-10/validation.json",
+      "bytes": 239,
+      "sha256": "06e76b1910458f93124d8fb803789b019493c2632d04e2e10ae5dd03542a7536"
+    },
+    {
+      "name": "recovered-2026-09-10/2ef4b268-81b2-44f2-af22-bd7af6aca9bb.project.json",
+      "bytes": 637939,
+      "sha256": "9cd0ef6c9095b3c59fc3b50e4810a4d01608a777aee670d38eb74e102c9b2db8"
+    },
+    {
+      "name": "recovered-2026-09-10/a655e1ee-8f58-4bc7-b130-337eb8189b9b.searchlight.json",
+      "bytes": 345161,
+      "sha256": "b06edddac8f8848d069dea961fc069f46970c7056dbc2602289357df6f46854e"
+    },
+    {
+      "name": "recovered-2026-09-10/run-recovery-status.json",
+      "bytes": 15,
+      "sha256": "3f97f2b9c0c1def6dd2a0972643f79f9e31a0c2dbad18087842456f7164ababd"
+    }
+  ]
+}

@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const sourceSchema = z.object({
   id: z.string(),
+  revision: z.number().int().positive().optional(),
   title: z.string(),
   summary: z.string(),
   body: z.string(),
@@ -38,7 +39,9 @@ export const contextCardSchema = sourceSchema.extend({
 });
 export const talkRequestSchema = z.object({
   messages: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string() })).min(1),
-  cards: z.array(contextCardSchema),
+  cards: z.array(contextCardSchema).max(12),
+  focusedId: z.string().nullable().optional(),
+  contextCoverage: z.object({ totalCards:z.number(),includedCards:z.number(),omittedCards:z.number(),truncatedCardIds:z.array(z.string()) }).optional(),
   selectedIds: z.array(z.string()).default([]),
 });
 export type TalkRequest = z.infer<typeof talkRequestSchema>;
