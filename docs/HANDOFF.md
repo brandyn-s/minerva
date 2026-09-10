@@ -1,4 +1,13 @@
 # Root atlas: layout controls and graph navigation
+
+## Voice canvas continuity release
+Active voice survives card inspection hiding Talk; reopening retains voice controls and transcript.
+Explicit Talk close, Escape and End voice mode still end the session.
+Branch `fix/voice-canvas-continuity`; worktree `/Users/brandyn.schult/code/minerva-voice-canvas`.
+`npm run check` and focused mocked voice replay passed; artifacts `/tmp/minerva-voice-release`.
+Production startup: `npm run start -- --port 3299`; replay with `MINERVA_VOICE_ONLY=1`.
+Authorized next step: merge and deploy, verify hosted behavior, then owner review.
+
 Branch: `demo-layout-navigation`, from `origin/main` at `83844e4`, integrated through `16f39b7`.
 Worktree: `/Users/brandyn.schult/code/minerva-layout-navigation`.
 Scope ends after merge and deployment to https://minerva-eight.vercel.app/; one operator-started Fable review follows.
