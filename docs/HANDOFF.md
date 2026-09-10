@@ -40,3 +40,11 @@ and a scrolling body with an accessible fixed close control on mobile.
 Focused mocked desktop/mobile replay covers suggestions, failure/retry, hide/show,
 free exploration and chosen moves. Repository and desktop/touch UI checks pass.
 No paid calls. Owner authorized commit and merge after required CI.
+
+## Weave output contract
+Weave sends an exact one-card schema and one contribution per selected source
+to the provider. Wander uses its requested count; root and Develop require one.
+Final cardinality validation remains in place for malformed provider responses.
+Regression tests cover SDK schema conversion, valid outputs and rejection paths.
+Verification uses synthetic providers; no paid generation calls.
+Worktree: `/Users/brandyn.schult/code/minerva-weave-count`, branch `fix/weave-output-count`.
