@@ -28,7 +28,9 @@ try {
       await route.fulfill({ json: { card: { title: 'Combined idea', summary: 'A fixture combination.', body: 'Combines the two source ideas.' }, contributions: ['First contribution', 'Second contribution'] } });
     });
     await dock.getByRole('button', { name: 'Weave', exact: true }).click();
-    assert.ok(await dock.getByRole('button', { name: 'Weaving…', exact: true }).isDisabled());
+    await page.getByText('Weave is combining your cards…', { exact: true }).waitFor();
+    assert.deepEqual(await labels(), ['Focus both', 'Compare', 'Clear selection']);
+    assert.equal(await dock.locator('button:disabled').count(), 0);
     release();
     await page.waitForFunction(count => document.querySelectorAll('.thought').length === count + 1, beforeCount);
     assert.equal(await dock.locator('.selection-count').innerText(), '2 selected');
