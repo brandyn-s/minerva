@@ -8,14 +8,11 @@ An application under development for a single-user, browser-only
 ideas: visible inheritance, three views, contextual creative moves, Weave,
 Wander, Agent Drive, concurrent voice and usable outputs.
 
-**Implemented locally:** the M1 prepared atlas with pan/zoom, movable cards,
-source inspection, comparison selection and contextual previews. A text reference
-and denser scene support experience review. Changes reset on reload.
-**Still open:** persistence, generation, voice and the complete capabilities in
-[SPEC](./docs/product/SPEC.md). M1 review and owner acceptance are pending.
-Initialized from [minerva-template](https://github.com/brandyn-s/minerva-template)
-at `248665c116fb0655e2b70f732ca1b9bffb5b5dcb`. Package 1 establishes application
-identity and portable checks. See [the handoff](./docs/HANDOFF.md) for the next outcome.
+The root atlas provides the mall fixture, three perspectives, editable cards,
+relationships, layout controls, Wander, Weave, Expedition, typed and voice
+conversation, and downloads. Atlas data is saved per browser in IndexedDB.
+See [the capability record](./docs/product/CAPABILITIES.md) for verified scope
+and [the handoff](./docs/HANDOFF.md) for the current candidate.
 
 The application will ship with editable demo data for **What to do with a dead
 shopping mall**, demonstrating every tool alongside fully functional capabilities
@@ -30,12 +27,11 @@ npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run dev
 ```
 
 Open [localhost:3000](http://localhost:3000). Dev/start bind to loopback; the
-prepared atlas needs no cloud account, provider key or sign-in. Add database, model and
-voice configuration when implementing those capabilities.
+prepared atlas needs no cloud account, provider key or sign-in. Model and voice calls require the Gateway configuration in `.env.example`.
 
 The browser is the only client, not the only runtime. Keep the Next.js/TypeScript
-monolith, internal server endpoints, server-held credentials, Postgres, Vercel
-AI Gateway for text and voice models and durable Vercel Workflows. External
+monolith, model route handlers, server-held credentials and Vercel
+AI Gateway for text and voice models. External
 REST/MCP APIs and accounts are excluded. Local loopback is the development loop;
 the release target is a public Vercel deployment for a bounded demonstration
 window used by a small judge panel, still with no sign-in. See

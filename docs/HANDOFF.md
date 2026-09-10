@@ -1,55 +1,34 @@
-# Voice customization
+# Root atlas demo
 
-Branch: `feat/voice-customization`.
-Worktree: `/Users/brandyn.schult/code/minerva-remove-node-tooltips`.
+Branch: `cleanup/root-atlas-only`; worktree: `/Users/brandyn.schult/code/minerva-root-only`.
+Base: `3f2034f` from `origin/main`.
+The demo runs at `/` with per-browser IndexedDB storage and AI Gateway routes.
+No server persistence or durable execution engine is included.
 
-Voice now uses `openai/gpt-realtime-2.1` for both token issuance and client sessions.
-Voice settings live beside the microphone in Talk: ten voices, generated preview,
-tone, approach, length, pace, expertise, follow-up style, language, accent,
-custom instructions, server/semantic turn detection, silence/threshold/padding,
-transcription language/vocabulary, and browser microphone processing.
-Settings persist per browser when storage is available, reset to defaults, and
-apply to the next session. Active sessions lock settings and offer Stop voice.
-Preview needs no microphone and does not enter the conversation history.
-The model follows the current atlas rather than a hardcoded shopping-mall topic;
-live focus/selection updates and context boundaries are preserved.
+## Verification
+`npm run check` passed: lint, typecheck, 22 tests and production build.
+Build output lists only `/`, model API routes, the icon and the not-found page.
+`npm ls esbuild --all` is empty; no esbuild version below 0.25 is installed.
+Local production requests to `/workspaces` and `/internal/graph` return 404.
+The unchanged atlas replay fails at line 363 in both dev and production startup.
+Untouched base `3f2034f` reproduces the same failure; captured UI text is identical.
+Logs: `/tmp/minerva-root-check.log`, `/tmp/minerva-root-{dev,start,baseline}.log`.
+The release decision for the pre-existing replay failure is pending owner direction.
 
-Verification: `npm run check`; `scripts/verify-voice-settings.mjs` verifies settings,
-persistence, reset, mobile dialog, and preview configuration with a mock socket.
-`tests/voice-settings.test.mjs` covers parsing and session configuration.
-Live Realtime 2.1 audio remains unverified: Gateway rejects OIDC token minting;
-the existing dedicated voice key is configured only in Preview and Production.
-Next role: owner reviews voice behavior on the preview/merged deployment.
-Commit and merge authorized; live audio validation is still pending.
-Startup: `npm run dev -- --port 3198` (Node 24.20.0 / npm 12.0.2).
+## Operation
+Prefix npm/node with `npx --yes --package=node@24.20.0 --package=npm@12.0.2`.
+Dev: `npm run dev -- --port 3321`; production: `npm run build`, then
+`npm run start -- --port 3320`.
+Stable URL: https://minerva-eight.vercel.app/.
 
-Integrated main: the compact card inspector retains Content, Connections and
-History tabs, editing, session revision history, and draft preservation.
-Voice dismissal, transcript handling, and live focus updates remain intact.
+## Owner cleanup outside the repository
+- Neon database resource.
+- Vercel `DATABASE_URL` secret.
+- Vercel Workflow integration.
+These external resources are untouched.
 
-## Constellation clusters
-Branch: `fix/constellation-clusters`, based on `main` at `779e2b9`.
-Worktree: `/Users/brandyn.schult/code/minerva-constellation-release`.
-Compact theme shelves and readable zoom previews share the current Studio styling.
-Association edges join ideas; headings follow moved members. Regroup keeps untouched positions.
-Current folding, resizing, chain inspection and voice behavior are preserved.
-Verification: `npm run check` passed (25 tests, lint, types, build); browser fixture smoke passed.
-Theme responses were mocked for visual verification; no paid provider calls.
-Startup: use Node 24.20.0 / npm 12.0.2, then `npm run start -- --port 56020`.
-Next role: owner; no additional implementation or critic requested.
-
-## Voice settings layout
-Branch `fix/voice-settings-layout`, base `aeeae8f`; owner authorized commit and merge.
-Worktree: `/Users/brandyn.schult/code/minerva-constellation-release`.
-Shared instrument header, consistent controls, bounded scroll and persistent footer.
-Listening controls expand on demand; checkbox widths and textarea focus are isolated from Talk.
-Checks: 25 tests, lint, types, build; mocked settings replay at 390px and 1280px.
-Local production preview: `npm run start -- --port 56023` with Node 24/npm 12.
-Next role: owner reviews the UI; no live audio calls in this task.
-# Voice pane refinement
-Worktree: `/Users/brandyn.schult/code/minerva-voice-pane`; branch `improve/voice-settings-pane`.
-Four main preferences remain visible; conversation and microphone options expand on demand.
-Preview and Done stay in the footer. Reset is a quieter secondary action.
-`npm run check` passed. In-app browser verified desktop/mobile layouts, editing, reload persistence and reset.
-No live preview/provider call was made. Changes are uncommitted and not deployed.
-Local production preview: http://127.0.0.1:3310; start with `npm run start -- --port 3310`.
+## Next role
+One operator-started Fable 5.1 review of the exact released candidate, read-only
+for application source, using `docs/review/judge-fable-5-1.system.md`.
+Use a separate checkout, synthetic browser state and no paid provider calls.
+Stop after this cleanup release; no new feature work is authorized.
