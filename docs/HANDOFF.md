@@ -1,34 +1,24 @@
-# Root atlas demo
+# Shared UI integrated with the current root atlas
 
-Branch: `cleanup/root-atlas-only`; worktree: `/Users/brandyn.schult/code/minerva-root-only`.
-Base: `3f2034f` from `origin/main`.
-The demo runs at `/` with per-browser IndexedDB storage and AI Gateway routes.
-No server persistence or durable execution engine is included.
+Branch: `feat/ui-normalization`.
+Worktree: `/Users/brandyn.schult/code/minerva-expedition-theme`.
+Integrated main through `8255efa`; owner authorized commit and merge.
+
+Shared controls, icons, tooltips and headers live in `components/ui`.
+Guide and Menu share the perspective buttons' engraved framing and active states.
+Existing feature styles retain precedence over shared defaults.
+Main's compact Card pane, voice preferences, toolbar toggles and Layout selection
+ring are preserved. Removed workspace/Workflow/Postgres code stays removed.
 
 ## Verification
-`npm run check` passed: lint, typecheck, 22 tests and production build.
-Build output lists only `/`, model API routes, the icon and the not-found page.
-`npm ls esbuild --all` is empty; no esbuild version below 0.25 is installed.
-Local production requests to `/workspaces` and `/internal/graph` return 404.
-The atlas replay passes against both dev and production startup.
-Replay interactions use the current card pane, edit, export and layout controls.
-Preview requests to `/workspaces` and `/internal/graph` return 404.
-Logs: `/tmp/minerva-root-check.log`, `/tmp/minerva-root-{dev,start}.log`.
+Run `npm run check`, `npm run test:ui`, and `npm run test:browser`.
+UI tests cover gallery accessibility and actual desktop/touch panel journeys,
+including matching Guide/Menu styles and active states, reader accents and Talk.
+Provider requests in browser verification are mocked; no paid calls authorized.
+The gallery at `/dev/ui` is development-only.
 
 ## Operation
-Prefix npm/node with `npx --yes --package=node@24.20.0 --package=npm@12.0.2`.
-Dev: `npm run dev -- --port 3321`; production: `npm run build`, then
-`npm run start -- --port 3320`.
-Stable URL: https://minerva-eight.vercel.app/.
-
-## Owner cleanup outside the repository
-- Neon database resource.
-- Vercel `DATABASE_URL` secret.
-- Vercel Workflow integration.
-These external resources are untouched.
-
-## Next role
-One operator-started Fable 5.1 review of the exact released candidate, read-only
-for application source, using `docs/review/judge-fable-5-1.system.md`.
-Use a separate checkout, synthetic browser state and no paid provider calls.
-Stop after this cleanup release; no new feature work is authorized.
+Preview: http://127.0.0.1:3077/.
+Start: `npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run dev -- --port 3077`.
+See [UI ownership](./product/UI.md) for maintenance rules.
+Next role: owner inspects the merged UI.

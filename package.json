@@ -25,10 +25,10 @@
     "typecheck": "tsc --noEmit",
     "test": "node --test",
     "check": "npm run lint && npm run typecheck && npm test && npm run build",
-    "test:browser": "node scripts/verify-atlas.mjs"
+    "test:browser": "node scripts/verify-atlas.mjs",
+    "test:ui": "playwright test --config playwright.ui.config.ts"
   },
   "dependencies": {
-    "@phosphor-icons/react": "2.1.10",
     "@xyflow/react": "12.11.6",
     "ai": "7.0.94",
     "lucide-react": "1.43.0",
@@ -46,7 +46,9 @@
     "eslint": "9.39.5",
     "eslint-config-next": "16.3.4",
     "playwright": "1.63.0",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "@playwright/test": "1.63.0",
+    "@axe-core/playwright": "4.13.0"
   },
   "allowScripts": {
     "unrs-resolver@1.12.2": true

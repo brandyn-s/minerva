@@ -1,8 +1,9 @@
 "use client";
 
-import { ArrowUp, LoaderCircle } from "lucide-react";
-import TooltipButton from "./tooltip-button";
-import Image from "next/image";
+import { Button, Textarea } from "../../components/ui/controls";
+
+import { ArrowUp, ArrowDown, LoaderCircle } from "../../components/ui/icons";
+import PanelHeader from "../../components/ui/panel-header";
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import type { TalkRequest } from "./generation";
 import VoiceButton from "./voice-button";
@@ -90,18 +91,17 @@ export default function TalkPanel({ focusedId, open, close, cards, selectedIds, 
 
   return <aside id="minerva-talk" hidden={!open} className="detail-panel talk-panel" role="dialog" aria-label="Talk to Minerva"
     onKeyDown={(event) => { if (event.key === "Escape") { event.stopPropagation(); close(); } }}>
-    <div className="panel-heading talk-heading"><Image className="talk-cameo" src="/images/minerva-engraved-cameo.png" alt="Minerva" width={56} height={56} sizes="56px" />
-      <button aria-label="Close panel" onClick={close}>×</button></div>
+    <PanelHeader title="Talk to Minerva" image="/images/minerva-engraved-cameo.png" close={close} />
     <div ref={transcript} className="talk-transcript" role="log" aria-live="polite" onScroll={(event) => { const el = event.currentTarget; followReply.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40; setShowLatest(!followReply.current); }}>
       {messages.map((message, index) => <section key={index} className={`talk-message talk-message-${message.role}`}>
         <h3>{message.role === "user" ? "You" : "Minerva"}</h3><MessageContent text={message.content} />
       </section>)}
       {(reply || busy) && <section className="talk-message talk-message-assistant"><h3>Minerva</h3><MessageContent text={reply || "Thinking…"} /></section>}
     </div>
-    {showLatest && <button className="talk-latest" onClick={() => { followReply.current = true; setShowLatest(false); if (transcript.current) transcript.current.scrollTop = transcript.current.scrollHeight; }}>Latest message ↓</button>}
-    {error && <div><p role="alert">{error}</p><button disabled={busy} onClick={() => void send(true)}>Retry</button></div>}
+    {showLatest && <Button className="talk-latest" onClick={() => { followReply.current = true; setShowLatest(false); if (transcript.current) transcript.current.scrollTop = transcript.current.scrollHeight; }}>Latest message <ArrowDown /></Button>}
+    {error && <div><p role="alert">{error}</p><Button disabled={busy} onClick={() => void send(true)}>Retry</Button></div>}
     <form onSubmit={(event) => { event.preventDefault(); void send(); }}>
-      <div className="integrated-composer"><label className="composer-label">Message Minerva<textarea placeholder="Message Minerva…" disabled={voiceBusy} ref={input} rows={2} value={draft} onChange={(event) => setDraft(event.target.value)}
+      <div className="integrated-composer"><label className="composer-label">Message Minerva<Textarea placeholder="Message Minerva…" disabled={voiceBusy} ref={input} rows={2} value={draft} onChange={(event) => setDraft(event.target.value)}
         onKeyDown={(event) => {
           if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing && event.keyCode !== 229) {
             event.preventDefault();
@@ -112,7 +112,7 @@ export default function TalkPanel({ focusedId, open, close, cards, selectedIds, 
     {/* Canvas navigation may hide Talk without ending its active voice session. */}
     {(open || voiceBusy) && <VoiceButton focusedId={focusedId} cards={cards} selectedIds={selectedIds} messages={messages} onMessages={setMessages}
       onBusy={setVoiceBusy} disabled={busy || !!error} />}
-      <TooltipButton className="composer-icon composer-send" title="Send message" aria-label={busy ? "Replying…" : "Send"} disabled={busy || voiceBusy || !!error || !draft.trim()} type="submit">{busy ? <LoaderCircle className="composer-spinner" size={20} aria-hidden="true" /> : <ArrowUp size={22} aria-hidden="true" />}</TooltipButton>
+      <Button iconOnly className="composer-icon composer-send" title="Send message" aria-label={busy ? "Replying…" : "Send"} disabled={busy || voiceBusy || !!error || !draft.trim()} type="submit">{busy ? <LoaderCircle className="composer-spinner" aria-hidden="true" /> : <ArrowUp aria-hidden="true" />}</Button>
       </div></div>
     </form>
   </aside>;

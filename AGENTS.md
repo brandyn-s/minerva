@@ -122,6 +122,13 @@ role. Supply the applicable bounded launch instructions from
 [setup](./docs/setup.md#standard-checkpoint-output). A handoff neither grants new
 authority nor names work the next session may start on its own.
 
+## Shared UI
+
+Use `components/ui` for controls, functional icons, tooltips and panel headers.
+Follow [UI ownership](./docs/product/UI.md); feature CSS owns layout, not control
+appearance. Add reusable variants to the gallery and tests rather than local
+overrides. UI changes must pass `npm run test:ui` alongside the required checks.
+
 ## Run and contribute
 
 ```sh

@@ -1,6 +1,9 @@
 "use client";
 
-import { ArrowClockwise } from "@phosphor-icons/react";
+import { Button, Summary } from "../../components/ui/controls";
+
+import PanelHeader from "../../components/ui/panel-header";
+import { ArrowClockwise } from "../../components/ui/icons";
 import { useEffect, useRef, useState } from "react";
 import { validateThemes, type ThemeGroup } from "./themes";
 
@@ -42,16 +45,16 @@ export default function RegroupPanel({ cards, ids, close, apply, onGenerate }: {
     } finally { if (!request.signal.aborted) setBusy(false); }
   }
   return <section className="regroup-panel" aria-labelledby="regroup-title" onKeyDown={e => { if (e.key === "Escape") { e.stopPropagation(); dismiss(); } }}>
-    <header><h2 id="regroup-title" ref={heading} tabIndex={-1}>{ids.length === cards.length ? "Regroup all ideas" : "Regroup selected ideas"}</h2><button aria-label="Close regroup preview" onClick={() => dismiss()}>Close</button></header>
+    <PanelHeader title={ids.length === cards.length ? "Regroup all ideas" : "Regroup selected ideas"} titleId="regroup-title" headingRef={heading} closeLabel="Close regroup preview" close={() => dismiss()} />
     <p>{ids.length} of {cards.length} ideas</p>
     <div className="regroup-content">
-      {groups ? <><h3>Proposed themes for {ids.length} ideas</h3><ul>{groups.map(g => <li key={g.name}><div><strong>{g.name}</strong><p>{g.reason}</p><details><summary>Review ideas</summary><ul>{g.memberIds.map(id => <li key={id}>{cards.find(c => c.id === id)?.title}</li>)}</ul></details></div><span aria-label={`${g.memberIds.length} ideas`}>{g.memberIds.length}</span></li>)}</ul></>
-        : <><h3>Find fresh connections</h3><p>Preview new themes for this selection before changing your constellation.</p><details><summary>Review {ids.length} selected ideas</summary><ul>{source.map(c => <li key={c.id}>{c.title}</li>)}</ul></details></>}
-      {busy && <p role="status" className="regroup-loading"><ArrowClockwise size={18} className="composer-spinner" aria-hidden="true" />Finding themes for {ids.length} ideas…</p>}
+      {groups ? <><h3>Proposed themes for {ids.length} ideas</h3><ul>{groups.map(g => <li key={g.name}><div><strong>{g.name}</strong><p>{g.reason}</p><details><Summary>Review ideas</Summary><ul>{g.memberIds.map(id => <li key={id}>{cards.find(c => c.id === id)?.title}</li>)}</ul></details></div><span aria-label={`${g.memberIds.length} ideas`}>{g.memberIds.length}</span></li>)}</ul></>
+        : <><h3>Find fresh connections</h3><p>Preview new themes for this selection before changing your constellation.</p><details><Summary>Review {ids.length} selected ideas</Summary><ul>{source.map(c => <li key={c.id}>{c.title}</li>)}</ul></details></>}
+      {busy && <p role="status" className="regroup-loading"><ArrowClockwise className="composer-spinner" aria-hidden="true" />Finding themes for {ids.length} ideas…</p>}
       {error && <p role="alert">{error}</p>}
       {stale && <p role="alert">These ideas changed. Close this preview and regroup the updated selection.</p>}
     </div>
     <p className="regroup-note">{ids.length < cards.length ? `${cards.length - ids.length} other ideas stay in their current themes. ` : ""}Your current grouping stays until you choose Apply.</p>
-    <footer><button onClick={() => dismiss()}>Cancel</button>{groups ? <button className="primary" disabled={stale} onClick={() => dismiss(() => apply(groups))}>Apply to {ids.length} ideas</button> : <button className="primary regroup-preview" aria-busy={busy} disabled={busy || stale} onClick={() => void preview()}>{busy && <ArrowClockwise size={18} className="composer-spinner" aria-hidden="true" />}{busy ? "Preparing preview…" : error ? "Retry" : "Preview themes"}</button>}</footer>
+    <footer><Button onClick={() => dismiss()}>Cancel</Button>{groups ? <Button variant="primary" className="primary" disabled={stale} onClick={() => dismiss(() => apply(groups))}>Apply to {ids.length} ideas</Button> : <Button variant="primary" className="primary regroup-preview" aria-busy={busy} disabled={busy || stale} onClick={() => void preview()}>{busy && <ArrowClockwise className="composer-spinner" aria-hidden="true" />}{busy ? "Preparing preview…" : error ? "Retry" : "Preview themes"}</Button>}</footer>
   </section>;
 }

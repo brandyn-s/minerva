@@ -1,7 +1,9 @@
 "use client";
 
+import { Button } from "../../components/ui/controls";
+
 import { useEffect, useId, useState } from "react";
-import { ArrowRight, LoaderCircle } from "lucide-react";
+import { ArrowRight, LoaderCircle } from "../../components/ui/icons";
 import { movesSchema, type ContextualMove, type TalkRequest } from "./generation";
 
 export default function MovesPanel({ source, prepared, busy, error, choose, explore, retryGeneration }: {
@@ -38,28 +40,28 @@ export default function MovesPanel({ source, prepared, busy, error, choose, expl
     <section className="wander-primary" aria-labelledby={`${suggestionsId}-title`}>
       <h2 id={`${suggestionsId}-title`}>See where this could lead</h2>
       <p>Generate several new directions from this idea.</p>
-      <button className="wander-explore" disabled={busy} onClick={explore}>Explore freely <ArrowRight size={20} aria-hidden="true" /></button>
+      <Button variant="primary" className="wander-explore" disabled={busy} onClick={explore}>Explore freely <ArrowRight aria-hidden="true" /></Button>
     </section>
     <section className="wander-suggestions" aria-labelledby={`${suggestionsId}-heading`}>
       <h3 id={`${suggestionsId}-heading`}>Or choose a suggested move</h3>
       <div id={suggestionsId} hidden={!showSuggestions}>
         <p>{loading ? "We’re finding a few thoughtful next steps related to this idea." : "Choose a next step to explore this idea further."}</p>
         {loading && <>
-          <p className="wander-loading" role="status"><LoaderCircle size={22} aria-hidden="true" /> Finding tailored next steps…</p>
+          <p className="wander-loading" role="status"><LoaderCircle aria-hidden="true" /> Finding tailored next steps…</p>
           <div className="wander-skeletons" aria-hidden="true">{[0, 1].map(index => <div className="wander-skeleton" key={index}><span /><div><span /><span /></div></div>)}</div>
           <p className="wander-hint">You can explore freely while suggestions load.</p>
         </>}
         {failure && <><p role="alert">{failure}</p>
-          <button disabled={busy} onClick={() => { setFailure(""); setLoading(true); setAttempt(n => n + 1); }}>Retry</button>
+          <Button disabled={busy} onClick={() => { setFailure(""); setLoading(true); setAttempt(n => n + 1); }}>Retry</Button>
           <p className="small-note">Prepared move available while live suggestions are unavailable.</p></>}
         {!loading && (failure ? [prepared] : moves).map((move, index) => <section className="wander-move" key={index}>
           <h4>{move.title}</h4><p>{move.question}</p><p className="wander-hint">{move.preview}</p>
-          <button className="move-choice" disabled={busy} onClick={() => choose(move)}>Try {move.title} <ArrowRight size={16} aria-hidden="true" /></button>
+          <Button variant="primary" className="move-choice" disabled={busy} onClick={() => choose(move)}>Try {move.title} <ArrowRight aria-hidden="true" /></Button>
         </section>)}
       </div>
-      <button className="wander-toggle" aria-expanded={showSuggestions} aria-controls={suggestionsId} onClick={() => setShowSuggestions(show => !show)}>{showSuggestions ? "Hide suggestions" : "Show suggestions"}</button>
+      <Button variant="quiet" className="wander-toggle" aria-expanded={showSuggestions} aria-controls={suggestionsId} onClick={() => setShowSuggestions(show => !show)}>{showSuggestions ? "Hide suggestions" : "Show suggestions"}</Button>
     </section>
-    {busy && <p className="wander-loading" role="status"><LoaderCircle size={22} aria-hidden="true" /> Developing new directions…</p>}
-    {error && <><p role="alert">{error}</p><button disabled={busy} onClick={retryGeneration}>Retry card</button></>}
+    {busy && <p className="wander-loading" role="status"><LoaderCircle aria-hidden="true" /> Developing new directions…</p>}
+    {error && <><p role="alert">{error}</p><Button disabled={busy} onClick={retryGeneration}>Retry card</Button></>}
   </div>;
 }

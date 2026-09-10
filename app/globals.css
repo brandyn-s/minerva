@@ -1,47 +1,8 @@
-:root {
-  color-scheme: light;
-  --paper: #e9dfc7;
-  --card: #f1e9d6;
-  --ink: #273a35;
-  --muted: #645f51;
-  --teal: #273f32;
-  --bronze: #8d6d40;
-  --line: #c7bca2;
-  color: var(--ink);
-  background: var(--paper);
-  font-family: Georgia, "Times New Roman", serif;
-}
 * {
   box-sizing: border-box;
 }
 body {
   margin: 0;
-}
-button,
-input,
-textarea {
-  font: inherit;
-  color: inherit;
-}
-button {
-  min-height: 44px;
-  border: 1px solid var(--line);
-  background: var(--card);
-  cursor: pointer;
-  padding: 8px 12px;
-  border-radius: 3px;
-  font:
-    12px/1.4 ui-monospace,
-    SFMono-Regular,
-    monospace;
-}
-button:hover {
-  background: #e4d8bc;
-  border-color: var(--bronze);
-}
-button[aria-pressed="true"] {
-  background: var(--teal);
-  color: var(--card);
 }
 :focus-visible {
   outline: 3px solid var(--teal);
@@ -459,23 +420,6 @@ label {
     monospace;
   margin: 12px 0;
 }
-input,
-textarea {
-  display: block;
-  width: 100%;
-  background: #fcf7ec;
-  border: 1px solid var(--line);
-  border-radius: 3px;
-  padding: 12px;
-  font:
-    16px/1.4 Georgia,
-    serif;
-  margin-top: 5px;
-}
-summary {
-  cursor: pointer;
-  padding: 12px 0;
-}
 .reference-list section {
   padding: 20px 0;
   border-bottom: 1px solid var(--line);
@@ -799,24 +743,6 @@ summary {
 @media(max-width:600px) { .talk-panel { width: calc(100vw - 20px); bottom: 10px; } }
 
 .perspective-switch { display: flex; gap: 8px; flex-wrap: wrap; }
-.perspective-switch button {
-  position: relative;
-  min-height: 44px;
-  padding: 10px 18px;
-  border: 1px solid #aa9168;
-  border-radius: 6px;
-  background: #faf6ea;
-  color: #273f32;
-  font: 13px/1.5 ui-monospace, monospace;
-  box-shadow: inset 0 0 0 3px #faf6ea, inset 0 0 0 4px #d5c39e, 0 2px 3px #273a3515;
-}
-.perspective-switch button:hover { background: #f1e9d6; }
-.perspective-switch button[aria-pressed="true"] {
-  background: var(--teal);
-  color: #f1e9d6;
-  border-color: #8d6d40;
-  box-shadow: inset 0 0 0 2px #273f32, inset 0 0 0 3px #b59a66, 0 2px 4px #273a3529;
-}
 .theme-heading { width: 440px; color: #28686a; background: #f7f4ec; padding: 16px; border-bottom: 2px solid #28686a; }
 .theme-heading h2 { margin: 0; }
 .themes-status { position: absolute; right: 16px; top: 16px; z-index: 5; max-width: 340px; background: #f7f4ec; padding: 12px; border: 1px solid #ccc5b5; }
@@ -987,12 +913,10 @@ summary {
 .scalable-atlas .react-flow__resize-control.handle:not(.bottom.right) { display: none; }
 /* Atlas file actions stay in the header, leaving the canvas unobstructed. */
 .atlas-menu { margin-left: auto; position: relative; flex-shrink: 0; z-index: 30; }
-.atlas-menu summary { display: flex; align-items: center; justify-content: center; gap: 10px; list-style: none; cursor: pointer; min-height: 44px; padding: 10px 16px; border: 1px solid #aa9168; border-radius: 6px; background: #faf6ea; font: 13px/1.5 ui-monospace, monospace; }
+.atlas-menu summary { display: flex; align-items: center; justify-content: center; gap: 10px; list-style: none; cursor: pointer; }
 .atlas-menu summary::-webkit-details-marker { display: none; }
 .atlas-header-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0; }
 .atlas-header-actions .atlas-menu { margin-left: 0; }
-.guide-launcher { min-height: 44px; padding: 10px 16px; border: 1px solid #aa9168; border-radius: 6px; background: #faf6ea; font: 13px/1.5 ui-monospace, monospace; }
-.guide-launcher[aria-expanded="true"] { background: var(--teal); color: var(--card); }
 .detail-panel.guide-panel { width: min(680px, calc(100vw - 40px)); bottom: 20px; padding: 20px 30px 30px; }
 .guide-panel .panel-heading { margin-bottom: 12px; }
 .guide-content h2 { font-size: clamp(26px, 3vw, 36px); line-height: 1.15; margin: 10px 0 16px; font-weight: 400; max-width: 18ch; }
@@ -1013,7 +937,6 @@ summary {
 .guide-content kbd { font: 12px/1.5 ui-monospace, monospace; border: 1px solid var(--line); border-radius: 3px; padding: 2px 5px; white-space: nowrap; }
 @media (max-width: 700px) {
   .atlas-header-actions { gap: 6px; }
-  .guide-launcher, .atlas-header-actions .atlas-menu summary { padding: 10px 12px; }
   .detail-panel.guide-panel { top: 160px; right: 10px; bottom: 10px; width: calc(100vw - 20px); padding: 16px 20px 24px; }
   .guide-panel .panel-heading { top: -16px; }
 }
@@ -1023,7 +946,6 @@ summary {
   .detail-panel.guide-panel { top: 142px; }
 }
 .atlas-menu[open] summary svg { transform: rotate(180deg); }
-.atlas-menu[open] summary { background: var(--teal); color: var(--card); }
 .atlas-menu-options { position: absolute; right: 0; top: calc(100% + 8px); width: 280px; max-width: calc(100vw - 20px); max-height: calc(100dvh - 100px); overflow: auto; padding: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 8px 24px #273a3526; }
 .atlas-menu-options > button { display: block; width: 100%; text-align: left; border: 0; }
 .atlas-menu-options input[hidden] { display: none; }
@@ -1033,7 +955,6 @@ summary {
 @media (max-width: 600px) {
   .scalable-atlas .masthead { height: auto; }
   .perspective-switch { flex-wrap: nowrap; gap: 6px; }
-  .perspective-switch button { padding: 10px 12px; font-size: 12px; }
 }
 
 /* Wander owns exploration; dismissal sits outside the action row. */
@@ -1332,23 +1253,6 @@ summary {
 .regroup-loading svg, .regroup-preview svg { flex-shrink: 0; }
 
 /* Expedition is the shared field-guide template for atlas instruments. */
-:root {
-  --guide-paper: #f5eddb;
-  --guide-input: #fbf7ec;
-  --guide-border: #aaa084;
-  --guide-line: #c9bea3;
-  --guide-accent: #417975;
-  --guide-selected: #273e35;
-  --guide-radius: 9px;
-  --guide-space: 14px;
-  --guide-font-content: Georgia, "Times New Roman", serif;
-  --guide-font-label: ui-monospace, SFMono-Regular, monospace;
-  --guide-type-title: 400 20px/1.25 var(--guide-font-content);
-  --guide-type-body: 400 15px/1.45 var(--guide-font-content);
-  --guide-type-control: 400 16px/1.35 var(--guide-font-content);
-  --guide-type-label: 400 12px/1.4 var(--guide-font-label);
-  --guide-type-note: 400 11px/1.4 var(--guide-font-label);
-}
 .field-guide {
   background: var(--guide-paper);
   border-color: var(--guide-border);

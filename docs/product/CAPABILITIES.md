@@ -185,3 +185,12 @@ provides keyboard zoom or Fit. The seed and legend are clearer, and the requeste
 status and overview annotations are removed. Browser coverage checks visible
 endpoint attachment, grouping across zoom, mouse/keyboard and simulated touch.
 This is fixture-based evidence, not live service evidence or a new owner acceptance.
+
+## Shared compact controls
+
+Local UI normalization uses `components/ui` for feature controls, icons, tooltips
+and headers. See [UI ownership](./UI.md). Repository checks and four desktop/touch
+UI tests pass, including gallery axe, keyboard/form behavior and atlas journeys.
+Focused mocked voice replay passes after preserving Escape propagation through
+tooltips. The full replay stops at its older export expectation for `## Decision`,
+which the unchanged exporter omits. No live-provider or deployment claim.

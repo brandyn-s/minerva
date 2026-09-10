@@ -38,3 +38,9 @@ jobs:
 
       - name: Check source
         run: npm run check
+
+      - name: Install UI test browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify UI contracts and accessibility
+        run: npm run test:ui

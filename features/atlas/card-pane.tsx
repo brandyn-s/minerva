@@ -1,5 +1,7 @@
 "use client";
 
+import { Button, Summary, Input, Textarea } from "../../components/ui/controls";
+
 import { useEffect, useRef, useState } from "react";
 import {
   CornersOut,
@@ -12,7 +14,7 @@ import {
   ArrowLeft,
   Circle,
   CircleDashed,
-} from "@phosphor-icons/react";
+} from "../../components/ui/icons";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Thought, Relationship } from "./domain";
@@ -99,10 +101,10 @@ export default function CardPane(props: Props) {
     const otherId = edge.from === card.id ? edge.to : edge.from;
     return (
       <div className="card-pane-relation" key={edge.id}>
-        <button onClick={() => props.inspect(otherId)}>
+        <Button onClick={() => props.inspect(otherId)}>
           {byId.get(otherId)?.title ?? otherId}
-          <CaretRight size={16} aria-hidden="true" />
-        </button>
+          <CaretRight aria-hidden="true" />
+        </Button>
         <p>
           {edge.label}
           {edge.kind === "derivation" || edge.kind === "recombination"
@@ -112,7 +114,7 @@ export default function CardPane(props: Props) {
         {edge.contribution && <blockquote>{edge.contribution}</blockquote>}
         {(edge.kind === "derivation" || edge.kind === "recombination") && (
           <details>
-            <summary>Source excerpt</summary>
+            <Summary>Source excerpt</Summary>
             <p>
               {(
                 revisions.find(
@@ -158,16 +160,16 @@ export default function CardPane(props: Props) {
         <div className="card-pane-top">
           <span className="instrument-label">Card</span>
           <div>
-            <button
+            <Button
               className="card-pane-focus"
               onClick={() => props.focus(card.id)}
             >
-              <CornersOut size={19} aria-hidden="true" />
+              <CornersOut aria-hidden="true" />
               Focus on canvas
-            </button>
-            <button aria-label="Close panel" onClick={props.close}>
-              <X size={22} aria-hidden="true" />
-            </button>
+            </Button>
+            <Button aria-label="Close panel" onClick={props.close}>
+              <X aria-hidden="true" />
+            </Button>
           </div>
         </div>
         <h2>{card.title}</h2>
@@ -182,7 +184,7 @@ export default function CardPane(props: Props) {
           className="card-pane-tabs"
         >
           {tabs.map((name, index) => (
-            <button
+            <Button
               key={name}
               id={`card-tab-${name}`}
               role="tab"
@@ -217,7 +219,7 @@ export default function CardPane(props: Props) {
             >
               {name}
               {name === "Connections" && <span>{connectionCount}</span>}
-            </button>
+            </Button>
           ))}
         </div>
       </header>
@@ -254,7 +256,7 @@ export default function CardPane(props: Props) {
                 <label key={key}>
                   {label}
                   {key === "title" ? (
-                    <input
+                    <Input
                       ref={titleInput}
                       required
                       value={draft[key]}
@@ -263,7 +265,7 @@ export default function CardPane(props: Props) {
                       }
                     />
                   ) : (
-                    <textarea
+                    <Textarea
                       rows={key === "body" ? 6 : 3}
                       value={draft[key]}
                       onChange={(event) =>
@@ -288,7 +290,7 @@ export default function CardPane(props: Props) {
               <p>{card.contribution}</p>
               {card.generation && (
                 <details>
-                  <summary>Generation context and mechanism</summary>
+                  <Summary>Generation context and mechanism</Summary>
                   <p>{card.generation.mechanism}</p>
                   <p>
                     Prerequisites: {card.generation.prerequisites.join("; ")}
@@ -306,7 +308,7 @@ export default function CardPane(props: Props) {
               )}
               {card.assessment && (
                 <details>
-                  <summary>Assessment of this revision</summary>
+                  <Summary>Assessment of this revision</Summary>
                   <p>{card.assessment.goalFidelity}</p>
                   <p>{card.assessment.constraints}</p>
                   <p>{card.assessment.causalDependencies}</p>
@@ -318,7 +320,7 @@ export default function CardPane(props: Props) {
               )}
               {card.provenance && (
                 <details>
-                  <summary>Provenance</summary>
+                  <Summary>Provenance</Summary>
                   <p>
                     {card.provenance.feature} · {card.provenance.tag}
                   </p>
@@ -338,17 +340,16 @@ export default function CardPane(props: Props) {
             <div className="card-pane-section-heading">
               <h3>Follow the thread</h3>
               {props.descendantCount > 0 && (
-                <button onClick={props.showBranch}>
-                  <GitBranch size={16} aria-hidden="true" />
+                <Button onClick={props.showBranch}>
+                  <GitBranch aria-hidden="true" />
                   Show branch
-                </button>
+                </Button>
               )}
             </div>
             <div className="card-pane-lineage">
               <section>
                 <CircleDashed
                   className="card-pane-node"
-                  size={16}
                   aria-hidden="true"
                 />
                 <span className="instrument-label">
@@ -363,8 +364,6 @@ export default function CardPane(props: Props) {
               <section>
                 <Circle
                   className="card-pane-node"
-                  size={16}
-                  weight="fill"
                   aria-hidden="true"
                 />
                 <span className="instrument-label">Current idea</span>
@@ -373,7 +372,6 @@ export default function CardPane(props: Props) {
               <section>
                 <GitBranch
                   className="card-pane-node"
-                  size={16}
                   aria-hidden="true"
                 />
                 <span className="instrument-label">
@@ -387,11 +385,11 @@ export default function CardPane(props: Props) {
               </section>
             </div>
             {props.descendantCount > 0 && (
-              <button className="card-pane-fold" onClick={props.toggleFold}>
+              <Button className="card-pane-fold" onClick={props.toggleFold}>
                 {props.folded
                   ? "Show descendants on canvas"
                   : "Hide descendants on canvas"}
-              </button>
+              </Button>
             )}
             <h3>Related ideas</h3>
             <p className="small-note">
@@ -418,10 +416,10 @@ export default function CardPane(props: Props) {
             </p>
             {review ? (
               <>
-                <button onClick={() => setReview(undefined)}>
-                  <ArrowLeft size={16} aria-hidden="true" />
+                <Button onClick={() => setReview(undefined)}>
+                  <ArrowLeft aria-hidden="true" />
                   All versions
-                </button>
+                </Button>
                 <h3>
                   Revision {review.revision} · {review.title}
                 </h3>
@@ -433,13 +431,13 @@ export default function CardPane(props: Props) {
                 </div>
                 <h3>Contribution</h3>
                 <p>{review.contribution}</p>
-                <button
+                <Button
                   onClick={() =>
                     save({ ...cardEdit(review), revision: card.revision })
                   }
                 >
                   Restore this version
-                </button>
+                </Button>
               </>
             ) : (
               <>
@@ -455,10 +453,10 @@ export default function CardPane(props: Props) {
                         <p>{item.title}</p>
                       </div>
                       {index > 0 && (
-                        <button onClick={() => setReview(item)}>
+                        <Button onClick={() => setReview(item)}>
                           Review
-                          <CaretRight size={16} aria-hidden="true" />
-                        </button>
+                          <CaretRight aria-hidden="true" />
+                        </Button>
                       )}
                     </div>
                   ))}
@@ -469,11 +467,11 @@ export default function CardPane(props: Props) {
       </div>
       <footer className="card-pane-footer">
         {!draft && (
-          <button
+          <Button
             className="card-pane-relationship-summary"
             onClick={() => setTab("Connections")}
           >
-            <GitBranch size={19} aria-hidden="true" />
+            <GitBranch aria-hidden="true" />
             <span>
               {parents.length
                 ? `${parents.length} parent${parents.length === 1 ? "" : "s"}`
@@ -481,8 +479,8 @@ export default function CardPane(props: Props) {
               · {props.descendantCount} descendant
               {props.descendantCount === 1 ? "" : "s"}
             </span>
-            <CaretRight size={16} aria-hidden="true" />
-          </button>
+            <CaretRight aria-hidden="true" />
+          </Button>
         )}
         <div className="card-pane-actions">
           {draft ? (
@@ -490,48 +488,48 @@ export default function CardPane(props: Props) {
               <span className="small-note">
                 {dirty ? "Unsaved edits" : "No changes yet"}
               </span>
-              <button
+              <Button
                 onClick={() => {
                   setDraft(undefined);
                   setError("");
                 }}
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 className="card-pane-primary"
                 type="submit"
                 form="card-edit-form"
                 disabled={!dirty || !draft.title.trim()}
               >
                 Save changes
-              </button>
+              </Button>
             </>
           ) : (
             <>
-              <button className="card-pane-primary" onClick={props.explore}>
-                <Compass size={21} aria-hidden="true" />
+              <Button className="card-pane-primary" onClick={props.explore}>
+                <Compass aria-hidden="true" />
                 Explore this idea
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => {
                   setDraft(cardEdit(card));
                   setTab("Content");
                   setMenu(false);
                 }}
               >
-                <PencilSimple size={19} aria-hidden="true" />
+                <PencilSimple aria-hidden="true" />
                 Edit
-              </button>
+              </Button>
               <div className="card-pane-more">
-                <button
+                <Button
                   ref={more}
                   aria-label="More card actions"
                   aria-expanded={menu}
                   onClick={() => setMenu(!menu)}
                 >
-                  <DotsThree size={24} aria-hidden="true" />
-                </button>
+                  <DotsThree aria-hidden="true" />
+                </Button>
                 {menu && (
                   <div ref={menuRef}>
                     <DownloadButton
@@ -539,14 +537,14 @@ export default function CardPane(props: Props) {
                       cards={cards}
                       relationships={relationships}
                     />
-                    <button
+                    <Button
                       onClick={() => {
                         setTab("History");
                         setMenu(false);
                       }}
                     >
                       View history
-                    </button>
+                    </Button>
                   </div>
                 )}
               </div>

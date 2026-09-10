@@ -37,9 +37,10 @@ optional, not a first-release obligation.
 
 Expedition is the visual template for atlas instruments. Layout, Read as text,
 and Browse thoughts share its warm paper surface, fine borders, rounded frame,
-medallion header, uppercase monospaced instrument name and 44px close control.
-Use `FieldGuideHeading` and the `field-guide` class rather than separate header
-styles. Shared `--guide-*` tokens in `app/globals.css` own the palette and spacing.
+medallion header, uppercase monospaced instrument name and shared close control (36px desktop, 44px touch).
+Use `PanelHeader` from `components/ui` rather than separate header styles.
+Shared tokens in `components/ui/tokens.css` own the palette and spacing.
+[UI ownership and verification](./UI.md) defines components and enforcement.
 
 The shared type roles are 20px serif titles, 15px serif body text, 16px serif
 inputs and actions, 12px mono labels, and 11px mono notes/instrument names.

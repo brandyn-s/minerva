@@ -1178,6 +1178,8 @@ try {
   await page.setViewportSize({ width: 1280, height: 600 });
   await fit();
   const targets = page.locator(".overview-target");
+  // Fit can retain full cards when compact geometry fits the viewport.
+  for (let step = 0; step < 4 && !await targets.count(); step++) { await cameraKey("-"); await settle(); }
   assert.ok((await targets.count()) > 0);
   for (const target of await targets.all()) {
     const b = await target.boundingBox();
@@ -1857,9 +1859,9 @@ try {
   assert.equal(await rendered.locator('a[href^="javascript:"]').count(), 0);
   assert.equal(await markdownPage.evaluate(() => window.markdownUnsafe), undefined);
   await markdownPage.locator(".talk-transcript").evaluate(el => { el.scrollTop = 0; });
-  await markdownPage.getByRole("button", { name: "Latest message ↓" }).waitFor();
+  await markdownPage.getByRole("button", { name: "Latest message" }).waitFor();
   await markdownPage.screenshot({ path: `${artifacts}/talk-markdown.png` });
-  await markdownPage.getByRole("button", { name: "Latest message ↓" }).click();
+  await markdownPage.getByRole("button", { name: "Latest message" }).click();
   await markdownPage.setViewportSize({ width: 390, height: 844 });
   await markdownPage.locator(".talk-transcript").evaluate(el => { el.scrollTop = 0; });
   assert.equal(await markdownPage.locator(".talk-panel").evaluate(el => el.scrollWidth <= el.clientWidth), true, "Markdown keeps the narrow panel within its width");
