@@ -44,6 +44,7 @@ import TalkPanel from "./talk-panel";
 import RegroupPanel from "./regroup-panel";
 import { applyRegroup } from "./regroup-layout";
 import DownloadButton from "./download-button";
+import FieldGuideHeading from "./field-guide-heading";
 import ThoughtCatalogue from "./thought-catalogue";
 import MovesPanel from "./moves-panel";
 import ExpeditionPanel from "./expedition-panel";
@@ -1227,8 +1228,8 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           </TooltipButton>
           {!session && <TooltipButton className="expedition-control" aria-label="Expedition panel" title="Open expedition panel" aria-haspopup="dialog" aria-expanded={panel === "expedition"} onClick={() => open("expedition")}><Image src="/images/expedition-compass.png" width={44} height={44} alt="" /></TooltipButton>}
 
-          {!session && <details className="layout-menu layout-icon-menu"><TooltipButton as="summary" aria-label="Layout" title="Arrange layout"><Image src="/images/layout-medallion.png" width={48} height={48} alt="" /></TooltipButton>
-            <div className="layout-popover"><h3>Layout</h3><p>Undo up to 50 layout changes in this view.</p><div className="layout-actions">
+          {!session && <details className="layout-menu layout-icon-menu" onKeyDown={event => { if (event.key === "Escape") { event.stopPropagation(); event.currentTarget.open = false; event.currentTarget.querySelector<HTMLElement>("summary")?.focus(); } }}><TooltipButton as="summary" aria-label="Layout" title="Arrange layout"><Image src="/images/layout-medallion.png" width={48} height={48} alt="" /></TooltipButton>
+            <div className="layout-popover field-guide"><FieldGuideHeading title="Layout" image="/images/layout-medallion.png" close={() => { const menu = document.querySelector<HTMLDetailsElement>(".layout-icon-menu[open]"); if (menu) { menu.open = false; menu.querySelector<HTMLElement>("summary")?.focus(); } }} /><p>Undo up to 50 layout changes in this view.</p><div className="layout-actions">
             <button disabled={!history[perspective].undo.length} onClick={() => undoLayout()}><Undo2 size={16} aria-hidden="true" />Undo</button>
             <button disabled={!history[perspective].redo.length} onClick={() => undoLayout(true)}><Redo2 size={16} aria-hidden="true" />Redo</button>
             <button className="layout-arrange" onClick={() => { const before = captureLayout(), after = structuredClone(before); const visible = renderedNodes.filter(n => !n.hidden);
@@ -1243,8 +1244,8 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
             <button onClick={() => { void session.command({ operation: "create-idea", ideaId: crypto.randomUUID(), title: "New idea", body: "Write your idea here." }).catch(() => {}); }}>New idea</button>
             <button onClick={() => { void session.command({ operation: "set-viewpoint", expectedRevision: savedGraph!.viewpoint.revision, ...viewport }).catch(() => {}); }}>Save view</button>
             <button onClick={() => open("explore")}>Develop alternatives</button>
-            <details className="layout-menu layout-icon-menu"><TooltipButton as="summary" aria-label="Layout" title="Arrange layout"><Image src="/images/layout-medallion.png" width={48} height={48} alt="" /></TooltipButton>
-              <div className="layout-popover"><h3>Layout</h3><p>Undo up to 50 card moves or resizes.</p><div className="layout-actions">
+            <details className="layout-menu layout-icon-menu" onKeyDown={event => { if (event.key === "Escape") { event.stopPropagation(); event.currentTarget.open = false; event.currentTarget.querySelector<HTMLElement>("summary")?.focus(); } }}><TooltipButton as="summary" aria-label="Layout" title="Arrange layout"><Image src="/images/layout-medallion.png" width={48} height={48} alt="" /></TooltipButton>
+              <div className="layout-popover field-guide"><FieldGuideHeading title="Layout" image="/images/layout-medallion.png" close={() => { const menu = document.querySelector<HTMLDetailsElement>(".layout-icon-menu[open]"); if (menu) { menu.open = false; menu.querySelector<HTMLElement>("summary")?.focus(); } }} /><p>Undo up to 50 card moves or resizes.</p><div className="layout-actions">
               <button disabled={!layoutUndo.length} onClick={() => { void restoreLayout(false).catch(() => {}); }}><Undo2 size={16} aria-hidden="true" />Undo</button>
               <button disabled={!layoutRedo.length} onClick={() => { void restoreLayout(true).catch(() => {}); }}><Redo2 size={16} aria-hidden="true" />Redo</button>
               <button onClick={() => { void (async () => {
@@ -1377,7 +1378,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           id={panel === "guide" ? "atlas-guide" : undefined}
           ref={panelRef}
           tabIndex={-1}
-          className={`detail-panel ${panel === "moves" ? "wander-panel" : ""} ${panel === "guide" ? "guide-panel" : ""} ${panel === "index" ? "catalogue-panel" : ""} ${panel === "text" ? "text-reader" : ""} ${panel === "compare" || panel === "text" ? "wide-panel" : ""}`}
+          className={`detail-panel ${panel === "moves" ? "wander-panel" : ""} ${panel === "guide" ? "guide-panel" : ""} ${panel === "index" ? "catalogue-panel field-guide" : ""} ${panel === "text" ? "text-reader field-guide" : ""} ${panel === "compare" || panel === "text" ? "wide-panel" : ""}`}
           role="dialog"
           aria-modal="false"
           aria-label={
@@ -1398,15 +1399,14 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
             }
           }}
         >
-          {panel !== "index" && <div className="panel-heading">
+          {panel === "text" && <FieldGuideHeading title="Read as text" image="/images/read-scroll.png" close={close} />}
+          {panel !== "index" && panel !== "text" && <div className="panel-heading">
             <span className="instrument-label">
               {panel === "guide" ? "Guide" : panel === "inspect"
                 ? "Thought / source material"
                 : panel === "moves"
                   ? (session ? "Prepared move / no model call" : "Wander")
-                  : panel === "text"
-                    ? `Read as text · ${nodes.length} ideas`
-                    : "Selected contributions"}
+                  : "Selected contributions"}
             </span>
             <button aria-label="Close panel" onClick={close}>
               ×

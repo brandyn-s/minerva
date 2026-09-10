@@ -1,33 +1,33 @@
-# Remove card decision and evidence metadata
+# Expedition theme standard
 
-Branch: `fix/remove-card-metadata`, based on `origin/main` at `f184531`.
-Worktree: `/Users/brandyn.schult/code/minerva-card-metadata-release`.
+Branch: `feat/expedition-theme`.
+Worktree: `/Users/brandyn.schult/code/minerva-expedition-theme`.
+Theme commit: `1139771`; integrated with main `41660a0`.
 
 ## Outcome
-Cards no longer carry decision/evidence status fields. Catalogue, inspection,
-comparison, and Markdown downloads omit them; decision controls are removed.
-Provenance, contributions, relationships, and current layout/navigation remain.
-Old browser saves migrate and discard retired fields without losing provenance.
-Shared card producers and graph readers match the simplified type; no DB migration.
+Expedition is the shared visual standard for Layout, Read as text and Browse
+thoughts. `FieldGuideHeading` supplies each instrument's medallion, mono title
+and close control. `field-guide` and `--guide-*` tokens share paper, borders,
+inputs, primary actions and selection accents. DESIGN owns this convention.
+The reader retains contents/article navigation; Browse retains filtering,
+selection, disclosure and downloads; Layout retains arrange/undo/redo.
+Open Layout stays above selected-card previews on narrow screens.
+Typography uses shared role tokens: titles 20px, body 15px, inputs/actions 16px,
+labels 12px and notes/header names 11px. Compact widths: Expedition/Browse 440px,
+Layout 340px, reader 880px. Desktop controls 36px; touch targets remain 44px.
+Header icons, control heights and responsive spacing follow the same scale.
+No backend changes or paid model calls. Owner authorized commit and merge.
+Latest main metadata removal, voice continuity and node/card fade are preserved.
 
 ## Verification
-`npm run check` passed: lint, typecheck, 15 tests, and production build.
-`scripts/verify-card-metadata.mjs` passed against the production build: legacy
-restore, catalogue, inspection, download, provenance, and cleaned browser save.
-No live model calls are needed for this change.
+`npm run check`: lint, TypeScript, 15 tests and production build passed.
+In-app browser: search, selection, disclosure, reader contents/next navigation,
+Layout arrange/undo/redo, close and Escape checked using the local fixture.
+Desktop 1280x720 and narrow 390x844 visual checks; see `design-qa.md`.
+No browser console warnings or errors observed. Provider behavior was not retested.
 
-## Release and next role
-Owner authorized commit, merge, and production deployment.
-Use the PR checks before merging; verify the stable URL after deployment.
-Production: https://minerva-eight.vercel.app/.
-Local start: prefix commands with `npx --yes --package=node@24.20.0 --package=npm@12.0.2`,
-then run `npm run build` and `npm run start -- --port 54426`.
-Next role: owner inspects the released cards; no critic requested.
-
-## Voice canvas continuity release
-Active voice survives card inspection hiding Talk; reopening retains controls and transcript.
-Explicit Talk close, Escape and End voice mode still end the session.
-Branch `fix/voice-canvas-continuity`; worktree `/Users/brandyn.schult/code/minerva-voice-canvas`.
-`npm run check` and focused mocked voice replay passed; artifacts `/tmp/minerva-voice-release`.
-Production startup: `npm run start -- --port 3299`; replay with `MINERVA_VOICE_ONLY=1`.
-Owner authorized merge and deployment; verify hosted behavior, then owner review.
+## Startup and next role
+Development preview: http://127.0.0.1:3077/.
+Use `npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run dev -- --port 3077`
+with the same launcher.
+Next role: owner visual acceptance. No further feature or critic work queued.
