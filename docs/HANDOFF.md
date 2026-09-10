@@ -1,40 +1,35 @@
-# Voice lifecycle and transcript correction
+# Compact Card pane
 
-Branch: `fix/voice-survives-dismiss`, integrated with `main` at `f64fbed`.
-Worktree: `/Users/brandyn.schult/code/minerva-card-metadata-release`.
-Voice change commit: `f607e7b`. Owner authorized commit and merge.
+Branch: `feat/compact-card-pane`.
+Worktree: `/Users/brandyn.schult/code/minerva-compact-card-pane`.
+Integrated with main `6155709`, including voice lifecycle and live canvas context.
 
 ## Outcome
-Current main pane styling and node/card transitions are preserved.
-Talk's close button and Escape hide the window without clearing active Voice.
-Reopening retains the same session, transcript, and mute state.
-End voice mode still stops capture and releases the session.
-Normal teardown on page unload and connection failure remains.
-Separate speech text parts render as paragraphs; empty transcriptions add no blank messages.
-Push-to-talk checks captured audio before committing or requesting a response.
-A missing microphone callback now shows a retry status instead of sending an empty turn.
-The historical repeated wording is not reproduced: saved text cannot establish
-whether audio repeated or the provider emitted repeated text.
+Root-atlas inspection uses the approved compact manuscript pane: Content,
+Connections and History tabs, persistent relationship summary, Explore and Edit.
+Real parent/child edges, associations and shared context remain separate.
+Source excerpts, contributions, generation details, provenance and Markdown
+export remain available. Explore opens the existing Wander flow for this card.
+Save updates current atlas text and creates a session revision. Restore makes a
+new revision; generation provenance survives, stale revision assessments do not.
+Unsaved drafts survive dismissal and other card inspections within the session.
+Current text uses existing browser persistence; earlier history is session-only.
+Managed-workspace inspection and unrelated worktrees are unchanged.
+Voice dismissal/transcript fixes and active-session focus/selection updates from
+main are preserved; this integration does not alter their protocol.
 
 ## Verification
-`npm run check` passed: lint, typecheck, 15 tests, production build.
-The focused mocked voice replay covers close/Escape, replies while hidden,
-reopening without a new microphone, retained mute state, and explicit End.
-Replay also checks repeated final transcript events, multi-part speech, empty
-input transcripts, and that text events cannot schedule audio playback.
-These are mocked protocol/PCM tests, not a live-provider or acoustic-echo diagnosis.
-No paid voice calls or deployment in this task.
+`npm run check`: lint, TypeScript, 17 tests and production build passed.
+New unit coverage checks revision restoration, stale-edit rejection, assessment
+invalidation, multi-parent relationships and context/association separation.
+In-app browser: real cards, both parents, editing, dismiss/reopen draft, save,
+review/restore, Cancel, keyboard tabs and Wander entry verified. Narrow layout
+390x844 checked and Menu/close overlap fixed. No provider generation was run.
+Existing full atlas browser replay was not run; its older inspection selectors
+need a separate refresh before using that broad replay on this design.
+See `design-qa.md` for visual evidence and limitations.
 
 ## Startup and next role
-Local production preview: http://127.0.0.1:56007.
-Prefix commands with `npx --yes --package=node@24.20.0 --package=npm@12.0.2`.
-Startup: `npm run build`, then `npm run start -- --port 56007`.
-Replay: `MINERVA_VOICE_ONLY=1 MINERVA_URL=http://127.0.0.1:56007 node scripts/verify-atlas.mjs`.
-Next role: owner inspects the local result; no critic requested.
-
-## Live voice focus
-Voice receives updated canvas content, inspection focus and selection during an active session.
-The instructions map "this one" to focus and "these" to selected cards without reconnecting.
-Branch `fix/voice-live-focus`; worktree `/Users/brandyn.schult/code/minerva-voice-canvas`.
-Local startup: `npm run start -- --port 3302`; focused replay uses `MINERVA_VOICE_ONLY=1`.
-Owner authorized commit and merge; final response records integrated verification.
+Local preview: http://127.0.0.1:3081/.
+Start with `npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run dev -- --port 3081`.
+Next role: owner visual acceptance. Commit and merge are authorized.
