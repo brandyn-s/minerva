@@ -32,3 +32,11 @@ Full bounded commands: [implementation](scorebook-transition/implementation.md#l
 Next role: owner reviews the uncommitted Minerva candidate; Scorebook archival is complete.
 Live comparison configuration is prepared but requires an explicit numeric budget.
 No further implementation, commit, deployment or paid execution is granted by this handoff.
+
+## Wander pane follow-up
+Local branch `fix/wander-pane` in `/Users/brandyn.schult/code/minerva-revision-labels`.
+Compact title-first Wander uses the shared header, secondary suggestion actions,
+and a scrolling body with an accessible fixed close control on mobile.
+Focused mocked desktop/mobile replay covers suggestions, failure/retry, hide/show,
+free exploration and chosen moves. Repository and desktop/touch UI checks pass.
+No paid calls. Owner authorized commit and merge after required CI.
