@@ -1,7 +1,9 @@
 "use client";
 
+import { Button, Input, Summary } from "../../components/ui/controls";
+
 import { useState } from "react";
-import { FileText, Lightbulb, GitMerge, Compass, ChevronRight, ChevronDown, MoreHorizontal } from "lucide-react";
+import { FileText, Lightbulb, GitMerge, Compass, ChevronRight, ChevronDown, MoreHorizontal } from "../../components/ui/icons";
 import type { Thought, Relationship } from "./domain";
 import FieldGuideHeading from "./field-guide-heading";
 import DownloadButton from "./download-button";
@@ -25,11 +27,11 @@ export default function ThoughtCatalogue({ cards, relationships, selected, selec
             event.currentTarget.querySelector("summary")?.focus();
           }
         }}>
-          <summary aria-label="Thought options"><MoreHorizontal size={20} /></summary>
+          <Summary variant="secondary" iconOnly aria-label="Thought options"><MoreHorizontal /></Summary>
           <div><DownloadButton cards={cards} relationships={relationships} /></div>
         </details>} />
       <label className="field-guide-label">Find a thought
-      <input aria-label="Find a thought" type="search" autoComplete="off" placeholder="Search titles" value={query} onChange={event => setQuery(event.target.value)} />
+      <Input aria-label="Find a thought" type="search" autoComplete="off" placeholder="Search titles" value={query} onChange={event => setQuery(event.target.value)} />
       </label>
     </div>
     <div className="catalogue-list">
@@ -38,18 +40,18 @@ export default function ThoughtCatalogue({ cards, relationships, selected, selec
         const isOpen = expanded === card.id;
         return <section className={`catalogue-entry${selected.includes(card.id) ? " is-selected" : ""}`} key={card.id}>
           <div className="catalogue-row">
-            <input type="checkbox" aria-label={`Select ${card.title}`} checked={selected.includes(card.id)} onChange={() => select(card.id)} />
-            <Icon className="catalogue-kind" size={25} aria-hidden="true" />
-            <button className="catalogue-disclosure" aria-expanded={isOpen} aria-controls={`thought-preview-${card.id}`} onClick={() => setExpanded(isOpen ? null : card.id)}>
+            <Input type="checkbox" aria-label={`Select ${card.title}`} checked={selected.includes(card.id)} onChange={() => select(card.id)} />
+            <Icon className="catalogue-kind" aria-hidden="true" />
+            <Button variant="content" className="catalogue-disclosure" aria-expanded={isOpen} aria-controls={`thought-preview-${card.id}`} onClick={() => setExpanded(isOpen ? null : card.id)}>
               <span><strong>{card.title}</strong><span className="instrument-label">{card.kind}</span></span>
-              {isOpen ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
-            </button>
+              {isOpen ? <ChevronDown /> : <ChevronRight />}
+            </Button>
           </div>
-          {foldedUnder?.has(card.id) && <p className="catalogue-fold">folded under {foldedUnder.get(card.id)!.map(id => cards.find(c => c.id === id)?.title).join(", ")} <button onClick={() => unfold?.(card.id)}>Unfold</button></p>}
+          {foldedUnder?.has(card.id) && <p className="catalogue-fold">folded under {foldedUnder.get(card.id)!.map(id => cards.find(c => c.id === id)?.title).join(", ")} <Button onClick={() => unfold?.(card.id)}>Unfold</Button></p>}
           <div id={`thought-preview-${card.id}`} hidden={!isOpen} className="catalogue-preview">
             <p>{card.summary || card.body}</p>
             <div className="catalogue-actions">
-              <button onClick={() => focus(card.id)}>Show in atlas</button>
+              <Button onClick={() => focus(card.id)}>Show in atlas</Button>
               {downloadable && <DownloadButton card={card} cards={cards} relationships={relationships} />}
             </div>
           </div>

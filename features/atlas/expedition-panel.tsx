@@ -1,9 +1,10 @@
 "use client";
 
+import { Button, Textarea, Select, SegmentedControl, Field } from "../../components/ui/controls";
+
 import FieldGuideHeading from "./field-guide-heading";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ExternalLink } from "../../components/ui/icons";
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
-import TooltipButton from "./tooltip-button";
 import type { Thought } from "./domain";
 import { expeditionStepSchema, nearIdentical, validateReading } from "./expedition";
 import type { GeneratedCard } from "./generation";
@@ -95,46 +96,43 @@ export default function ExpeditionPanel({ open, close, source, cards, add, focus
   function links(steps: number[]) {
     return <span className="expedition-links">{steps.map(step => {
       const entry = run!.steps.find(s => s.step === step)!;
-      return <TooltipButton key={step} onClick={() => focus(entry.id)} title={cards.find(c => c.id === entry.id)?.title}>Step {step} ↗</TooltipButton>;
+      return <Button key={step} onClick={() => focus(entry.id)} title={cards.find(c => c.id === entry.id)?.title}>Step {step} <ExternalLink /></Button>;
     })}</span>;
   }
   return <aside ref={panelRef} tabIndex={-1} hidden={!open} className="detail-panel field-guide expedition-panel" role="dialog" aria-label="Expedition" onKeyDown={e => {
     if (e.key === "Escape") { e.stopPropagation(); close(); }
   }}>
     <FieldGuideHeading title="Expedition" image="/images/expedition-compass.png" close={close} />
-    {entries.length > 0 && <label>Expedition history<select aria-label="Expedition history" disabled={running || readingBusy} value={activeEntry ?? ""} onChange={e => { const index = e.target.value === "" ? null : Number(e.target.value); setActiveEntry(index); runIndex.current = index; }}>
+    {entries.length > 0 && <label>Expedition history<Select aria-label="Expedition history" disabled={running || readingBusy} value={activeEntry ?? ""} onChange={e => { const index = e.target.value === "" ? null : Number(e.target.value); setActiveEntry(index); runIndex.current = index; }}>
       <option value="">New expedition</option>{entries.map((e, i) => <option key={i} value={i}>{i + 1}. {e.run.goal}</option>)}
-    </select></label>}
+    </Select></label>}
     {!run ? <>
       <form className="expedition-setup" onSubmit={event => { event.preventDefault(); void start(); }}>
         <div className="expedition-source-label">Starting from</div>
         <div className="expedition-source">
           {source ? <><h2>{source.title}</h2><p>{source.summary}</p></> : <p>Select one card on the atlas to begin.</p>}
         </div>
-        <label className="expedition-destination">Where would you like to take this idea?
-          <textarea rows={3} value={goal} onChange={e => setGoal(e.target.value)} placeholder="Describe the direction you want to explore…" />
-        </label>
-        <fieldset className="expedition-budget"><legend>Maximum steps</legend>
-          <div className="expedition-segments">{[2, 3, 4, 5].map(n => <label key={n}>
-            <input type="radio" name="expedition-steps" value={n} checked={budget === n} onChange={() => setBudget(n)} />
-            <span>{n}</span>
-          </label>)}</div>
+        <div className="expedition-destination"><Field label="Where would you like to take this idea?">
+          <Textarea rows={3} value={goal} onChange={e => setGoal(e.target.value)} placeholder="Describe the direction you want to explore…" />
+        </Field></div>
+        <div className="expedition-budget">
+          <SegmentedControl label="Maximum steps" options={[2, 3, 4, 5]} value={budget} onChange={setBudget} />
           <p>Each step adds one connected card. It may finish sooner.</p>
-        </fieldset>
-        <button className="expedition-start" type="submit" disabled={!source || !goal.trim()}>Start expedition <ArrowRight size={22} aria-hidden="true" /></button>
+        </div>
+        <Button variant="primary" className="expedition-start" type="submit" disabled={!source || !goal.trim()}>Start expedition <ArrowRight aria-hidden="true" /></Button>
       </form>
     </> : <>
       <h2>Following your goal</h2>
       <p className="expedition-goal">{run.goal}</p>
       <p role="status">{run.steps.length} / {run.budget} steps{running ? ` · Generating step ${run.steps.length + 1}…` : ""}</p>
-      {running && <button onClick={stop}>Stop</button>}
+      {running && <Button onClick={stop}>Stop</Button>}
       <ol className="expedition-steps">{run.steps.map(s => <li key={s.id}>
         {links([s.step])}<p>{s.rationale}</p><p className="small-note">Model self-report: {s.reached ? "goal appears reached" : "goal not yet reached"}. {s.reason}</p>
       </li>)}</ol>
       {run.stop && <>
         <p className="expedition-stop" role="status">{run.stop}</p>
-        <button disabled={readingBusy || !run.steps.length} onClick={() => void read()}>{readingBusy ? "Reading…" : reading ? "Re-read" : "What this expedition suggests"}</button>
-        <button disabled={readingBusy} onClick={() => { setActiveEntry(null); runIndex.current = null; }}>New expedition</button>
+        <Button disabled={readingBusy || !run.steps.length} onClick={() => void read()}>{readingBusy ? "Reading…" : reading ? "Re-read" : "What this expedition suggests"}</Button>
+        <Button disabled={readingBusy} onClick={() => { setActiveEntry(null); runIndex.current = null; }}>New expedition</Button>
         {!run.steps.length && <p>Complete a step to read its cards.</p>}
       </>}
       {readingError && <p role="alert">{readingError}</p>}
@@ -145,7 +143,7 @@ export default function ExpeditionPanel({ open, close, source, cards, add, focus
         <h4>Shared mechanisms</h4>
         {reading.result.groups.map((g, i) => <section key={i}>
           <p>{g.mechanism}</p>{links(g.steps)}
-          <button aria-label={`Challenge group ${i + 1}`} onClick={() => setNotes(n => [...n, `I disagree with the grouping “${g.mechanism}” (steps ${g.steps.join(", ")}).`])}>Challenge</button>
+          <Button aria-label={`Challenge group ${i + 1}`} onClick={() => setNotes(n => [...n, `I disagree with the grouping “${g.mechanism}” (steps ${g.steps.join(", ")}).`])}>Challenge</Button>
         </section>)}
         <h4>Mechanism changes</h4>
         {!reading.result.changes.length && <p>No mechanism change identified by the model.</p>}

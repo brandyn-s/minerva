@@ -1,33 +1,40 @@
-# Voice lifecycle and transcript correction
+# Shared compact UI
 
-Branch: `fix/voice-survives-dismiss`, integrated with `main` at `f64fbed`.
-Worktree: `/Users/brandyn.schult/code/minerva-card-metadata-release`.
-Voice change commit: `f607e7b`. Owner authorized commit and merge.
+Branch: `feat/ui-normalization`.
+Base SHA: `8b48e1b7c9e3a3ac9409947c9beb97a265d13147`; UI changes are authorized for commit and merge.
+Worktree: `/Users/brandyn.schult/code/minerva-expedition-theme`.
 
 ## Outcome
-Current main pane styling and node/card transitions are preserved.
-Talk's close button and Escape hide the window without clearing active Voice.
-Reopening retains the same session, transcript, and mute state.
-End voice mode still stops capture and releases the session.
-Normal teardown on page unload and connection failure remains.
-Separate speech text parts render as paragraphs; empty transcriptions add no blank messages.
-Push-to-talk checks captured audio before committing or requesting a response.
-A missing microphone callback now shows a retry status instead of sending an empty turn.
-The historical repeated wording is not reproduced: saved text cannot establish
-whether audio repeated or the provider emitted repeated text.
+Expedition's compact language is now owned by `components/ui`.
+All feature buttons, fields and disclosure triggers use shared primitives.
+Functional icons use one Lucide family; panel headers and tooltips are shared.
+Shared defaults sit below existing feature styles to preserve specialized controls.
+ESLint guards against new raw controls, icon imports and local paint overrides.
+A development-only gallery at `/dev/ui` makes every control state inspectable.
+See [UI ownership](./product/UI.md) for variants and maintenance rules.
+Existing voice lifecycle handlers are preserved.
 
 ## Verification
-`npm run check` passed: lint, typecheck, 15 tests, production build.
-The focused mocked voice replay covers close/Escape, replies while hidden,
-reopening without a new microphone, retained mute state, and explicit End.
-Replay also checks repeated final transcript events, multi-part speech, empty
-input transcripts, and that text events cannot schedule audio playback.
-These are mocked protocol/PCM tests, not a live-provider or acoustic-echo diagnosis.
-No paid voice calls or deployment in this task.
+`npm run check`: lint, typecheck, 17 Node tests and production build passed.
+`npm run test:ui`: four desktop/touch browser tests passed, including gallery axe,
+keyboard controls, tooltip dismissal, forms and atlas panel journeys.
+Computed-style baselines cover typography, color, border, padding and sizing.
+Screenshots in `test-results/ui` support composition review; not pixel baselines.
+Production `/dev/ui` returns HTTP 404.
+Focused mocked voice replay passed, including hold/release, mute, close/Escape,
+retained sessions and explicit End. Tooltip dismissal preserves panel Escape.
+No paid provider calls or deployment; UI journeys intercept provider routes.
 
 ## Startup and next role
-Local production preview: http://127.0.0.1:56007.
-Prefix commands with `npx --yes --package=node@24.20.0 --package=npm@12.0.2`.
-Startup: `npm run build`, then `npm run start -- --port 56007`.
-Replay: `MINERVA_VOICE_ONLY=1 MINERVA_URL=http://127.0.0.1:56007 node scripts/verify-atlas.mjs`.
-Next role: owner inspects the local result; no critic requested.
+Preview: http://127.0.0.1:3077/; gallery: http://127.0.0.1:3077/dev/ui.
+Start with `npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run dev -- --port 3077`.
+Next role: owner inspects integrated UI; commit and merge are authorized.
+
+The broader mocked replay currently stops at its existing export assertion for
+`## Decision`; the unchanged exporter no longer includes that metadata section.
+This prevents claiming a complete full-replay pass. Navigation assertions were
+updated for decorative icons, compact targets and current lineage controls.
+
+Regression correction: restored feature styling after shared defaults overrode
+reader layout, composer controls and other specialized elements. Actual reader
+and Talk style assertions supplement gallery coverage.

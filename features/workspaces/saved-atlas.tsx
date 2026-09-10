@@ -1,4 +1,7 @@
 "use client";
+
+import { Button } from "../../components/ui/controls";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Atlas from "../atlas/atlas";
@@ -59,6 +62,6 @@ export default function SavedAtlas({ workspaceId }: { workspaceId: string }) {
   }, [workspaceId]);
   return <>
     {session ? <Atlas session={session} /> : <main className="workspace-browser"><h1>Saved atlas</h1><Link href="/workspaces">Workspaces</Link></main>}
-    <div className="save-status" role="status">{message}{retry && <button onClick={() => void retry()}>Retry interrupted save</button>}</div>
+    <div className="save-status" role="status">{message}{retry && <Button onClick={() => void retry()}>Retry interrupted save</Button>}</div>
   </>;
 }

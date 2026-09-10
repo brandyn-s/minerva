@@ -1,5 +1,7 @@
 "use client";
 
+import { Button, Input, Textarea } from "../../components/ui/controls";
+
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { Workspace, WorkspaceCommand } from "./domain";
@@ -114,32 +116,32 @@ export default function WorkspaceBrowser() {
       <p role="status" aria-live="polite">{message}</p>
       <div className="workspace-columns">
         <nav aria-label="Saved workspaces">
-          <button disabled={busy || !!pending} onClick={() => open(null)}>New workspace</button>
-          <button disabled={busy || !!pending} onClick={() => refresh().catch((e) => setMessage(e.message))}>Refresh list</button>
-          <label><input type="checkbox" checked={showDeleted} onChange={(e) => setShowDeleted(e.target.checked)} />Show deleted workspaces</label>
+          <Button disabled={busy || !!pending} onClick={() => open(null)}>New workspace</Button>
+          <Button disabled={busy || !!pending} onClick={() => refresh().catch((e) => setMessage(e.message))}>Refresh list</Button>
+          <label><Input type="checkbox" checked={showDeleted} onChange={(e) => setShowDeleted(e.target.checked)} />Show deleted workspaces</label>
           <ul>{workspaces.filter((w) => showDeleted || !w.deleted).map((workspace) => <li key={workspace.id}>
-            <button disabled={busy || !!pending} aria-current={current?.id === workspace.id ? "page" : undefined}
-              onClick={() => open(workspace)}>{workspace.name} · {workspace.deleted ? "deleted" : `revision ${workspace.revision}`}</button>
+            <Button disabled={busy || !!pending} aria-current={current?.id === workspace.id ? "page" : undefined}
+              onClick={() => open(workspace)}>{workspace.name} · {workspace.deleted ? "deleted" : `revision ${workspace.revision}`}</Button>
           </li>)}</ul>
         </nav>
         <form onSubmit={save}>
           <h2>{current ? "Workspace brief" : "New workspace"}</h2>
           <fieldset disabled={busy || !!pending || current?.deleted}>
-            <label htmlFor="workspace-name">Name</label><input id="workspace-name" required maxLength={160} value={name} onChange={(e) => setName(e.target.value)} />
-            <label htmlFor="workspace-brief">Brief</label><textarea id="workspace-brief" rows={8} maxLength={20000} value={brief} onChange={(e) => setBrief(e.target.value)} />
-            <label htmlFor="workspace-constraints">Constraints</label><textarea id="workspace-constraints" rows={5} maxLength={10000} value={constraints} onChange={(e) => setConstraints(e.target.value)} />
+            <label htmlFor="workspace-name">Name</label><Input id="workspace-name" required maxLength={160} value={name} onChange={(e) => setName(e.target.value)} />
+            <label htmlFor="workspace-brief">Brief</label><Textarea id="workspace-brief" rows={8} maxLength={20000} value={brief} onChange={(e) => setBrief(e.target.value)} />
+            <label htmlFor="workspace-constraints">Constraints</label><Textarea id="workspace-constraints" rows={5} maxLength={10000} value={constraints} onChange={(e) => setConstraints(e.target.value)} />
           </fieldset>
-          <button type="submit" disabled={busy || (current?.deleted && !pending)}>{busy ? "Saving…" : pending ? "Retry same save" : "Save workspace"}</button>
+          <Button type="submit" disabled={busy || (current?.deleted && !pending)}>{busy ? "Saving…" : pending ? "Retry same save" : "Save workspace"}</Button>
           {pending && !busy && <p>The last save could not be confirmed. Retry it to recover the receipt before making another change.</p>}
           {current && <fieldset disabled={busy || !!pending}>
             <legend>Workspace actions</legend>
             {!current.deleted && <Link href={`/workspaces/${current.id}`}>Open atlas</Link>}
-            <button type="button" onClick={download}>Export JSON</button>
-            {current.deleted ? <button type="button" onClick={() => lifecycle("restore-workspace")}>Restore workspace</button> : <>
-              <button type="button" onClick={() => lifecycle("duplicate-workspace")}>Duplicate workspace</button>
+            <Button type="button" onClick={download}>Export JSON</Button>
+            {current.deleted ? <Button type="button" onClick={() => lifecycle("restore-workspace")}>Restore workspace</Button> : <>
+              <Button type="button" onClick={() => lifecycle("duplicate-workspace")}>Duplicate workspace</Button>
               <p>Delete hides this workspace and retains its history. You can restore it from the deleted list.</p>
-              <label>Type {current.name} to confirm deletion<input value={confirmation} onChange={(e) => setConfirmation(e.target.value)} /></label>
-              <button type="button" disabled={confirmation !== current.name} onClick={() => lifecycle("delete-workspace")}>Delete workspace</button>
+              <label>Type {current.name} to confirm deletion<Input value={confirmation} onChange={(e) => setConfirmation(e.target.value)} /></label>
+              <Button type="button" disabled={confirmation !== current.name} onClick={() => lifecycle("delete-workspace")}>Delete workspace</Button>
             </>}
           </fieldset>}
         </form>

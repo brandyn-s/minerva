@@ -1,3 +1,4 @@
+import { Summary } from "../../components/ui/controls";
 export default function GuideContent() {
   return <article className="guide-content">
     <p className="instrument-label">A field guide to Minerva</p>
@@ -16,7 +17,7 @@ export default function GuideContent() {
 
     <div className="guide-chapters">
       <details>
-        <summary>Read cards and connections</summary>
+        <Summary>Read cards and connections</Summary>
         <div>
           <p>A card gives an idea a title and a short summary. Open its details to read the full text, contributions, and relationships. Look for what was inherited, what changed, what is new, and what remains unknown.</p>
           <dl>
@@ -29,7 +30,7 @@ export default function GuideContent() {
         </div>
       </details>
       <details>
-        <summary>Find your way around</summary>
+        <Summary>Find your way around</Summary>
         <div>
           <p>Use <strong>Thoughts</strong> to browse or find a card, and <strong>Read as text</strong> to read the same material without navigating the map. Focus brings an idea into view; Inspect opens its details.</p>
           <p>Select cards with their selection controls to build a working set. The selection dock shows the available actions. <strong>Clear selection</strong> clears that working set; it does not delete ideas.</p>
@@ -39,7 +40,7 @@ export default function GuideContent() {
         </div>
       </details>
       <details>
-        <summary>Choose a perspective</summary>
+        <Summary>Choose a perspective</Summary>
         <div>
           <dl>
             <dt>Lineage · read the contributions</dt><dd>Detailed cards and their connections help you understand where a proposal came from.</dd>
@@ -50,7 +51,7 @@ export default function GuideContent() {
         </div>
       </details>
       <details>
-        <summary>Develop ideas with the creative tools</summary>
+        <Summary>Develop ideas with the creative tools</Summary>
         <div>
           <dl>
             <dt>Wander · explore from one idea</dt><dd>Select one card. Wander requests suggested next steps; choosing a step develops a new direction. Explore freely generates several directions instead. Read each result and its source contribution before continuing.</dd>
@@ -63,7 +64,7 @@ export default function GuideContent() {
         </div>
       </details>
       <details>
-        <summary>Talk with Minerva</summary>
+        <Summary>Talk with Minerva</Summary>
         <div>
           <p>Open the Minerva cameo to discuss the atlas. Typed Talk receives the current canvas and its relationships. Selected cards tell it where your attention is; they do not limit which cards it can see.</p>
           <p>Talk can explain, question, and suggest. It cannot create or change cards. Use the atlas tools to develop a suggestion into a card.</p>
@@ -77,7 +78,7 @@ export default function GuideContent() {
         </div>
       </details>
       <details>
-        <summary>Judge what you discover</summary>
+        <Summary>Judge what you discover</Summary>
         <div>
           <p>Keep the distinction between a prepared example, a generated proposal, a model interpretation, your own decision, and external evidence. A confident explanation is still something to examine.</p>
           <p>“Goal appears reached” is the model’s self-report. A new theme or a larger collection of cards does not by itself mean you have found a better answer.</p>
@@ -91,7 +92,7 @@ export default function GuideContent() {
         </div>
       </details>
       <details>
-        <summary>Save and take your work with you</summary>
+        <Summary>Save and take your work with you</Summary>
         <div>
           <p>The demo saves your atlas in this browser. It is not an account with cross-device sync. Clearing browser data can remove that local copy.</p>
           <dl>

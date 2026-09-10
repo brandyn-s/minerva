@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import "../components/ui/tokens.css";
 import "./globals.css";
+import "../components/ui/ui.css";
 
 export const metadata: Metadata = {
   title: "Minerva - A living atlas of ideas",

@@ -1,10 +1,11 @@
 "use client";
 
+import { Button } from "../../components/ui/controls";
+
 import { useEffect, useRef, useState } from "react";
 import { Experimental_AbstractRealtimeSession, gateway, type Experimental_RealtimeState } from "ai";
 import Image from "next/image";
-import { AudioLines, Mic, MicOff, PhoneOff } from "lucide-react";
-import TooltipButton from "./tooltip-button";
+import { AudioLines, Mic, MicOff, PhoneOff } from "../../components/ui/icons";
 import type { TalkRequest } from "./generation";
 
 class VoiceSession extends Experimental_AbstractRealtimeSession {
@@ -169,21 +170,21 @@ export default function VoiceButton({ cards, selectedIds, messages, onMessages, 
   return <div className={`voice-control${active ? " voice-active" : ""}`}>
     {error && <p role="alert">{error}</p>}
     <div className="voice-buttons">
-    {!active && <TooltipButton type="button" className="composer-icon" disabled={disabled} aria-pressed={held} aria-label={error ? "Retry" : "Hold to talk"} title={error ? "Hold to retry" : "Hold to talk"}
+    {!active && <Button iconOnly type="button" className="composer-icon" disabled={disabled} aria-pressed={held} aria-label={error ? "Retry" : "Hold to talk"} title={error ? "Hold to retry" : "Hold to talk"}
       aria-describedby="voice-status" style={{ touchAction: "none" }}
       onPointerDown={(event) => { if (event.button !== 0) return; event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); void press(); }}
       onPointerUp={() => release()} onPointerCancel={() => release(true)}
       onLostPointerCapture={() => release(true)} onBlur={() => release(true)}
       onKeyDown={(event) => { if (event.key === " " || event.key === "Enter") { event.preventDefault(); if (!event.repeat) void press(); } }}
       onKeyUp={(event) => { if (event.key === " " || event.key === "Enter") { event.preventDefault(); release(); } }}>
-      <Mic aria-hidden="true" size={20} />
-    </TooltipButton>}
-    {!active && <TooltipButton type="button" className="composer-icon" aria-label="Start voice mode" title="Start voice mode" disabled={disabled || held} onClick={() => void press(true)}><AudioLines aria-hidden="true" size={20} /></TooltipButton>}
+      <Mic aria-hidden="true" />
+    </Button>}
+    {!active && <Button iconOnly type="button" className="composer-icon" aria-label="Start voice mode" title="Start voice mode" disabled={disabled || held} onClick={() => void press(true)}><AudioLines aria-hidden="true" /></Button>}
     {active && <>
       <Image src="/images/minerva-engraved-cameo.png" alt="Minerva" width={44} height={44} />
-      <AudioLines className={`voice-wave${muted ? " muted" : ""}`} aria-hidden="true" size={28} />
-      <TooltipButton type="button" className="composer-icon" aria-label={muted ? "Unmute microphone" : "Mute microphone"} title={muted ? "Unmute microphone" : "Mute microphone"} aria-pressed={muted} onClick={toggleMute}>{muted ? <MicOff size={20} aria-hidden="true" /> : <Mic size={20} aria-hidden="true" />}</TooltipButton>
-      <TooltipButton type="button" className="composer-icon voice-end" aria-label="End voice mode" title="End voice mode" onClick={end}><PhoneOff size={20} aria-hidden="true" /></TooltipButton>
+      <AudioLines className={`voice-wave${muted ? " muted" : ""}`} aria-hidden="true" />
+      <Button iconOnly type="button" className="composer-icon" aria-label={muted ? "Unmute microphone" : "Mute microphone"} title={muted ? "Unmute microphone" : "Mute microphone"} aria-pressed={muted} onClick={toggleMute}>{muted ? <MicOff aria-hidden="true" /> : <Mic aria-hidden="true" />}</Button>
+      <Button iconOnly type="button" className="composer-icon voice-end" aria-label="End voice mode" title="End voice mode" onClick={end}><PhoneOff aria-hidden="true" /></Button>
     </>}
     </div>
     <p id="voice-status" className="small-note" role="status">{status}</p>

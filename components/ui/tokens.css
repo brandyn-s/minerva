@@ -1,0 +1,42 @@
+:root {
+  color-scheme: light;
+  --paper: #e9dfc7;
+  --card: #f1e9d6;
+  --ink: #273a35;
+  --muted: #645f51;
+  --teal: #273f32;
+  --bronze: #8d6d40;
+  --line: #c7bca2;
+  color: var(--ink);
+  background: var(--paper);
+  font-family: Georgia, "Times New Roman", serif;
+}
+:root {
+  --guide-paper: #f5eddb;
+  --guide-input: #fbf7ec;
+  --guide-border: #aaa084;
+  --guide-line: #c9bea3;
+  --guide-accent: #417975;
+  --guide-selected: #273e35;
+  --guide-radius: 9px;
+  --guide-space: 14px;
+  --guide-font-content: Georgia, "Times New Roman", serif;
+  --guide-font-label: ui-monospace, SFMono-Regular, monospace;
+  --guide-type-title: 400 20px/1.25 var(--guide-font-content);
+  --guide-type-body: 400 15px/1.45 var(--guide-font-content);
+  --guide-type-control: 400 16px/1.35 var(--guide-font-content);
+  --guide-type-label: 400 12px/1.4 var(--guide-font-label);
+  --guide-type-note: 400 11px/1.4 var(--guide-font-label);
+}
+:root {
+  --ui-font: var(--guide-font-content);
+  --ui-mono: var(--guide-font-label);
+  --ui-control-font: var(--guide-type-control);
+  --ui-label-font: var(--guide-type-label);
+  --ui-note-font: var(--guide-type-note);
+  --ui-control-height: 36px;
+  --ui-radius: 5px;
+  --ui-icon-size: 18px;
+  --ui-gap: 8px;
+  --ui-space: 14px;
+}

@@ -1,7 +1,9 @@
 "use client";
 
+import { Button, Input, Textarea, Select, Summary } from "../../components/ui/controls";
+
 import Image from "next/image";
-import { ChevronDown, GitFork, Copy, Compass, Shuffle, Undo2, Redo2, LayoutGrid } from "lucide-react";
+import { ChevronDown, GitFork, Copy, Compass, Shuffle, Undo2, Redo2, LayoutGrid, GripVertical, Plus, Minus, Check, ArrowLeft, ExternalLink } from "../../components/ui/icons";
 import {
   createContext,
   useContext,
@@ -34,7 +36,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import type { AtlasFixture, Thought, Relationship } from "./domain";
 import type { AtlasSession, LayoutRecord } from "../workspaces/graph-domain";
-import { CaretDown, ArrowRight, ArrowClockwise, Crosshair, CaretRight, X } from "@phosphor-icons/react";
+import { CaretDown, ArrowRight, ArrowClockwise, Crosshair, CaretRight, X } from "../../components/ui/icons";
 import { relationshipsFor } from "./domain";
 import { mallFixture } from "./fixture";
 import { wanderSchema, weaveSchema, moveCardSchema, type ContextualMove, type GeneratedCard, type LiveFeature } from "./generation";
@@ -49,7 +51,6 @@ import ThoughtCatalogue from "./thought-catalogue";
 import MovesPanel from "./moves-panel";
 import ExpeditionPanel from "./expedition-panel";
 import GuideContent from "./guide-content";
-import TooltipButton from "./tooltip-button";
 import { overviewDiameter, overviewLabels, overviewName } from "./overview";
 import ExplorationPanel from "../exploration/panel";
 
@@ -177,7 +178,7 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
     >
       {ui.resize && !ui.overview && <NodeResizer minWidth={200} minHeight={120} maxWidth={1000} maxHeight={1600}
         isVisible={ui.scalable || ui.selected.includes(id)} onResizeStart={() => ui.resizeStart?.()} onResizeEnd={(_, size) => ui.resize?.(id, size)} />}
-      {!!ui.folded?.[id] && <button className="fold-marker nodrag nopan" style={ui.overview ? { transform: `scale(${1 / ui.zoom})`, transformOrigin: "right bottom", top: -28 / ui.zoom } : undefined} onClick={() => ui.unfold?.(id)}>+{ui.folded[id]} folded</button>}
+      {!!ui.folded?.[id] && <Button className="fold-marker nodrag nopan" style={ui.overview ? { transform: `scale(${1 / ui.zoom})`, transformOrigin: "right bottom", top: -28 / ui.zoom } : undefined} onClick={() => ui.unfold?.(id)}>+{ui.folded[id]} folded</Button>}
       <Handle type="target" position={Position.Left} style={{ top: anchorY }} />
       <Handle
         type="source"
@@ -188,42 +189,42 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
         }}
       />
       {ui.overview ? (
-        <TooltipButton
+        <Button variant="canvas"
           aria-label={`Open ${thought.title}`}
           aria-description="Drag or use arrow keys to move"
           className={`overview-target card-grip nopan ${ui.scalable ? "scale-target" : ui.compact ? "compact-target" : ""}`}
           style={{ transform: `scale(${1 / ui.zoom})`, ...(ui.scalable ? { width: diameter, height: diameter, minHeight: diameter } : {}) }}
         >
           {ui.scalable ? ui.labels?.has(id) && <span className="overview-name">{overviewName(thought)}</span> : ui.compact ? null : thought.title}
-        </TooltipButton>
+        </Button>
       ) : (
         <div className="card-content">
           <div className="card-top">
             <span>
               {thought.kind === "proposal" ? "Starting proposal" : thought.kind}
             </span>
-            <TooltipButton
+            <Button iconOnly variant="quiet"
               className="card-grip"
               aria-label={`Move ${thought.title}`}
             >
-              ⠿
-            </TooltipButton>
-            <button
+              <GripVertical aria-hidden="true" />
+            </Button>
+            <Button iconOnly variant="quiet"
               className="nodrag nopan select-card"
               aria-pressed={ui.selected.includes(thought.id)}
               aria-label={`Select ${thought.title}`}
               onClick={() => ui.select(thought.id)}
             >
-              {ui.selected.includes(thought.id) ? "✓" : "+"}
-            </button>
+              {ui.selected.includes(thought.id) ? <Check aria-hidden="true" /> : <Plus aria-hidden="true" />}
+            </Button>
           </div>
-          <button className="card-title nodrag">{thought.title}</button>
+          <Button variant="card-title" className="card-title nodrag">{thought.title}</Button>
           <p className="card-summary">{thought.summary}</p>
           {ui.live?.sources.some((source) => source.id === id) && (
             <div className="generation-status nodrag nopan" aria-live="polite">
               {ui.busy ? <p className="generation-inline"><span className="generation-spinner" aria-hidden="true" />{ui.live.feature === "wander" ? "Wandering…" : "Weaving…"}</p> : ui.live.error && <>
                 <p role="alert">{ui.live.error}</p>
-                <button onClick={ui.retry}>Retry {ui.live.feature === "wander" ? "Wander" : "Weave"}</button>
+                <Button onClick={ui.retry}>Retry {ui.live.feature === "wander" ? "Wander" : "Weave"}</Button>
               </>}
             </div>
           )}
@@ -307,18 +308,18 @@ function GraphNavigation({ id, chain, chainIds, descendantCount, byId, folds, se
   const folded = folds.includes(id);
   return <div className="lineage-navigation">
     <div className="lineage-tabs" role="group" aria-label="Trace lineage">
-      {(["ancestors", "descendants"] as const).map(direction => <button key={direction} aria-label={`Show ${direction}`} aria-pressed={active?.direction === direction}
-        onClick={() => setChain({ id, direction })}>{direction === "ancestors" ? "Ancestors" : "Descendants"}</button>)}
-      {active && <button className="lineage-clear" onClick={() => setChain(null)}>Clear</button>}
+      {(["ancestors", "descendants"] as const).map(direction => <Button key={direction} aria-label={`Show ${direction}`} aria-pressed={active?.direction === direction}
+        onClick={() => setChain({ id, direction })}>{direction === "ancestors" ? "Ancestors" : "Descendants"}</Button>)}
+      {active && <Button className="lineage-clear" onClick={() => setChain(null)}>Clear</Button>}
     </div>
     {active && <>
       <p className="lineage-count">{relatives.length} {active.direction === "ancestors" ? "ancestor" : "descendant"} {relatives.length === 1 ? "idea" : "ideas"}</p>
-      <ul className="lineage-results" aria-label={`${active.direction} chain`}>{relatives.map(key => <li key={key}><button onClick={() => focus(key)}>{byId.get(key)?.title}<CaretRight size={18} aria-hidden="true" /></button></li>)}</ul>
+      <ul className="lineage-results" aria-label={`${active.direction} chain`}>{relatives.map(key => <li key={key}><Button onClick={() => focus(key)}>{byId.get(key)?.title}<CaretRight aria-hidden="true" /></Button></li>)}</ul>
     </>}
     <div className="lineage-fold">
-      <button disabled={!descendantCount && !folded} aria-pressed={folded} onClick={() => setFolds(current => current.includes(id) ? current.filter(key => key !== id) : [...current, id])}>
-        {folded ? <CaretRight size={18} aria-hidden="true" /> : <CaretDown size={18} aria-hidden="true" />}{folded ? "Show descendants on canvas" : "Hide descendants"}
-      </button>
+      <Button disabled={!descendantCount && !folded} aria-pressed={folded} onClick={() => setFolds(current => current.includes(id) ? current.filter(key => key !== id) : [...current, id])}>
+        {folded ? <CaretRight aria-hidden="true" /> : <CaretDown aria-hidden="true" />}{folded ? "Show descendants on canvas" : "Hide descendants"}
+      </Button>
       {!descendantCount && <p>No descendants to hide</p>}
     </div>
   </div>;
@@ -1011,31 +1012,31 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           <span className="instrument-label">{session ? `Studio / ${perspective}` : "Saved in this browser"}</span>
           <h1>{session ? "Saved idea atlas" : "The mall, reconsidered"}</h1>
         </div>
-        {!session && <nav className="perspective-switch" aria-label="Atlas perspective">{(["Lineage", "Evolution", "Constellation"] as const).map(view => <button key={view} aria-pressed={perspective === view} onClick={() => switchPerspective(view)}>{view}</button>)}</nav>}
+        {!session && <nav className="perspective-switch" aria-label="Atlas perspective">{(["Lineage", "Evolution", "Constellation"] as const).map(view => <Button variant="header" key={view} aria-pressed={perspective === view} onClick={() => switchPerspective(view)}>{view}</Button>)}</nav>}
       {!session && <div className="atlas-header-actions">
-        <button className="guide-launcher" aria-haspopup="dialog" aria-expanded={panel === "guide"} aria-controls="atlas-guide" onClick={event => {
+        <Button variant="header" className="guide-launcher" aria-haspopup="dialog" aria-expanded={panel === "guide"} aria-controls="atlas-guide" onClick={event => {
           if (storageMenu.current) storageMenu.current.open = false;
           if (panel === "guide") close();
           else { open("guide"); returnFocus.current = event.currentTarget; }
-        }}>Guide</button>
+        }}>Guide</Button>
         <details ref={storageMenu} className="atlas-menu" onKeyDown={event => {
           if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); }
         }}>
-        <summary>Menu <ChevronDown size={14} aria-hidden="true" /></summary>
+        <Summary variant="header">Menu <ChevronDown aria-hidden="true" /></Summary>
         <div className="atlas-menu-options" aria-label="Atlas options">
-        <label className="relationship-label-toggle"><input type="checkbox" checked={showRelationshipLabels} onChange={event => setShowRelationshipLabels(event.target.checked)} /> Relationship labels</label>
-        <button onClick={() => { exportAtlas(); if (storageMenu.current) storageMenu.current.open = false; }}>Export atlas</button>
-        <button onClick={() => importInput.current?.click()}>Import atlas</button>
-        <input ref={importInput} hidden aria-label="Import atlas file" type="file" accept=".json,application/json" onChange={async e => {
+        <label className="relationship-label-toggle"><Input type="checkbox" checked={showRelationshipLabels} onChange={event => setShowRelationshipLabels(event.target.checked)} /> Relationship labels</label>
+        <Button onClick={() => { exportAtlas(); if (storageMenu.current) storageMenu.current.open = false; }}>Export atlas</Button>
+        <Button onClick={() => importInput.current?.click()}>Import atlas</Button>
+        <Input ref={importInput} hidden aria-label="Import atlas file" type="file" accept=".json,application/json" onChange={async e => {
           const file = e.target.files?.[0]; e.target.value = ""; setImportFile(undefined); setImportNotice("");
           if (!file) return;
           try { setImportFile(interruptSavedRuns(atlasSaveSchema.parse(JSON.parse(await file.text())))); }
           catch (error) { setImportNotice(`Invalid atlas file: ${error instanceof Error ? error.message : String(error)}`); }
         }} />
-        <button onClick={() => setConfirmation("reset")}>Reset to fixture</button>
-        {importFile && <span>{importFile.thoughts.length} cards ready. <button disabled={importBusy} onClick={() => setConfirmation("replace")}>Replace</button> <button disabled={importBusy} onClick={() => void importAtlas(true)}>Merge</button> <button onClick={() => setImportFile(undefined)}>Cancel import</button></span>}
-        {confirmation && <div role="group" aria-label="Confirm atlas change"><p>{confirmation === "reset" ? "Reset to fixture? This discards the atlas, Talk and expeditions." : "Replace this atlas with the backup? Current content will be discarded."}</p><button onClick={() => { const action = confirmation; setConfirmation(null); if (action === "reset") void resetFixture(); else void importAtlas(false); }}>Confirm {confirmation === "reset" ? "Reset" : "Replace"}</button><button onClick={() => setConfirmation(null)}>Keep current atlas</button></div>}
-        {!!recoveries.length && <details><summary>Recovery copies ({recoveries.length})</summary><ul>{recoveries.map(copy => <li key={copy.key}>{copy.key}<button onClick={() => { const url = URL.createObjectURL(new Blob([JSON.stringify(copy.value, null, 2)], { type: "application/json" })); const a = document.createElement("a"); a.href = url; a.download = `${copy.key}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }}>Export</button><button onClick={() => void discardRecovery(copy.key).then(() => setRecoveries(current => current.filter(c => c.key !== copy.key))).catch(() => setImportNotice("Could not discard recovery copy."))}>Discard</button></li>)}</ul></details>}
+        <Button onClick={() => setConfirmation("reset")}>Reset to fixture</Button>
+        {importFile && <span>{importFile.thoughts.length} cards ready. <Button disabled={importBusy} onClick={() => setConfirmation("replace")}>Replace</Button> <Button disabled={importBusy} onClick={() => void importAtlas(true)}>Merge</Button> <Button onClick={() => setImportFile(undefined)}>Cancel import</Button></span>}
+        {confirmation && <div role="group" aria-label="Confirm atlas change"><p>{confirmation === "reset" ? "Reset to fixture? This discards the atlas, Talk and expeditions." : "Replace this atlas with the backup? Current content will be discarded."}</p><Button onClick={() => { const action = confirmation; setConfirmation(null); if (action === "reset") void resetFixture(); else void importAtlas(false); }}>Confirm {confirmation === "reset" ? "Reset" : "Replace"}</Button><Button onClick={() => setConfirmation(null)}>Keep current atlas</Button></div>}
+        {!!recoveries.length && <details><Summary>Recovery copies ({recoveries.length})</Summary><ul>{recoveries.map(copy => <li key={copy.key}>{copy.key}<Button onClick={() => { const url = URL.createObjectURL(new Blob([JSON.stringify(copy.value, null, 2)], { type: "application/json" })); const a = document.createElement("a"); a.href = url; a.download = `${copy.key}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }}>Export</Button><Button onClick={() => void discardRecovery(copy.key).then(() => setRecoveries(current => current.filter(c => c.key !== copy.key))).catch(() => setImportNotice("Could not discard recovery copy."))}>Discard</Button></li>)}</ul></details>}
         {importNotice && <p role="alert">{importNotice}</p>}
         {storageNotice && <p role="status">{storageNotice}</p>}
       </div></details></div>}
@@ -1219,71 +1220,71 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           id="atlas-tools"
           aria-label="Atlas controls"
         >
-          <TooltipButton className="expedition-control thoughts-control" aria-label={`Thoughts ${nodes.length}`} title="Browse thoughts" aria-haspopup="dialog" aria-expanded={panel === "index"} onClick={() => open("index")}>
+          <Button variant="medallion" className="expedition-control thoughts-control" aria-label={`Thoughts ${nodes.length}`} title="Browse thoughts" aria-haspopup="dialog" aria-expanded={panel === "index"} onClick={() => open("index")}>
             <Image className="thoughts-medallion" src="/images/thoughts-olive.png" width={44} height={44} alt="" />
             <span className="thought-count" aria-hidden="true">{nodes.length}</span>
-          </TooltipButton>
-          <TooltipButton className="expedition-control" aria-label="Read as text" title="Read as text" aria-haspopup="dialog" aria-expanded={panel === "text"} onClick={() => open("text")}>
+          </Button>
+          <Button variant="medallion" className="expedition-control" aria-label="Read as text" title="Read as text" aria-haspopup="dialog" aria-expanded={panel === "text"} onClick={() => open("text")}>
             <Image className="scroll-medallion" src="/images/read-scroll.png" width={44} height={44} alt="" />
-          </TooltipButton>
-          {!session && <TooltipButton className="expedition-control" aria-label="Expedition panel" title="Open expedition panel" aria-haspopup="dialog" aria-expanded={panel === "expedition"} onClick={() => open("expedition")}><Image src="/images/expedition-compass.png" width={44} height={44} alt="" /></TooltipButton>}
+          </Button>
+          {!session && <Button variant="medallion" className="expedition-control" aria-label="Expedition panel" title="Open expedition panel" aria-haspopup="dialog" aria-expanded={panel === "expedition"} onClick={() => open("expedition")}><Image src="/images/expedition-compass.png" width={44} height={44} alt="" /></Button>}
 
-          {!session && <details className="layout-menu layout-icon-menu" onKeyDown={event => { if (event.key === "Escape") { event.stopPropagation(); event.currentTarget.open = false; event.currentTarget.querySelector<HTMLElement>("summary")?.focus(); } }}><TooltipButton as="summary" aria-label="Layout" title="Arrange layout"><Image src="/images/layout-medallion.png" width={48} height={48} alt="" /></TooltipButton>
+          {!session && <details className="layout-menu layout-icon-menu" onKeyDown={event => { if (event.key === "Escape") { event.stopPropagation(); event.currentTarget.open = false; event.currentTarget.querySelector<HTMLElement>("summary")?.focus(); } }}><Summary variant="medallion" aria-label="Layout" title="Arrange layout"><Image src="/images/layout-medallion.png" width={48} height={48} alt="" /></Summary>
             <div className="layout-popover field-guide"><FieldGuideHeading title="Layout" image="/images/layout-medallion.png" close={() => { const menu = document.querySelector<HTMLDetailsElement>(".layout-icon-menu[open]"); if (menu) { menu.open = false; menu.querySelector<HTMLElement>("summary")?.focus(); } }} /><p>Undo up to 50 layout changes in this view.</p><div className="layout-actions">
-            <button disabled={!history[perspective].undo.length} onClick={() => undoLayout()}><Undo2 size={16} aria-hidden="true" />Undo</button>
-            <button disabled={!history[perspective].redo.length} onClick={() => undoLayout(true)}><Redo2 size={16} aria-hidden="true" />Redo</button>
-            <button className="layout-arrange" onClick={() => { const before = captureLayout(), after = structuredClone(before); const visible = renderedNodes.filter(n => !n.hidden);
+            <Button disabled={!history[perspective].undo.length} onClick={() => undoLayout()}><Undo2 aria-hidden="true" />Undo</Button>
+            <Button disabled={!history[perspective].redo.length} onClick={() => undoLayout(true)}><Redo2 aria-hidden="true" />Redo</Button>
+            <Button variant="primary" className="layout-arrange" onClick={() => { const before = captureLayout(), after = structuredClone(before); const visible = renderedNodes.filter(n => !n.hidden);
               const widths = [0, 1, 2].map(column => Math.max(290, ...visible.filter((_, i) => i % 3 === column).map(n => sizes[perspective][n.id]?.width ?? n.measured?.width ?? 290)) + 90);
               let y = 0;
-              visible.forEach((n, i) => { if (i && i % 3 === 0) y += Math.max(...visible.slice(i - 3, i).map(n => sizes[perspective][n.id]?.height ?? n.measured?.height ?? 320)) + 90; after.positions[n.id] = { x: widths.slice(0, i % 3).reduce((a, b) => a + b, 0), y }; }); applyLayout(after); rememberLayout("arrange", before, after); }}><LayoutGrid size={16} aria-hidden="true" />Arrange grid</button>
+              visible.forEach((n, i) => { if (i && i % 3 === 0) y += Math.max(...visible.slice(i - 3, i).map(n => sizes[perspective][n.id]?.height ?? n.measured?.height ?? 320)) + 90; after.positions[n.id] = { x: widths.slice(0, i % 3).reduce((a, b) => a + b, 0), y }; }); applyLayout(after); rememberLayout("arrange", before, after); }}><LayoutGrid aria-hidden="true" />Arrange grid</Button>
             </div><small>Editing ideas, generating, importing or resetting clears history.</small></div>
           </details>}
           {session && <>
-            <label className="relationship-label-toggle"><input type="checkbox" checked={showRelationshipLabels} onChange={event => setShowRelationshipLabels(event.target.checked)} /> Relationship labels</label>
-            <button onClick={() => { void session.command({ operation: "seed-mall" }).catch(() => {}); }} disabled={nodes.length > 0}>Load prepared mall</button>
-            <button onClick={() => { void session.command({ operation: "create-idea", ideaId: crypto.randomUUID(), title: "New idea", body: "Write your idea here." }).catch(() => {}); }}>New idea</button>
-            <button onClick={() => { void session.command({ operation: "set-viewpoint", expectedRevision: savedGraph!.viewpoint.revision, ...viewport }).catch(() => {}); }}>Save view</button>
-            <button onClick={() => open("explore")}>Develop alternatives</button>
-            <details className="layout-menu layout-icon-menu" onKeyDown={event => { if (event.key === "Escape") { event.stopPropagation(); event.currentTarget.open = false; event.currentTarget.querySelector<HTMLElement>("summary")?.focus(); } }}><TooltipButton as="summary" aria-label="Layout" title="Arrange layout"><Image src="/images/layout-medallion.png" width={48} height={48} alt="" /></TooltipButton>
+            <label className="relationship-label-toggle"><Input type="checkbox" checked={showRelationshipLabels} onChange={event => setShowRelationshipLabels(event.target.checked)} /> Relationship labels</label>
+            <Button onClick={() => { void session.command({ operation: "seed-mall" }).catch(() => {}); }} disabled={nodes.length > 0}>Load prepared mall</Button>
+            <Button onClick={() => { void session.command({ operation: "create-idea", ideaId: crypto.randomUUID(), title: "New idea", body: "Write your idea here." }).catch(() => {}); }}>New idea</Button>
+            <Button onClick={() => { void session.command({ operation: "set-viewpoint", expectedRevision: savedGraph!.viewpoint.revision, ...viewport }).catch(() => {}); }}>Save view</Button>
+            <Button onClick={() => open("explore")}>Develop alternatives</Button>
+            <details className="layout-menu layout-icon-menu" onKeyDown={event => { if (event.key === "Escape") { event.stopPropagation(); event.currentTarget.open = false; event.currentTarget.querySelector<HTMLElement>("summary")?.focus(); } }}><Summary variant="medallion" aria-label="Layout" title="Arrange layout"><Image src="/images/layout-medallion.png" width={48} height={48} alt="" /></Summary>
               <div className="layout-popover field-guide"><FieldGuideHeading title="Layout" image="/images/layout-medallion.png" close={() => { const menu = document.querySelector<HTMLDetailsElement>(".layout-icon-menu[open]"); if (menu) { menu.open = false; menu.querySelector<HTMLElement>("summary")?.focus(); } }} /><p>Undo up to 50 card moves or resizes.</p><div className="layout-actions">
-              <button disabled={!layoutUndo.length} onClick={() => { void restoreLayout(false).catch(() => {}); }}><Undo2 size={16} aria-hidden="true" />Undo</button>
-              <button disabled={!layoutRedo.length} onClick={() => { void restoreLayout(true).catch(() => {}); }}><Redo2 size={16} aria-hidden="true" />Redo</button>
-              <button onClick={() => { void (async () => {
+              <Button disabled={!layoutUndo.length} onClick={() => { void restoreLayout(false).catch(() => {}); }}><Undo2 aria-hidden="true" />Undo</Button>
+              <Button disabled={!layoutRedo.length} onClick={() => { void restoreLayout(true).catch(() => {}); }}><Redo2 aria-hidden="true" />Redo</Button>
+              <Button onClick={() => { void (async () => {
                 for (const [index, node] of nodes.entries()) await saveLayout(node.id, { x: (index % 3) * 440, y: Math.floor(index / 3) * 380 });
-              })().catch(() => {}); }}><LayoutGrid size={16} aria-hidden="true" />Arrange grid</button>
-              <button onClick={() => { void (async () => {
+              })().catch(() => {}); }}><LayoutGrid aria-hidden="true" />Arrange grid</Button>
+              <Button onClick={() => { void (async () => {
                 for (const node of nodes) if (session.initial.layouts[node.id]) await saveLayout(node.id, session.initial.layouts[node.id], session.initial.layouts[node.id]);
-              })().catch(() => {}); }}>Restore initial layout</button>
+              })().catch(() => {}); }}>Restore initial layout</Button>
               </div>{layoutNotice && <p role="status">{layoutNotice}</p>}</div>
             </details>
           </>}
         </nav>
         {!session && focusedId && <section className="focus-navigation" aria-label="Focused card connections">
-          <div className="focus-heading"><strong>{byId.get(focusedId)?.title}</strong><button aria-label="Close focused connections" onClick={() => setFocusedId(null)}><X size={20} aria-hidden="true" /></button></div>
+          <div className="focus-heading"><strong>{byId.get(focusedId)?.title}</strong><Button iconOnly variant="quiet" aria-label="Close focused connections" onClick={() => setFocusedId(null)}><X aria-hidden="true" /></Button></div>
           <p className="focus-summary">{byId.get(focusedId)?.summary}</p>
           <div className="focus-actions">
-            <button className="focus-open" onClick={() => inspect(focusedId)}>Open card <ArrowRight size={22} aria-hidden="true" /></button>
-            <button className="focus-center" onClick={() => focus(focusedId)}><Crosshair size={24} aria-hidden="true" />Center on canvas</button>
+            <Button className="focus-open" onClick={() => inspect(focusedId)}>Open card <ArrowRight aria-hidden="true" /></Button>
+            <Button className="focus-center" onClick={() => focus(focusedId)}><Crosshair aria-hidden="true" />Center on canvas</Button>
           </div>
           <details className="focus-connections" key={focusedId}>
-          <summary>Connections <CaretRight size={20} aria-hidden="true" /></summary>
+          <Summary>Connections <CaretRight aria-hidden="true" /></Summary>
           <GraphNavigation id={focusedId} chain={chain} chainIds={chainIds} descendantCount={trace(focusedId, "descendants").length} byId={byId} folds={folds} setChain={setChain} setFolds={setFolds} focus={focus} />
-          <label>Show connections <select value={connectionKind} onChange={e => { setConnectionKind(e.target.value); setConnectionPage(0); setBranchId(null); }}>
+          <label>Show connections <Select value={connectionKind} onChange={e => { setConnectionKind(e.target.value); setConnectionPage(0); setBranchId(null); }}>
             <option value="parents">Parents</option><option value="children">Children</option><option value="associations">Associations</option><option value="context">Shared brief</option>
-          </select></label>
+          </Select></label>
           <p className="small-note">{focusedRelations.length ? `${focusedRelations.length} connection${focusedRelations.length === 1 ? "" : "s"}` : `No ${connectionKind === "context" ? "shared brief connections" : connectionKind}.`}</p>
-          <ul>{relationPage.map(edge => <li key={edge.id}><button className="relative-link" onClick={() => focus(edge.otherId)}>{byId.get(edge.otherId)?.title} ↗</button><button aria-label={`Highlight only ${byId.get(edge.otherId)?.title}`} aria-pressed={branchId === edge.id} onClick={() => setBranchId(branchId === edge.id ? null : edge.id)}>Trace</button></li>)}</ul>
-          {focusedRelations.length > 6 && <div><button disabled={!connectionPage} onClick={() => { setConnectionPage(p => p - 1); setBranchId(null); }}>Previous connections</button><button disabled={(connectionPage + 1) * 6 >= focusedRelations.length} onClick={() => { setConnectionPage(p => p + 1); setBranchId(null); }}>Next connections</button></div>}
+          <ul>{relationPage.map(edge => <li key={edge.id}><Button variant="content" className="relative-link" onClick={() => focus(edge.otherId)}>{byId.get(edge.otherId)?.title} <ExternalLink /></Button><Button aria-label={`Highlight only ${byId.get(edge.otherId)?.title}`} aria-pressed={branchId === edge.id} onClick={() => setBranchId(branchId === edge.id ? null : edge.id)}>Trace</Button></li>)}</ul>
+          {focusedRelations.length > 6 && <div><Button disabled={!connectionPage} onClick={() => { setConnectionPage(p => p - 1); setBranchId(null); }}>Previous connections</Button><Button disabled={(connectionPage + 1) * 6 >= focusedRelations.length} onClick={() => { setConnectionPage(p => p + 1); setBranchId(null); }}>Next connections</Button></div>}
         </details>
         </section>}
         {perspective === "Constellation" && !regroupIds && <section className="themes-status" aria-label="Theme grouping">
           <span>{themeCache ? `${nodes.length} ideas · ${themeCache.groups.filter(g => g.memberIds.length).length} themes` : "Group ideas into themes"}</span>
           {themeBusy && <span role="status">Grouping themes…</span>}
-          {themeError && <><span role="alert">{themeError}</span><button disabled={themeBusy} onClick={() => void groupThemes(themeRetryFull.current)}>Retry</button></>}
-          <button data-regroup-trigger aria-busy={themeBusy} title={themeBusy ? "Finding themes…" : selected.length ? `Regroup ${selected.length} selected ideas` : "Regroup all ideas"} disabled={themeBusy || !themeCache} onClick={() => { setPanel(null); setFocusedId(null); setRegroupIds(selected.length ? selected : nodes.map(n => n.id)); }}><ArrowClockwise size={18} className={themeBusy ? "composer-spinner" : undefined} aria-hidden="true" />{themeBusy ? "Finding themes…" : "Regroup"}{!themeBusy && selected.length > 0 ? ` ${selected.length} selected` : ""}</button>
-          {selected.length > 0 && <button onClick={() => setSelected([])}>Clear selection</button>}
-          {regroupedIds.length > 0 && <><span role="status">Regrouped {regroupedIds.length} ideas</span><button onClick={() => void flow.fitView({ nodes: [...regroupedIds, ...themeCache!.groups.flatMap((g, i) => g.memberIds.some(id => regroupedIds.includes(id)) ? [`theme-${i}`] : [])].map(id => ({ id })), padding: .3, maxZoom: 1 })}>View regrouped ideas</button></>}
-          {themeUndo && <button onClick={() => { clearHistory(); setThemeCache(themeUndo.cache); setPositions(themeUndo.positions); void flow.setViewport(themeUndo.viewport); setThemeUndo(undefined); setRegroupedIds([]); }}>Undo regroup</button>}
+          {themeError && <><span role="alert">{themeError}</span><Button disabled={themeBusy} onClick={() => void groupThemes(themeRetryFull.current)}>Retry</Button></>}
+          <Button data-regroup-trigger aria-busy={themeBusy} title={themeBusy ? "Finding themes…" : selected.length ? `Regroup ${selected.length} selected ideas` : "Regroup all ideas"} disabled={themeBusy || !themeCache} onClick={() => { setPanel(null); setFocusedId(null); setRegroupIds(selected.length ? selected : nodes.map(n => n.id)); }}><ArrowClockwise className={themeBusy ? "composer-spinner" : undefined} aria-hidden="true" />{themeBusy ? "Finding themes…" : "Regroup"}{!themeBusy && selected.length > 0 ? ` ${selected.length} selected` : ""}</Button>
+          {selected.length > 0 && <Button onClick={() => setSelected([])}>Clear selection</Button>}
+          {regroupedIds.length > 0 && <><span role="status">Regrouped {regroupedIds.length} ideas</span><Button onClick={() => void flow.fitView({ nodes: [...regroupedIds, ...themeCache!.groups.flatMap((g, i) => g.memberIds.some(id => regroupedIds.includes(id)) ? [`theme-${i}`] : [])].map(id => ({ id })), padding: .3, maxZoom: 1 })}>View regrouped ideas</Button></>}
+          {themeUndo && <Button onClick={() => { clearHistory(); setThemeCache(themeUndo.cache); setPositions(themeUndo.positions); void flow.setViewport(themeUndo.viewport); setThemeUndo(undefined); setRegroupedIds([]); }}>Undo regroup</Button>}
         </section>}
         {perspective === "Constellation" && regroupIds && themeCache && <RegroupPanel
           key={regroupIds.join(",")} cards={nodes.map(n => n.data.thought)} ids={regroupIds}
@@ -1323,52 +1324,51 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
         {selected.length > 0 && !regroupIds && (
           <div className={`selection-bar${session ? "" : " light-selection-dock"}`}>
             <span className="selection-count">{selected.length} selected</span>
-            {selected.length === 1 && <button onClick={() => focus(selected[0])}><Crosshair size={22} aria-hidden="true" />Focus</button>}
-            {session ? <><button onClick={() => open("compare")}>Compare</button><button onClick={() => move(selected)}>Weave · preview</button></> : <>
-              <button className="wander-action" disabled={busy || selected.length !== 1} onClick={() => move(selected)} aria-busy={busy && live?.feature === "wander"}>{busy && live?.feature === "wander" ? <span className="generation-spinner" aria-hidden="true" /> : <GitFork size={22} aria-hidden="true" />}{busy && live?.feature === "wander" ? "Wandering…" : "Wander"}</button>
-              <button onClick={() => open("compare")}><Copy size={22} aria-hidden="true" />Compare</button>
-              <button disabled={selected.length !== 1} onClick={() => open("expedition")}><Compass size={24} aria-hidden="true" />Expedition</button>
-              <button disabled={busy || selected.length < 2} onClick={() => void generate("weave", selected.map((id) => byId.get(id)!))} aria-busy={busy && live?.feature === "weave"}>{busy && live?.feature === "weave" ? <span className="generation-spinner" aria-hidden="true" /> : <Shuffle size={22} aria-hidden="true" />}{busy && live?.feature === "weave" ? "Weaving…" : "Weave"}</button>
+            {selected.length === 1 && <Button onClick={() => focus(selected[0])}><Crosshair aria-hidden="true" />Focus</Button>}
+            {session ? <><Button onClick={() => open("compare")}>Compare</Button><Button onClick={() => move(selected)}>Weave · preview</Button></> : <>
+              <Button className="wander-action" disabled={busy || selected.length !== 1} onClick={() => move(selected)} aria-busy={busy && live?.feature === "wander"}>{busy && live?.feature === "wander" ? <span className="generation-spinner" aria-hidden="true" /> : <GitFork aria-hidden="true" />}{busy && live?.feature === "wander" ? "Wandering…" : "Wander"}</Button>
+              <Button onClick={() => open("compare")}><Copy aria-hidden="true" />Compare</Button>
+              <Button disabled={selected.length !== 1} onClick={() => open("expedition")}><Compass aria-hidden="true" />Expedition</Button>
+              <Button disabled={busy || selected.length < 2} onClick={() => void generate("weave", selected.map((id) => byId.get(id)!))} aria-busy={busy && live?.feature === "weave"}>{busy && live?.feature === "weave" ? <span className="generation-spinner" aria-hidden="true" /> : <Shuffle aria-hidden="true" />}{busy && live?.feature === "weave" ? "Weaving…" : "Weave"}</Button>
             </>}
-            {session && selected.length === 2 && <details className="layout-menu"><summary>Connect selected</summary>
+            {session && selected.length === 2 && <details className="layout-menu"><Summary>Connect selected</Summary>
               <p>From {byId.get(selected[0])?.title} to {byId.get(selected[1])?.title}</p>
-              <label>Relationship<select value={relationshipKind} onChange={(e) => setRelationshipKind(e.target.value as typeof relationshipKind)}>
+              <label>Relationship<Select value={relationshipKind} onChange={(e) => setRelationshipKind(e.target.value as typeof relationshipKind)}>
                 <option value="association">Semantic association</option><option value="derivation">Derivation</option><option value="recombination">Recombination parent</option>
-              </select></label>
-              <label>Contribution or link label<input maxLength={200} value={relationshipLabel} onChange={(e) => setRelationshipLabel(e.target.value)} /></label>
-              <button onClick={() => { void session.command({ operation: "connect-ideas", edgeId: crypto.randomUUID(), from: selected[0], to: selected[1],
+              </Select></label>
+              <label>Contribution or link label<Input maxLength={200} value={relationshipLabel} onChange={(e) => setRelationshipLabel(e.target.value)} /></label>
+              <Button onClick={() => { void session.command({ operation: "connect-ideas", edgeId: crypto.randomUUID(), from: selected[0], to: selected[1],
                 sourceRevision: byId.get(selected[0])!.revision, targetRevision: byId.get(selected[1])!.revision,
-                kind: relationshipKind, label: relationshipLabel, contribution: relationshipLabel }).catch(() => {}); }}>Save relationship</button>
+                kind: relationshipKind, label: relationshipLabel, contribution: relationshipLabel }).catch(() => {}); }}>Save relationship</Button>
             </details>}
-            <button
+            <Button iconOnly variant="quiet"
               className="selection-close"
               aria-label="Clear selection"
               title="Clear selection"
               onClick={() => { setSelected([]); setFocusedId(null); if (panel === "moves") setPanel(null); }}
             >
-              {session ? "×" : <X size={24} aria-hidden="true" />}
-            </button>
+              <X aria-hidden="true" />
+            </Button>
           </div>
         )}
         <div className="field-footer">
           <div className="zoom-controls">
-            <button aria-label="Zoom out" onClick={() => void flow.zoomOut()}>
-              −
-            </button>
+            <Button iconOnly aria-label="Zoom out" onClick={() => void flow.zoomOut()}>
+              <Minus aria-hidden="true" />
+            </Button>
             <output aria-label="Zoom level">
               {Math.round(viewport.zoom * 100)}%
             </output>
-            <button aria-label="Zoom in" onClick={() => void flow.zoomIn()}>
-              +
-            </button>
-            <button onClick={fit}>Fit</button>
+            <Button iconOnly aria-label="Zoom in" onClick={() => void flow.zoomIn()}>
+              <Plus aria-hidden="true" />            </Button>
+            <Button onClick={fit}>Fit</Button>
           </div>
         </div>
       </div>
-      {!session && <button className={`minerva-launcher${selected.length ? " has-selection" : ""}`} aria-label="Talk to Minerva" aria-haspopup="dialog" aria-expanded={panel === "talk"} aria-controls="minerva-talk" onClick={() => open("talk")}>
+      {!session && <Button variant="medallion" className={`minerva-launcher${selected.length ? " has-selection" : ""}`} aria-label="Talk to Minerva" aria-haspopup="dialog" aria-expanded={panel === "talk"} aria-controls="minerva-talk" onClick={() => open("talk")}>
         <Image src="/images/minerva-engraved-cameo.png" alt="" width={64} height={64} sizes="64px" />
         <span className="minerva-launcher-label" aria-hidden="true">Talk to Minerva</span>
-      </button>}
+      </Button>}
       {!session && <TalkPanel messages={messages} setMessages={update => { clearHistory(); setMessages(update); }} open={panel === "talk"} close={close} selectedIds={selected} cards={nodes.map(({ id, data }) => ({ ...data.thought, relationships: relationshipsFor(id, relationships) }))} />}
       {!session && <ExpeditionPanel entries={expeditions} setEntries={update => { clearHistory(); setExpeditions(update); }} activeEntry={activeExpedition} setActiveEntry={setActiveExpedition} open={panel === "expedition"} close={close} source={selected.length === 1 ? byId.get(selected[0]) : undefined}
         cards={nodes.map(n => n.data.thought)} add={addExpeditionCard} focus={id => { focus(id); setPanel("expedition"); }} />}
@@ -1400,18 +1400,10 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           }}
         >
           {panel === "text" && <FieldGuideHeading title="Read as text" image="/images/read-scroll.png" close={close} />}
-          {panel !== "index" && panel !== "text" && <div className="panel-heading">
-            <span className="instrument-label">
-              {panel === "guide" ? "Guide" : panel === "inspect"
-                ? "Thought / source material"
-                : panel === "moves"
-                  ? (session ? "Prepared move / no model call" : "Wander")
-                  : "Selected contributions"}
-            </span>
-            <button aria-label="Close panel" onClick={close}>
-              ×
-            </button>
-          </div>}
+          {panel !== "index" && panel !== "text" && <FieldGuideHeading
+            title={panel === "guide" ? "Guide" : panel === "inspect" ? "Thought / source material" : panel === "moves" ? "Wander" : "Selected contributions"}
+            close={close} />}
+
           {panel === "guide" && <GuideContent />}
           {panel === "explore" && session && <ExplorationPanel workspaceId={savedGraph!.workspaceId}
             sources={selected.map((id) => byId.get(id)!).filter(Boolean)} inspect={inspect} />}
@@ -1421,7 +1413,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
               {!session && <GraphNavigation id={thought.id} chain={chain} chainIds={chainIds} descendantCount={trace(thought.id, "descendants").length} byId={byId} folds={folds} setChain={setChain} setFolds={setFolds} focus={focus} />}
               {!session && <DownloadButton key={thought.id} card={thought} cards={nodes.map((node) => node.data.thought)} relationships={relationships} />}
               <p className="body-copy">{thought.body}</p>
-              {thought.generation && <details><summary>Generation context and mechanism</summary>
+              {thought.generation && <details><Summary>Generation context and mechanism</Summary>
                 <p>{thought.generation.mechanism}</p>
                 <p>Prerequisites: {thought.generation.prerequisites.join("; ")}</p>
                 <p>Uncertainties: {thought.generation.uncertainties.join("; ")}</p>
@@ -1429,7 +1421,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
                 <p>Observed: {thought.generation.observedChange}</p>
                 <p className="small-note">Original generation · {thought.generation.model} · input {thought.generation.manifestId}</p>
               </details>}
-              {thought.assessment && <details><summary>Assessment of this revision</summary>
+              {thought.assessment && <details><Summary>Assessment of this revision</Summary>
                 <p>{thought.assessment.goalFidelity}</p><p>{thought.assessment.constraints}</p>
                 <p>{thought.assessment.causalDependencies}</p><p>{thought.assessment.transformation}</p>
                 <p>Model assessment; real-world feasibility remains unverified.</p>
@@ -1449,10 +1441,10 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
                     <span className="instrument-label">
                       {edge.direction} / {edge.kind}
                     </span>
-                    <button onClick={() => inspect(edge.otherId)}>
+                    <Button onClick={() => inspect(edge.otherId)}>
                       {byId.get(edge.otherId)?.title}{" "}
-                      {edge.direction === "incoming" ? "←" : "→"}
-                    </button>
+                      {edge.direction === "incoming" ? <ArrowLeft /> : <ArrowRight />}
+                    </Button>
                     <p>
                       {edge.label}
                       {edge.kind !== "association" && edge.kind !== "context"
@@ -1462,17 +1454,17 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
                     {edge.contribution && (
                       <blockquote>{edge.contribution}</blockquote>
                     )}
-                    {savedGraph && <details><summary>Exact source revision {edge.sourceRevision}</summary>
+                    {savedGraph && <details><Summary>Exact source revision {edge.sourceRevision}</Summary>
                       <p>{savedGraph.revisions.find((r) => r.id === edge.from && r.revision === edge.sourceRevision)?.body ?? "Source revision unavailable"}</p>
                     </details>}
                   </li>
                 ))}
               </ul>
               <details>
-                <summary>{session ? "Edit idea" : "Edit prepared text"}</summary>
+                <Summary>{session ? "Edit idea" : "Edit prepared text"}</Summary>
                 <label>
                   Title
-                  <input
+                  <Input
                     value={thought.title}
                     onChange={(e) => {
                       clearHistory();
@@ -1497,7 +1489,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
                 </label>
                 <label>
                   Body
-                  <textarea
+                  <Textarea
                     rows={6}
                     value={thought.body}
                     onChange={(e) => {
@@ -1524,19 +1516,19 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
                 <p className="small-note">
                   {session ? "Save a new revision; earlier source revisions remain available." : "Local text rehearsal. Prepared source excerpts stay fixed; revision history and persistence arrive later."}
                 </p>
-                {session && <button onClick={() => {
+                {session && <Button onClick={() => {
                   void session.command({ operation: "revise-idea", ideaId: active, expectedRevision: thought.revision,
                     title: thought.title, body: thought.body }).then(() => {
                       dirtyText.current.delete(active);
                       setNodes((current) => current.map((n) => n.id === active ? { ...n, data: { ...n.data, thought: { ...n.data.thought, revision: thought.revision + 1 } } } : n));
                     }).catch(() => {});
-                }}>Save idea revision</button>}
+                }}>Save idea revision</Button>}
               </details>
             </>
           )}
           {panel === "text" && <div className="reader-layout">
             <nav className="reader-contents" aria-label="Ideas">
-              {nodes.map(n => <button key={n.id} aria-current={n.id === thought.id ? "true" : undefined} onClick={() => setActive(n.id)}>{n.data.thought.title}</button>)}
+              {nodes.map(n => <Button key={n.id} aria-current={n.id === thought.id ? "true" : undefined} onClick={() => setActive(n.id)}>{n.data.thought.title}</Button>)}
             </nav>
             <div className="reader-main">
               <article className="reader-article" key={thought.id}>
@@ -1544,18 +1536,18 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
                 <h2>{thought.title}</h2>
                 <p className="reader-summary">{thought.summary}</p>
                 <div className="body-copy">{(thought.body.startsWith(thought.summary) ? thought.body.slice(thought.summary.length).trim() : thought.body).split("\n\n").filter(Boolean).map((paragraph, i) => <p key={i}>{paragraph}</p>)}</div>
-                <details className="reader-details"><summary>Details</summary>
+                <details className="reader-details"><Summary>Details</Summary>
                   <p>Contribution: {thought.contribution}</p>
-                  <ul>{relationshipsFor(thought.id, relationships).map(e => <li key={e.id}><button onClick={() => setActive(e.otherId)}>{byId.get(e.otherId)?.title}</button> · {e.contribution || e.label}</li>)}</ul>
+                  <ul>{relationshipsFor(thought.id, relationships).map(e => <li key={e.id}><Button onClick={() => setActive(e.otherId)}>{byId.get(e.otherId)?.title}</Button> · {e.contribution || e.label}</li>)}</ul>
                 </details>
                 <div className="reader-actions">
-                  <label><input type="checkbox" checked={selected.includes(thought.id)} onChange={() => select(thought.id)} /> Select</label>
-                  <button className="reader-open" onClick={() => inspect(thought.id)}>Open card</button>
-                  <button className="reader-center" onClick={() => focus(thought.id)}>Center on canvas</button>
+                  <label><Input type="checkbox" checked={selected.includes(thought.id)} onChange={() => select(thought.id)} /> Select</label>
+                  <Button variant="primary" className="reader-open" onClick={() => inspect(thought.id)}>Open card</Button>
+                  <Button variant="quiet" className="reader-center" onClick={() => focus(thought.id)}>Center on canvas</Button>
                 </div>
               </article>
               <nav className="reader-pagination" aria-label="Reading navigation">
-                {[-1, 1].map(direction => { const neighbor = nodes[nodes.findIndex(n => n.id === thought.id) + direction]; return <button key={direction} disabled={!neighbor} onClick={() => neighbor && setActive(neighbor.id)}><span className="instrument-label">{direction < 0 ? "Previous" : "Next"}</span><span>{neighbor?.data.thought.title ?? (direction < 0 ? "First idea" : "Last idea")}</span></button>; })}
+                {[-1, 1].map(direction => { const neighbor = nodes[nodes.findIndex(n => n.id === thought.id) + direction]; return <Button key={direction} disabled={!neighbor} onClick={() => neighbor && setActive(neighbor.id)}><span className="instrument-label">{direction < 0 ? "Previous" : "Next"}</span><span>{neighbor?.data.thought.title ?? (direction < 0 ? "First idea" : "Last idea")}</span></Button>; })}
               </nav>
             </div>
           </div>}
@@ -1573,13 +1565,13 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
                     <h3>{byId.get(id)!.title}</h3>
                     <p>{byId.get(id)!.contribution}</p>
                     <p className="body-copy">{byId.get(id)!.body}</p>
-                    <button onClick={() => inspect(id)}>Inspect sources</button>
+                    <Button onClick={() => inspect(id)}>Inspect sources</Button>
                   </section>
                 ))}
               </div>
-              <button onClick={() => move(selected)}>
+              <Button onClick={() => move(selected)}>
                 Weave selected contributions · preview
-              </button>
+              </Button>
             </>
           )}
           {panel === "moves" && !session && selected.length === 1 && <MovesPanel
@@ -1613,12 +1605,12 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
                   </span>
                 </section>
               ))}
-              <button className="move-choice" onClick={() => setPreview(true)}>
+              <Button variant="primary" className="move-choice" onClick={() => setPreview(true)}>
                 {moveSources.length > 1
                   ? "Preview a shared occasion"
                   : byId.get(moveSources[0])!.move.title}{" "}
-                →
-              </button>
+                <ArrowRight />
+              </Button>
               {preview && (
                 <div className="prepared-result" aria-live="polite">
                   <h3>Prepared direction</h3>

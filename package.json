@@ -27,10 +27,10 @@
     "check": "npm run lint && npm run typecheck && npm test && npm run build",
     "test:browser": "node scripts/verify-atlas.mjs",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "node --env-file-if-exists=.env.local node_modules/drizzle-kit/bin.cjs migrate"
+    "db:migrate": "node --env-file-if-exists=.env.local node_modules/drizzle-kit/bin.cjs migrate",
+    "test:ui": "playwright test --config playwright.ui.config.ts"
   },
   "dependencies": {
-    "@phosphor-icons/react": "2.1.10",
     "@xyflow/react": "12.11.6",
     "ai": "7.0.94",
     "drizzle-orm": "0.45.2",
@@ -45,6 +45,8 @@
     "zod": "4.5.4"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@playwright/test": "1.63.0",
     "@types/node": "24.13.3",
     "@types/pg": "8.23.1",
     "@types/react": "19.2.18",
@@ -56,10 +58,18 @@
     "typescript": "5.9.3"
   },
   "overrides": {
-    "@workflow/core": { "nanoid": "5.1.16" },
-    "@workflow/world-local": { "undici": "7.29.0" },
-    "@workflow/world-vercel": { "undici": "7.29.0" },
-    "@esbuild-kit/core-utils": { "esbuild": "0.25.12" }
+    "@workflow/core": {
+      "nanoid": "5.1.16"
+    },
+    "@workflow/world-local": {
+      "undici": "7.29.0"
+    },
+    "@workflow/world-vercel": {
+      "undici": "7.29.0"
+    },
+    "@esbuild-kit/core-utils": {
+      "esbuild": "0.25.12"
+    }
   },
   "allowScripts": {
     "unrs-resolver@1.12.2": true

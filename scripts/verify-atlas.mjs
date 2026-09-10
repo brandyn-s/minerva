@@ -362,25 +362,25 @@ try {
   assert.equal(await dialog.locator(".status-line").count(), 0, "default draft and unknown evidence labels stay hidden");
   assert.equal(await dialog.locator(".relationship-list li").count(), 2);
   await dialog
-    .getByRole("button", { name: "A food hall ←", exact: true })
+    .getByRole("button", { name: "A food hall", exact: true })
     .click();
   assert.match(await dialog.innerText(), /outgoing \/ recombination/i);
   await dialog
     .getByRole("button", {
-      name: "Repair, then stay for supper →",
+      name: "Repair, then stay for supper",
       exact: true,
     })
     .click();
   await dialog
-    .getByRole("button", { name: "A shared tool library ←", exact: true })
+    .getByRole("button", { name: "A shared tool library", exact: true })
     .click();
   await dialog
-    .getByRole("button", { name: "A shopfront for six weeks ←", exact: true })
+    .getByRole("button", { name: "A shopfront for six weeks", exact: true })
     .click();
   assert.doesNotMatch(await dialog.innerText(), /Evidence: unknown/);
   assert.doesNotMatch(await dialog.innerText(), /\bkept\b/, "inspection omits the redundant kept label");
   await dialog
-    .getByRole("button", { name: "A shared tool library →", exact: true })
+    .getByRole("button", { name: "A shared tool library", exact: true })
     .click();
   const textSelection = await dialog.locator(".body-copy").evaluate((e) => {
     const r = document.createRange();
@@ -450,7 +450,8 @@ try {
         const bar = await toolbar.boundingBox();
         const dismiss = await toolbar.getByRole("button", { name: "Clear selection", exact: true }).boundingBox();
         assert.ok(bar.x >= 0 && bar.x + bar.width <= width, "toolbar fits viewport");
-        assert.ok(dismiss.width >= 44 && dismiss.height >= 44, "small X keeps a full click target");
+        const minimumTarget = await page.evaluate(() => matchMedia("(pointer: coarse)").matches ? 44 : 36);
+        assert.ok(dismiss.width >= minimumTarget && dismiss.height >= minimumTarget, "dismissal uses the shared pointer target size");
         assert.ok(dismiss.x >= bar.x && dismiss.y >= bar.y && dismiss.x + dismiss.width <= bar.x + bar.width && dismiss.y + dismiss.height <= bar.y + bar.height, "dismissal remains inside the light selection dock");
         await page.screenshot({ path: `${artifacts}/wander-toolbar-${width}.png` });
       }
@@ -541,9 +542,9 @@ try {
         await inspection.getByRole("button", { name: "Show ancestors", exact: true }).click();
         const wovenId = (await storedSave()).thoughts.find(c => c.title === result.title).id;
         assert.deepEqual((await page.locator(".react-flow__node.chain-highlighted").evaluateAll(nodes => nodes.map(n => n.dataset.id))).sort(), [wovenId, "food", "tools", "retail"].sort());
-        assert.deepEqual(await inspection.getByRole("list", { name: "ancestors chain" }).getByRole("button").allTextContents(), [result.title, "A food hall", "A shared tool library", "Independent retail shops"]);
+        assert.deepEqual(await inspection.getByRole("list", { name: "ancestors chain" }).getByRole("button").allTextContents(), ["A food hall", "A shared tool library", "Independent retail shops"]);
         assert.equal(await page.locator(".react-flow__node.chain-dimmed").count(), total - 4);
-        await inspection.getByRole("button", { name: "Show ancestors", exact: true }).click();
+        await inspection.getByRole("button", { name: "Clear", exact: true }).click();
         assert.equal(await page.locator(".chain-highlighted").count(), 0);
         assert.equal(evidence.weaveInput.length, 3);
         assert.equal(output.contributions.length, 3);
@@ -1838,9 +1839,9 @@ try {
   assert.equal(await rendered.locator('a[href^="javascript:"]').count(), 0);
   assert.equal(await markdownPage.evaluate(() => window.markdownUnsafe), undefined);
   await markdownPage.locator(".talk-transcript").evaluate(el => { el.scrollTop = 0; });
-  await markdownPage.getByRole("button", { name: "Latest message ↓" }).waitFor();
+  await markdownPage.getByRole("button", { name: "Latest message" }).waitFor();
   await markdownPage.screenshot({ path: `${artifacts}/talk-markdown.png` });
-  await markdownPage.getByRole("button", { name: "Latest message ↓" }).click();
+  await markdownPage.getByRole("button", { name: "Latest message" }).click();
   await markdownPage.setViewportSize({ width: 390, height: 844 });
   await markdownPage.locator(".talk-transcript").evaluate(el => { el.scrollTop = 0; });
   assert.equal(await markdownPage.locator(".talk-panel").evaluate(el => el.scrollWidth <= el.clientWidth), true, "Markdown keeps the narrow panel within its width");

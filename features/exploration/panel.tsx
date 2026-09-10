@@ -1,4 +1,7 @@
 "use client";
+
+import { Button, Textarea, Summary } from "../../components/ui/controls";
+
 import { useEffect, useState } from "react";
 import type { Thought } from "../atlas/domain";
 import type { Manifest, ProposalArtifact, Assessment } from "./domain";
@@ -47,26 +50,26 @@ export default function ExplorationPanel({ workspaceId, sources, inspect }: { wo
     <h2>Develop alternatives</h2>
     <p>{sources.length ? `${sources.length} selected sources.` : "Brief only; no idea or archive content is included."}</p>
     <label htmlFor="desired-change">Desired change</label>
-    <textarea id="desired-change" rows={4} maxLength={2000} value={change} onChange={(e) => { setChange(e.target.value); setPreview(null); }} />
-    <button disabled={busy || !!pending} onClick={() => { void act({ operation: "preview", workspaceId, change,
-      sources: sources.map(({ id, revision }) => ({ id, revision })) }).then((result) => { if (result) setPreview(result); }); }}>Preview exact input</button>
+    <Textarea id="desired-change" rows={4} maxLength={2000} value={change} onChange={(e) => { setChange(e.target.value); setPreview(null); }} />
+    <Button disabled={busy || !!pending} onClick={() => { void act({ operation: "preview", workspaceId, change,
+      sources: sources.map(({ id, revision }) => ({ id, revision })) }).then((result) => { if (result) setPreview(result); }); }}>Preview exact input</Button>
     {preview && <section><h3>Frozen input</h3><p>{preview.content.brief}</p><p>Constraints: {preview.content.constraints || "None stated"}</p>
-      {preview.content.sources.map((source) => <details key={source.id}><summary>{source.title} · revision {source.revision}</summary><p>{source.text}</p></details>)}
+      {preview.content.sources.map((source) => <details key={source.id}><Summary>{source.title} · revision {source.revision}</Summary><p>{source.text}</p></details>)}
       <p>Archive excluded. Model: {preview.content.profile.id}. Two alternatives and assessments reserve $0.20 of the M2 allowance.</p>
-      <button disabled={busy || !!pending} onClick={() => { void act({ operation: "start", commandId: crypto.randomUUID(), manifestId: preview.id, hash: preview.hash }); }}>Generate two alternatives</button>
+      <Button disabled={busy || !!pending} onClick={() => { void act({ operation: "start", commandId: crypto.randomUUID(), manifestId: preview.id, hash: preview.hash }); }}>Generate two alternatives</Button>
     </section>}
     {message && <p role="status">{message}</p>}
-    {!!pending && <button disabled={busy} onClick={() => { void act(pending).then((result) => { if (result?.content) setPreview(result); }); }}>Retry same request</button>}
+    {!!pending && <Button disabled={busy} onClick={() => { void act(pending).then((result) => { if (result?.content) setPreview(result); }); }}>Retry same request</Button>}
     <h3>Saved runs</h3>
     {state.runs.map((run) => <section key={run.id} className="run-card"><strong>{run.state}</strong><p>{run.error}</p>
       {!['completed', 'failed', 'stopped'].includes(run.state) && <div>
         {(run.state === "awaiting-input" ? ["resume", "stop", "recover"] : ["pause", "stop", "recover"]).map((action) =>
-          <button key={action} disabled={busy || !!pending} onClick={() => { void act({ operation: "control", commandId: crypto.randomUUID(), runId: run.id, action }); }}>{action === "recover" ? "Reconcile interrupted run" : action}</button>)}
+          <Button key={action} disabled={busy || !!pending} onClick={() => { void act({ operation: "control", commandId: crypto.randomUUID(), runId: run.id, action }); }}>{action === "recover" ? "Reconcile interrupted run" : action}</Button>)}
         <p>Already admitted calls may finish. Closing this panel does not stop the run.</p>
       </div>}
       {state.attempts.filter((a) => a.runId === run.id).map((a) => <div key={`${a.slot}-${a.purpose}`}>
         <p>Alternative {a.slot + 1} · {a.purpose} · {a.status}</p>{a.error && <p>{a.error}</p>}
-        {a.purpose === "generate" && a.status === "completed" && <button onClick={() => inspect(a.proposalId)}>Inspect {(a.artifact as ProposalArtifact).title}</button>}
+        {a.purpose === "generate" && a.status === "completed" && <Button onClick={() => inspect(a.proposalId)}>Inspect {(a.artifact as ProposalArtifact).title}</Button>}
         {a.purpose === "assess" && a.artifact && <p>{(a.artifact as Assessment).state}: {(a.artifact as Assessment).transformation}</p>}
       </div>)}
     </section>)}
