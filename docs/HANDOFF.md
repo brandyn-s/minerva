@@ -2,7 +2,7 @@
 
 Branch: `feat/expedition-theme`.
 Worktree: `/Users/brandyn.schult/code/minerva-expedition-theme`.
-Base candidate: `f184531` (current changes are uncommitted).
+Theme commit: `1139771`; integrated with main `41660a0`.
 
 ## Outcome
 Expedition is the shared visual standard for Layout, Read as text and Browse
@@ -16,7 +16,8 @@ Typography uses shared role tokens: titles 20px, body 15px, inputs/actions 16px,
 labels 12px and notes/header names 11px. Compact widths: Expedition/Browse 440px,
 Layout 340px, reader 880px. Desktop controls 36px; touch targets remain 44px.
 Header icons, control heights and responsive spacing follow the same scale.
-No backend changes, paid model calls, commits, pushes or deployment.
+No backend changes or paid model calls. Owner authorized commit and merge.
+Latest main metadata removal, voice continuity and node/card fade are preserved.
 
 ## Verification
 `npm run check`: lint, TypeScript, 15 tests and production build passed.

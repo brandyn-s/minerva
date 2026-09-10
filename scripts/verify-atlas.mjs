@@ -1690,6 +1690,18 @@ try {
       const stopsBeforeInterrupt = await voicePage.evaluate(() => window.voiceStats.playbackStops);
       emit({ type: "audio-delta", itemId: "handsfree-1", responseId: "handsfree-1", delta: Buffer.alloc(24000 * 2 * 4).toString("base64") });
       await voicePage.getByText("Minerva is speaking…", { exact: true }).waitFor();
+      const tracksBeforeNavigation = await voicePage.evaluate(() => window.voiceStats.stoppedTracks);
+      await voicePage.locator('[data-id="food"] .card-title').click();
+      await voicePage.locator("#minerva-talk").waitFor({ state: "hidden" });
+      assert.equal(await voicePage.locator(".voice-control").count(), 1, "card inspection retains the voice session");
+      await voicePage.waitForTimeout(300);
+      assert.equal(await voicePage.evaluate(() => window.voiceStats.playbackStops), stopsBeforeInterrupt, "card interaction preserves queued audio");
+      assert.equal(await voicePage.evaluate(() => window.voiceStats.stoppedTracks), tracksBeforeNavigation, "card interaction preserves microphone capture");
+      emit({ type: "audio-transcript-delta", itemId: "canvas-reply", responseId: "canvas-reply", delta: "Voice continues while inspecting the canvas." });
+      emit({ type: "audio-transcript-done", itemId: "canvas-reply", responseId: "canvas-reply", transcript: "Voice continues while inspecting the canvas." });
+      await vb("Talk to Minerva").click();
+      await voicePage.getByText("Voice continues while inspecting the canvas.", { exact: true }).waitFor();
+      assert.ok(await vb("End voice mode").isVisible(), "reopening Talk retains active voice controls");
       emit({ type: "speech-started", audioStartMs: 3000 });
       emit({ type: "response-done", responseId: "handsfree-1", status: "cancelled" });
       await voicePage.waitForFunction(previous => window.voiceStats.playbackStops > previous, stopsBeforeInterrupt);

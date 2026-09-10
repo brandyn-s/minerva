@@ -5,7 +5,7 @@ import { ideas, ideaRevisions, ideaRelationships, ideaLayouts, viewpoints, graph
 import { WorkspaceError } from "./domain";
 import { assertAcyclic, userThought, type GraphCommand, type GraphReceipt, type WorkspaceGraph } from "./graph-domain";
 import { mallFixture } from "../atlas/fixture";
-import { assessments, decisions } from "../exploration/schema";
+import { assessments } from "../exploration/schema";
 
 export async function readWorkspaceGraph(workspaceId: string): Promise<WorkspaceGraph> {
   return database().transaction(async (tx) => {
@@ -13,13 +13,11 @@ export async function readWorkspaceGraph(workspaceId: string): Promise<Workspace
     if (!workspace || workspace.deleted) throw new WorkspaceError("Workspace not found or deleted.", 404);
     const current = await tx.select().from(ideas).where(eq(ideas.workspaceId, workspaceId));
     const revisions = await tx.select().from(ideaRevisions).where(eq(ideaRevisions.workspaceId, workspaceId));
-    const savedDecisions = await tx.select().from(decisions).where(eq(decisions.workspaceId, workspaceId)).orderBy(decisions.createdAt);
     const savedAssessments = await tx.select().from(assessments);
     const thoughts = current.map((i) => {
       const content = revisions.find((r) => r.ideaId === i.id && r.revision === i.revision)!.content;
-      const decision = savedDecisions.filter((d) => d.ideaId === i.id && d.revision === i.revision).at(-1);
       const assessment = savedAssessments.find((a) => a.ideaId === i.id && a.revision === i.revision);
-      return { ...content, decision: decision?.decision ?? content.decision, evidence: assessment?.state ?? content.evidence,
+      return { ...content,
         assessment: assessment?.report ?? undefined };
     });
     const layouts = await tx.select().from(ideaLayouts).where(eq(ideaLayouts.workspaceId, workspaceId));
@@ -103,7 +101,7 @@ export async function executeGraphCommand(command: GraphCommand): Promise<GraphR
           const [previous] = await tx.select().from(ideaRevisions).where(and(eq(ideaRevisions.ideaId, idea.id), eq(ideaRevisions.revision, idea.revision)));
           const revision = idea.revision + 1;
           await tx.insert(ideaRevisions).values({ workspaceId, ideaId: idea.id, revision,
-            content: { ...previous.content, revision, title: command.title, body: command.body, summary: command.body.slice(0, 240), evidence: "unknown" } });
+            content: { ...previous.content, revision, title: command.title, body: command.body, summary: command.body.slice(0, 240) } });
           await tx.update(ideas).set({ revision }).where(eq(ideas.id, idea.id));
           result = { ...result, revision };
         } else {

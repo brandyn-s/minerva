@@ -973,7 +973,7 @@ summary {
 /* Root atlas layout and transitive navigation. */
 .scalable-atlas .thought:not(.thought-overview) { position: relative; }
 .scalable-atlas .card-content { height: 100%; overflow: auto; border-radius: 3px; }
-.scalable-atlas .react-flow__resize-control.handle { width: 10px; height: 10px; border-color: var(--card); background: var(--teal); }
+.scalable-atlas .react-flow__resize-control.handle { width: 10px; height: 10px; border-color: transparent; background: transparent; }
 .chain-dimmed { opacity: .18; }
 .fold-marker { pointer-events: all; position: absolute; top: -28px; right: 0; white-space: nowrap; z-index: 3; background: var(--card); }
 .chain-controls { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0; }
@@ -1539,4 +1539,14 @@ summary {
   .field-guide .field-guide-heading-actions > button, .field-guide .catalogue-menu > summary { min-height: 44px; }
   .field-guide .field-guide-heading-actions > button, .field-guide .catalogue-menu > summary { width: 44px; }
   .field-guide .expedition-segments span { min-height: 44px; }
+}
+
+/* Keep semantic zoom immediate, with only a short opacity fade at the switch. */
+.scalable-atlas .thought { animation: card-appear 120ms ease-out; }
+.scalable-atlas .thought.thought-overview { animation-name: node-appear; }
+@keyframes card-appear { from { opacity: 0; } to { opacity: 1; } }
+@keyframes node-appear { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .scalable-atlas .thought,
+  .scalable-atlas .thought.thought-overview { animation: none; }
 }

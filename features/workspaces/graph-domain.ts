@@ -74,6 +74,6 @@ export function assertAcyclic(edges: Relationship[], from: string, to: string) {
 }
 export function userThought(id: string, title: string, body: string): Thought {
   return { id, revision: 1, title, body, summary: body.slice(0, 240), kind: "exploration",
-    decision: "starting material", evidence: "unknown", contribution: "User-authored material; no assessed inheritance.",
+    contribution: "User-authored material; no assessed inheritance.",
     move: { title: "Develop this idea", question: "What should change?", preview: "Live generation is not connected yet." } };
 }
