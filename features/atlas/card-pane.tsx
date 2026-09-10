@@ -11,21 +11,21 @@ import {
   DotsThree,
   GitBranch,
   CaretRight,
-  ArrowLeft,
   Circle,
   CircleDashed,
 } from "../../components/ui/icons";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Thought, Relationship } from "./domain";
-import { cardConnections, cardEdit, type CardEdit } from "./card-revisions";
+import { cardConnections, cardEdit, wordDiff, type CardEdit } from "./card-revisions";
 import DownloadButton from "./download-button";
 
 type Props = {
   card: Thought;
   cards: Thought[];
   relationships: Relationship[];
-  revisions: Thought[];
+  revert: (number: number) => void;
+  develop: () => void;
   draft?: CardEdit;
   setDraft: (draft?: CardEdit) => void;
   save: (edit: CardEdit) => void;
@@ -42,11 +42,10 @@ const tabs = ["Content", "Connections", "History"] as const;
 type Tab = (typeof tabs)[number];
 
 export default function CardPane(props: Props) {
-  const { card, cards, relationships, draft, setDraft, revisions } = props;
+  const { card, cards, relationships, draft, setDraft } = props;
   const [tab, setTab] = useState<Tab>("Content");
   const [menu, setMenu] = useState(false);
   const [error, setError] = useState("");
-  const [review, setReview] = useState<Thought>();
   const scroll = useRef<HTMLDivElement>(null);
   const titleInput = useRef<HTMLInputElement>(null);
   const root = useRef<HTMLElement>(null);
@@ -66,7 +65,7 @@ export default function CardPane(props: Props) {
   }, []);
   useEffect(() => {
     scroll.current?.scrollTo(0, 0);
-  }, [tab, review]);
+  }, [tab]);
   const editing = !!draft;
   useEffect(() => {
     if (editing) titleInput.current?.focus();
@@ -89,7 +88,6 @@ export default function CardPane(props: Props) {
       props.save(edit);
       setDraft(undefined);
       setError("");
-      setReview(undefined);
       setTab("Content");
     } catch (cause) {
       setError(
@@ -108,7 +106,7 @@ export default function CardPane(props: Props) {
         <p>
           {edge.label}
           {edge.kind === "derivation" || edge.kind === "recombination"
-            ? ` · source revision ${edge.sourceRevision}`
+            ? ` · derived from revision ${edge.sourceRevision} of ${byId.get(edge.from)?.title ?? edge.from}${(byId.get(edge.from)?.revision ?? 0) > edge.sourceRevision ? " · Parent has moved on" : ""}`
             : ""}
         </p>
         {edge.contribution && <blockquote>{edge.contribution}</blockquote>}
@@ -116,19 +114,7 @@ export default function CardPane(props: Props) {
           <details>
             <Summary>Source excerpt</Summary>
             <p>
-              {(
-                revisions.find(
-                  (item) =>
-                    item.id === edge.from &&
-                    item.revision === edge.sourceRevision,
-                ) ??
-                cards.find(
-                  (item) =>
-                    item.id === edge.from &&
-                    item.revision === edge.sourceRevision,
-                )
-              )?.body ??
-                "This source revision is not available in this session."}
+              {byId.get(edge.from)?.revisions.find(r => r.number === edge.sourceRevision)?.body ?? "This source revision predates the imported history and is unavailable."}
             </p>
           </details>
         )}
@@ -194,7 +180,6 @@ export default function CardPane(props: Props) {
               disabled={!!draft}
               onClick={() => {
                 setTab(name);
-                setReview(undefined);
                 setError("");
               }}
               onKeyDown={(event) => {
@@ -213,7 +198,6 @@ export default function CardPane(props: Props) {
                       : (index + (event.key === "ArrowRight" ? 1 : 2)) %
                         tabs.length;
                 setTab(tabs[next]);
-                setReview(undefined);
                 document.getElementById(`card-tab-${tabs[next]}`)?.focus();
               }}
             >
@@ -257,6 +241,7 @@ export default function CardPane(props: Props) {
                   {label}
                   {key === "title" ? (
                     <Input
+                      aria-label={label}
                       ref={titleInput}
                       required
                       value={draft[key]}
@@ -266,6 +251,7 @@ export default function CardPane(props: Props) {
                     />
                   ) : (
                     <Textarea
+                      aria-label={label}
                       rows={key === "body" ? 6 : 3}
                       value={draft[key]}
                       onChange={(event) =>
@@ -407,63 +393,22 @@ export default function CardPane(props: Props) {
             )}
           </section>
         )}
-        {tab === "History" && (
-          <section>
-            <h3>How this idea changed</h3>
-            <p className="small-note">
-              Earlier versions saved during this session. Current text is saved
-              with the atlas; earlier versions are cleared on reload.
-            </p>
-            {review ? (
-              <>
-                <Button onClick={() => setReview(undefined)}>
-                  <ArrowLeft aria-hidden="true" />
-                  All versions
-                </Button>
-                <h3>
-                  Revision {review.revision} · {review.title}
-                </h3>
-                <p>{review.summary}</p>
-                <div className="card-pane-markdown">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {review.body}
-                  </ReactMarkdown>
-                </div>
-                <h3>Contribution</h3>
-                <p>{review.contribution}</p>
-                <Button
-                  onClick={() =>
-                    save({ ...cardEdit(review), revision: card.revision })
-                  }
-                >
-                  Restore this version
-                </Button>
-              </>
-            ) : (
-              <>
-                {[...revisions.filter((item) => item.id === card.id), card]
-                  .reverse()
-                  .map((item, index) => (
-                    <div className="card-pane-version" key={item.revision}>
-                      <div>
-                        <strong>
-                          Revision {item.revision}
-                          {index === 0 ? " · Current" : ""}
-                        </strong>
-                        <p>{item.title}</p>
-                      </div>
-                      {index > 0 && (
-                        <Button onClick={() => setReview(item)}>
-                          Review
-                          <CaretRight aria-hidden="true" />
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-              </>
-            )}
-          </section>
-        )}
+        {tab === "History" && <section aria-label="Revision history">
+          <h3>How this idea changed</h3>
+          <p className="small-note">Saved with this atlas. Revert creates a new revision; earlier content stays here.</p>
+          {[...card.revisions].reverse().map(item => {
+            const previous = card.revisions.find(r => r.number === item.number - 1);
+            return <section className="card-revision" key={item.number} aria-label={`Revision ${item.number}`}>
+              <h3>Revision {item.number}{item.number === card.revision ? " · Current" : ""}</h3>
+              <p className="small-note"><time dateTime={item.time}>{new Date(item.time).toLocaleString()}</time> · {item.cause}</p>
+              {item.note && <p>Model claim: {item.note}</p>}
+              <h4>Title</h4><div className="revision-diff" aria-label="Title changes">{wordDiff(previous?.title ?? "", item.title).map((part, i) => part.kind === "added" ? <ins key={i}>{part.text}</ins> : part.kind === "removed" ? <del key={i}>{part.text}</del> : <span key={i}>{part.text}</span>)}</div>
+              <h4>Summary</h4><p>{item.summary}</p>
+              <h4>Body</h4><div className="revision-diff" aria-label="Body changes">{wordDiff(previous?.body ?? "", item.body).map((part, i) => part.kind === "added" ? <ins key={i}>{part.text}</ins> : part.kind === "removed" ? <del key={i}>{part.text}</del> : <span key={i}>{part.text}</span>)}</div>
+              {item.number !== card.revision && <Button onClick={() => props.revert(item.number)}>Revert to revision {item.number}</Button>}
+            </section>;
+          })}
+        </section>}
       </div>
       <footer className="card-pane-footer">
         {!draft && (
@@ -507,6 +452,7 @@ export default function CardPane(props: Props) {
             </>
           ) : (
             <>
+              <Button onClick={props.develop}>Develop</Button>
               <Button className="card-pane-primary" onClick={props.explore}>
                 <Compass aria-hidden="true" />
                 Explore this idea

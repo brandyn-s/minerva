@@ -1582,3 +1582,16 @@ label {
 @media (max-width: 500px) { .voice-settings-dialog.field-guide .voice-essentials .voice-settings-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } }
 
 @media(pointer: coarse) { .voice-settings-dialog.field-guide select, .voice-settings-dialog.field-guide input:not([type=range]):not([type=checkbox]) { height: 44px; font-size: 16px; } }
+
+/* Development and revision content; controls use shared UI variants. */
+.detail-panel.develop-panel { bottom: auto; max-height: calc(100dvh - 110px); width: min(440px, calc(100vw - 20px)); overflow-y: auto; }
+.develop-actions, .develop-intent { display: flex; gap: 12px; align-items: center; }
+.develop-intent { justify-content: space-between; border-top: 1px solid var(--line); }
+.develop-intent p { overflow-wrap: anywhere; }
+.card-revision { border-top: 1px solid var(--line); margin-top: 18px; padding-top: 12px; }
+.revision-diff { white-space: pre-wrap; overflow-wrap: anywhere; }
+.revision-diff ins { background: #dce9dc; text-decoration: underline; }
+.revision-diff del { background: #f0ddd5; }
+.revision-badge { display: block; font: var(--guide-type-note); margin-top: 5px; color: var(--muted); }
+
+.overview-target .revision-badge { position: absolute; top: 100%; white-space: nowrap; }

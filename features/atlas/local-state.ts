@@ -7,7 +7,11 @@ const id = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9_-]*$/, "Invalid atlas id").r
 const point = z.object({ x: z.number(), y: z.number() });
 const camera = point.extend({ zoom: z.number().min(.03).max(1.6) });
 const view = z.enum(["Lineage", "Evolution", "Constellation"]);
+export const revisionSchema = z.object({ number: z.number().int().positive(), time: z.iso.datetime(), cause: z.string(),
+  title: z.string(), summary: z.string(), body: z.string(), note: z.string().optional(),
+  branch: z.object({ intent: z.string(), step: z.number().int().min(1).max(3), runId: z.string() }).optional() });
 const thought = z.object({
+  revisions: z.array(revisionSchema).min(1),
   id, revision: z.number().int().nonnegative(), title: z.string(), summary: z.string(), body: z.string(),
   kind: z.enum(["brief", "proposal", "recombination", "exploration"]),
   contribution: z.string(), move: z.object({ title: z.string(), question: z.string(), preview: z.string() }),
@@ -24,11 +28,11 @@ const size = z.object({ width: z.number().min(200).max(1000), height: z.number()
 const layout = z.object({ positions: z.record(id, point), sizes: z.record(id, size) });
 const change = z.object({ kind: z.enum(["move", "resize", "arrange"]), before: layout, after: layout });
 export function emptyHistory() { return { Lineage: { undo: [], redo: [] }, Evolution: { undo: [], redo: [] }, Constellation: { undo: [], redo: [] } }; }
-const saveV2 = z.object({
+const saveV3 = z.object({
   sizes: z.record(view, z.record(id, size)),
   layoutHistory: z.record(view, z.object({ undo: z.array(change).max(50), redo: z.array(change).max(50) })),
   folds: z.array(id),
-  version: z.literal(2), thoughts: z.array(thought).min(1), relationships: z.array(relationship),
+  version: z.literal(3), intents: z.array(z.object({ id, text: z.string().trim().min(1).max(500) })), thoughts: z.array(thought).min(1), relationships: z.array(relationship),
   positions: z.record(view, z.record(id, point)), cameras: z.partialRecord(view, camera),
   perspective: view, selected: z.array(id), active: id, focusedId: id.nullable(),
   themeCache: z.object({ groups: z.array(themesSchema.shape.groups.element.extend({ memberIds: z.array(id) })), hashes: z.record(id, z.string()), time: z.string() }).optional(),
@@ -37,6 +41,11 @@ const saveV2 = z.object({
 }).superRefine((save, ctx) => {
   const ids = new Set(save.thoughts.map(c => c.id));
   const fail = (message: string) => ctx.addIssue({ code: "custom", message });
+  for (const card of save.thoughts) {
+    const last = card.revisions.at(-1)!;
+    if (!last || card.revisions.some((r, i) => r.number !== i + 1) || card.revision !== last.number || (["title", "summary", "body"] as const).some(key => card[key] !== last[key])) fail("Invalid card revision history");
+  }
+  if (new Set(save.intents.map(i => i.id)).size !== save.intents.length) fail("Duplicate intent ids");
   if (ids.size !== save.thoughts.length) fail("Duplicate card ids");
   if (new Set(save.relationships.map(e => e.id)).size !== save.relationships.length) fail("Duplicate edge ids");
   const refs = [...save.selected, save.active, ...(save.focusedId ? [save.focusedId] : []), ...save.relationships.flatMap(e => [e.from, e.to]),
@@ -63,16 +72,26 @@ const saveV2 = z.object({
   }
 });
 export const atlasSaveSchema = z.preprocess(raw => {
-  if (raw && typeof raw === "object" && "version" in raw && raw.version === 1) {
-    return { ...raw, version: 2, sizes: { Lineage: {}, Evolution: {}, Constellation: {} }, layoutHistory: emptyHistory(), folds: [] };
-  }
-  return raw;
-}, saveV2);
+  if (!raw || typeof raw !== "object" || !("version" in raw) || ![1, 2].includes(raw.version as number)) return raw;
+  const legacy = raw as Record<string, unknown>;
+  const migrateCard = (value: unknown) => {
+    if (!value || typeof value !== "object") return value;
+    const card = value as Record<string, unknown>;
+    return { ...card, revision: 1, revisions: [{ number: 1, time: new Date().toISOString(), cause: "imported current content", title: card.title, summary: card.summary, body: card.body }] };
+  };
+  return { ...legacy, ...(raw.version === 1 ? { sizes: { Lineage: {}, Evolution: {}, Constellation: {} }, layoutHistory: emptyHistory(), folds: [] } : {}),
+    version: 3, intents: [], thoughts: Array.isArray(legacy.thoughts) ? legacy.thoughts.map(migrateCard) : legacy.thoughts,
+    expeditions: Array.isArray(legacy.expeditions) ? legacy.expeditions.map(entry => {
+      if (!entry || typeof entry !== "object") return entry;
+      const reading = entry.reading;
+      return { ...entry, reading: reading && typeof reading === "object" ? { ...reading, cards: Array.isArray(reading.cards) ? reading.cards.map(migrateCard) : reading.cards } : reading };
+    }) : legacy.expeditions };
+}, saveV3);
 export type AtlasSave = z.infer<typeof atlasSaveSchema>;
 export type ExpeditionRecord = z.infer<typeof expeditionRecordSchema>;
 export function fixtureSave(): AtlasSave {
   const fixture = mallFixture();
-  return { version: 2, sizes: { Lineage: {}, Evolution: {}, Constellation: {} }, layoutHistory: emptyHistory(), folds: [], thoughts: fixture.thoughts, relationships: fixture.relationships, positions: { Lineage: fixture.positions, Evolution: {}, Constellation: {} }, cameras: {}, perspective: "Lineage", selected: [], active: "repair", focusedId: null, messages: [], expeditions: [], activeExpedition: null };
+  return { version: 3, intents: [], sizes: { Lineage: {}, Evolution: {}, Constellation: {} }, layoutHistory: emptyHistory(), folds: [], thoughts: fixture.thoughts, relationships: fixture.relationships, positions: { Lineage: fixture.positions, Evolution: {}, Constellation: {} }, cameras: {}, perspective: "Lineage", selected: [], active: "repair", focusedId: null, messages: [], expeditions: [], activeExpedition: null };
 }
 export function interruptSavedRuns(save: AtlasSave): AtlasSave {
   return { ...save, expeditions: save.expeditions.map(entry => entry.run.stop ? entry : { ...entry, run: { ...entry.run, stop: `Step ${entry.run.steps.length + 1} was interrupted by leaving the atlas. Completed cards remain.` } }) };
@@ -131,7 +150,7 @@ async function restoreFromDatabase(): Promise<{ save: AtlasSave; notice: string 
 }
 export async function mergeAtlas(current: AtlasSave, incoming: AtlasSave) {
   const merged = structuredClone(current);
-  const contentHash = (c: AtlasSave["thoughts"][number]) => cardHash({ title: c.title, body: JSON.stringify([c.summary, c.body]) });
+  const contentHash = (c: AtlasSave["thoughts"][number]) => cardHash({ title: c.title, body: JSON.stringify([c.summary, c.body, c.revisions]) });
   const hashes = new Map(await Promise.all(current.thoughts.map(async c => [await contentHash(c), c.id] as const)));
   const ids = new Map<string, string>();
   let added = 0;
@@ -162,6 +181,7 @@ export async function mergeAtlas(current: AtlasSave, incoming: AtlasSave) {
       reading: entry.reading && { ...entry.reading, cards: entry.reading.cards.map(c => ({ ...c, id: ids.get(c.id)! })) } };
     if (!merged.expeditions.some(e => JSON.stringify(e) === JSON.stringify(next))) merged.expeditions.push(next);
   }
+  for (const intent of incoming.intents) if (!merged.intents.some(i => i.text === intent.text)) merged.intents.push({ ...intent, id: crypto.randomUUID() });
   merged.layoutHistory = emptyHistory();
   merged.folds = [...new Set([...merged.folds, ...incoming.folds.map(id => ids.get(id)!)])];
   return { save: atlasSaveSchema.parse(merged), added, skipped: incoming.thoughts.length - added };
