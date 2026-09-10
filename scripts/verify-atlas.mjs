@@ -812,7 +812,7 @@ try {
   assert.ok((await provenance.innerText()).includes("feature:wander"));
   await button("More card actions").click();
   await page.evaluate(() => { window.failDownload = true; });
-  await button("Download").click();
+  await button("Download Markdown").click();
   await page.getByRole("dialog").getByRole("alert").waitFor();
   const downloadedCard = page.waitForEvent("download");
   await button("Retry download").click();
@@ -907,7 +907,7 @@ try {
   assert.equal(await page.locator(".react-flow__edge.derivation,.react-flow__edge.recombination").count(), 0);
   await button("Lineage").click();
   await inspectFromIndex("Morning repair table");
-  await page.getByRole("dialog").getByRole("button", { name: "Edit", exact: true }).click();
+  await button("More card actions").click(); await page.getByRole("dialog").getByRole("button", { name: "Edit", exact: true }).click();
   await page.getByRole("dialog").getByRole("textbox", { name: /^Body/ }).fill("Edited theme content"); await button("Save changes").click();
   await close();
   await button("Constellation").click(); await settle();
@@ -1048,7 +1048,7 @@ try {
       }
       await button("Close panel").click();
       await inspectFromIndex(outputs[0].card.title);
-      await page.getByRole("dialog").getByRole("button", { name: "Edit", exact: true }).click();
+      await button("More card actions").click(); await page.getByRole("dialog").getByRole("button", { name: "Edit", exact: true }).click();
       await page.getByRole("dialog").getByRole("textbox", { name: /^Body/ }).fill("Edited expedition card after the reading."); await button("Save changes").click();
       await close(); await button("Expedition panel").click();
       await expPanel.getByText(/Stale reading/).waitFor();
@@ -1072,7 +1072,7 @@ try {
   await selectFromIndex("A shared tool library"); await button("Wander").click(); await button("Explore freely").click();
   await page.waitForFunction(() => document.querySelectorAll(".thought").length === 8);
   await inspectFromIndex("Repair apprenticeships");
-  await page.getByRole("dialog").getByRole("button", { name: "Edit", exact: true }).click();
+  await button("More card actions").click(); await page.getByRole("dialog").getByRole("button", { name: "Edit", exact: true }).click();
   await page.getByRole("dialog").getByRole("textbox", { name: /^Title/ }).fill("Durable repair apprenticeships"); await button("Save changes").click();
   await close();
   await inspectFromIndex("Durable repair apprenticeships"); await focusInspected(page); await settle();
@@ -1239,7 +1239,7 @@ try {
   await settle(); assert.equal((await storedSave()).layoutHistory.Lineage.undo.length, 50);
   await page.reload(); await page.locator(".thought").first().waitFor(); await settle();
   assert.equal((await storedSave()).layoutHistory.Lineage.undo.length, 50);
-  await inspectFromIndex("Repair, then stay for supper"); await page.getByRole("dialog").getByRole("button", { name: "Edit", exact: true }).click();
+  await inspectFromIndex("Repair, then stay for supper"); await button("More card actions").click(); await page.getByRole("dialog").getByRole("button", { name: "Edit", exact: true }).click();
   await page.getByRole("dialog").getByRole("textbox", { name: /^Title/ }).fill("Edited layout card"); await button("Save changes").click(); await settle();
   assert.ok(Object.values((await storedSave()).layoutHistory).every(h => !h.undo.length && !h.redo.length));
   await close();
