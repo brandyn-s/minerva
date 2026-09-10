@@ -400,11 +400,12 @@ export default function CardPane(props: Props) {
             const previous = card.revisions.find(r => r.number === item.number - 1);
             return <section className="card-revision" key={item.number} aria-label={`Revision ${item.number}`}>
               <h3>Revision {item.number}{item.number === card.revision ? " · Current" : ""}</h3>
-              <p className="small-note"><time dateTime={item.time}>{new Date(item.time).toLocaleString()}</time> · {item.cause}</p>
+              <p className="small-note">{item.prepared ? "Prepared" : <time dateTime={item.time}>{new Date(item.time).toLocaleString()}</time>} · {item.cause}</p>
               {item.note && <p>Model claim: {item.note}</p>}
               <h4>Title</h4><div className="revision-diff" aria-label="Title changes">{wordDiff(previous?.title ?? "", item.title).map((part, i) => part.kind === "added" ? <ins key={i}>{part.text}</ins> : part.kind === "removed" ? <del key={i}>{part.text}</del> : <span key={i}>{part.text}</span>)}</div>
               <h4>Summary</h4><p>{item.summary}</p>
               <h4>Body</h4><div className="revision-diff" aria-label="Body changes">{wordDiff(previous?.body ?? "", item.body).map((part, i) => part.kind === "added" ? <ins key={i}>{part.text}</ins> : part.kind === "removed" ? <del key={i}>{part.text}</del> : <span key={i}>{part.text}</span>)}</div>
+              <h4>Contribution</h4>{item.contribution === undefined ? <p>Historical contribution unknown.</p> : <div className="revision-diff" aria-label="Contribution changes">{wordDiff(previous?.contribution ?? "", item.contribution).map((part, i) => part.kind === "added" ? <ins key={i}>{part.text}</ins> : part.kind === "removed" ? <del key={i}>{part.text}</del> : <span key={i}>{part.text}</span>)}</div>}
               {item.number !== card.revision && <Button onClick={() => props.revert(item.number)}>Revert to revision {item.number}</Button>}
             </section>;
           })}

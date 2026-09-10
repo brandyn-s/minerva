@@ -5,8 +5,10 @@ AI Gateway model routes. [CAPABILITIES](./CAPABILITIES.md) records verified scop
 
 ## System shape
 
-One Next.js/React/TypeScript application is the deployment unit. The browser
-owns the atlas and its IndexedDB save. Model route handlers call AI Gateway;
+The Next.js/React/TypeScript application serves the atlas. The browser
+owns its editable atlas and IndexedDB save. Optional local durable Expedition
+execution uses a separate worker and SQLite WAL store for immutable experiments;
+it is not configured for hosted/serverless execution. Model route handlers call AI Gateway;
 voice uses a server-minted token and a browser realtime connection.
 
 ## Ownership and dependencies
@@ -28,15 +30,20 @@ command bus, service framework or universal agent engine.
 
 The browser stores cards, relationships, revisions, layout sizes and history,
 perspective positions and cameras, selection, themes, Talk and Expedition state
-in versioned IndexedDB saves. Import validates shape and references; Merge remaps
-IDs and skips duplicate content. Recovery copies and Export are browser-owned.
+in versioned IndexedDB saves. Import validates shape and references; Merge follows artifact identity and compatible revision history, extends known
+histories and preserves divergent histories as deterministic forks. Recovery copies and Export are browser-owned.
 Lineage, Evolution and Constellation share card IDs and have independent layout
-state. The server does not persist the atlas.
+state. The server does not persist the editable atlas. The optional local experiment
+store owns frozen inputs, operations, outcomes, assessments and readings.
+Materialization preserves source identity when its frozen revision still matches;
+otherwise it retains a separate result. See [local execution](../scorebook-transition/implementation.md).
 
 ## Context compilation
 
 Each model request supplies the current relevant cards and relationships.
-Typed Talk and voice receive full-canvas context with selection indicating focus.
+Typed Talk and voice receive a bounded canvas view prioritizing focus/selection,
+with omitted/truncated content disclosed. Conversation input is bounded separately
+from the saved visible transcript.
 Voice updates its context when the user inspects or selects a card. Model output
 is untrusted; validate generated records and graph references before adding them.
 

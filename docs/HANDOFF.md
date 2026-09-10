@@ -1,22 +1,34 @@
-# Atlas revision label fix
+# Scorebook transition: local implementation candidate
 
-Branch: `fix/revision-label-overlap`, based on `origin/main` at `6f14824`.
-Worktree: `/Users/brandyn.schult/code/minerva-revision-labels`.
-State: owner authorized commit and merge after required checks.
+Branch: `docs/scorebook-transition-batch-00`.
+Worktree: `/Users/brandyn.schult/code/minerva-scorebook-transition`.
+Base SHA: `6f148242c93f2cd44868c6374178ef12a8876586`.
+Candidate is uncommitted; no new candidate SHA, push or deployment.
+The owner authorized all remaining transition batches, extending the demo scope.
 
 ## Outcome
-Zoomed-out Atlas markers show titles without revision badges, preventing the
-revision count from overlapping the title. Expanded cards retain their count,
-aligned with the title and summary inset. History and Develop data are unchanged.
+Batches 01–08 implement local experiment persistence, shared operations,
+separate durable worker, population selection, readings, interventions,
+bounded browser/model context and reproducible synthetic evaluation.
+Existing Wander, Weave and Develop use the same operation contracts as Expedition.
+Revision contribution history, append-only Revert and identity-aware Merge remain.
+Batch 09 is complete: Scorebook archived at ed2a81c after accessible exports were recovered.
+Remaining unknown historical coverage has an explicit owner disposition; services remain running.
 
-## Verification
-`npm run check` and `npm run test:ui` pass (desktop and touch).
-Focused Develop browser replay verifies title-only overview labels, expanded
-badge placement, revision history, reuse, Stop, reload and export/import.
-Provider responses are mocked; no paid model calls were made.
+## Evidence and limits
+See [verification](scorebook-transition/verification.md) for exact outcomes.
+No paid calls or fresh hosted checks were performed.
+Synthetic evidence verifies software behavior, not discovery efficacy.
+Separate assessment currently uses the same configured model, not independent validation.
+SQLite/worker durability is local to one host; hosted durable infrastructure is absent.
+Voice replay fails at the same microphone assertion on this candidate and clean base.
 
-## Local startup and next role
+## Startup and next role
 Use Node 24.20.0 / npm 12.0.2 via the repository npx prefix.
-Production build: `npm run build`, then `npm run start -- --port 56113`.
-Replay: `MINERVA_URL=http://127.0.0.1:56113 MINERVA_DEVELOP_ONLY=1 node scripts/verify-atlas.mjs`.
-Next role: operator completes the authorized commit and merge after required CI.
+In two terminals set MINERVA_EXPERIMENT_DB to the same absolute private SQLite path.
+Run `npm run dev -- --port 3086` and `npm run expedition:worker`.
+Open http://127.0.0.1:3086 and select Expedition / Synthetic rehearsal.
+Full bounded commands: [implementation](scorebook-transition/implementation.md#local-startup).
+Next role: owner reviews the uncommitted Minerva candidate; Scorebook archival is complete.
+Live comparison configuration is prepared but requires an explicit numeric budget.
+No further implementation, commit, deployment or paid execution is granted by this handoff.

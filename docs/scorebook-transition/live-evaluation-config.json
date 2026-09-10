@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "status": "prepared-not-authorized",
+  "briefs": [
+    {
+      "id": "coordination",
+      "goal": "Design a mechanism for allocating eight shared workshop stations among twenty people requesting one-hour sessions.",
+      "constraints": [
+        "Never allocate more than eight stations simultaneously.",
+        "Do not require payments or a permanent central operator.",
+        "Explain handling of conflicting requests and no-shows."
+      ]
+    },
+    {
+      "id": "physical-service",
+      "goal": "Design a neighborhood tool-lending service that can operate from one small staffed desk for two hours each week.",
+      "constraints": [
+        "Use at most one paid staff member during opening hours.",
+        "Explain how tools are returned and damage is handled.",
+        "Do not require users to own a smartphone."
+      ]
+    },
+    {
+      "id": "creative-communication",
+      "goal": "Design a participatory public exhibit that communicates how a local river changes over a year.",
+      "constraints": [
+        "Fit within a single indoor room.",
+        "Support visitors who cannot hear spoken audio.",
+        "Explain how contributions from visitors alter the exhibit without obscuring prior contributions."
+      ]
+    }
+  ],
+  "policies": [
+    "independent",
+    "scorebook-baseline",
+    "diversity"
+  ],
+  "seeds": {
+    "development": [
+      1,
+      2,
+      3
+    ],
+    "heldOut": [
+      11,
+      12,
+      13
+    ]
+  },
+  "maxCallsPerRun": 24,
+  "maxCallsTotal": 1296,
+  "capacity": 8,
+  "mode": "explore",
+  "provider": "gateway",
+  "model": "anthropic/claude-sonnet-5",
+  "assessmentModel": "anthropic/claude-sonnet-5",
+  "promptImplementationSha256": "6cbf0041c58dfec187b15590cbdaa2cac45bcf12b3f74ca07ac905007a9151e7",
+  "schemaImplementationSha256": "8aa5fc7bc663b7813cb250eaaaaeade08262c9a0af1f3aa65a66314ab45f14c7",
+  "outputDirectory": "/Users/brandyn.schult/research/private/minerva-live-comparison",
+  "maxCostMicros": null,
+  "costStatus": "Execution blocked until an authorized numeric total ceiling and independently verified per-call ceiling are recorded; total reservation is 1296 times per-call ceiling.",
+  "retries": 0,
+  "stop": [
+    "24 calls per run",
+    "user stop",
+    "three failed or uncertain attempts"
+  ],
+  "independentSemanticReview": "pending separately specified assessor or blinded human review"
+}

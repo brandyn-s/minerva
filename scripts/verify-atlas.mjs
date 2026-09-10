@@ -252,14 +252,8 @@ async function verifyDevelopment() {
   assert.equal(await page.locator('.overview-target .revision-badge').count(), 0, "overview labels stay title-only after Develop");
   await page.screenshot({ path: `${artifacts}/revision-overview.png` });
   for (let i = 0; i < 20 && !await page.locator('[data-id="retail"] .card-content').count(); i++) { await cameraKey("+"); await settle(); }
-  const revisionBadge = page.locator('[data-id="retail"] .revision-badge');
-  assert.equal(await revisionBadge.innerText(), "3 revisions");
-  assert.ok(await revisionBadge.evaluate(element => {
-    const title = element.previousElementSibling.getBoundingClientRect();
-    const badge = element.getBoundingClientRect();
-    const summary = element.nextElementSibling.getBoundingClientRect();
-    return badge.top >= title.bottom && badge.bottom <= summary.top && Math.abs(badge.left - summary.left) < 1;
-  }), "expanded revision count sits between title and summary with aligned inset");
+  assert.ok(await page.locator('[data-id="retail"] .card-content').count());
+  assert.equal(await page.locator('.revision-badge').count(), 0, "expanded cards omit revision labels too");
   await fit();
   await inspectFromIndex(card(developed, "retail").title);
   await close(); await inspectFromIndex("A shared tool library"); await button("Develop").click();

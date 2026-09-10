@@ -16,7 +16,7 @@ function cardMarkdown(card: Thought, allCards: Thought[], edges: Relationship[],
   const parents = edges.filter(e => e.to === card.id && (e.kind === "derivation" || e.kind === "recombination"));
   const inheritance = parents.length ? `\n${heading}# Inheritance\n\n${parents.map(e => `- ${title(allCards.find(c => c.id === e.from)?.title ?? e.from)}: ${e.contribution || "Not specified"}${card.provenance?.moveTitle ? `\n  Move: ${card.provenance.moveTitle}` : ""}`).join("\n") }\n` : "";
   const provenance = card.provenance ? `\n${heading}# Provenance\n\nFeature: ${card.provenance.feature}\n\nTag: ${card.provenance.tag}\n\nSources at generation: ${card.provenance.sourceTitles.map(title).join("; ")}\n` : "";
-  const history = `\n${heading}# Revision history\n\n${[...card.revisions].reverse().map(r => `${heading}## Revision ${r.number} — ${r.cause}\n\nTime: ${r.time}\n\nTitle: ${r.title}\n\nSummary: ${r.summary}\n\n${r.body}${r.note ? `\n\nModel claim: ${r.note}` : ""}`).join("\n\n") }\n`;
+  const history = `\n${heading}# Revision history\n\n${[...card.revisions].reverse().map(r => `${heading}## Revision ${r.number} — ${r.cause}\n\nTime: ${r.prepared ? "Prepared" : r.time}\n\nTitle: ${r.title}\n\nSummary: ${r.summary}\n\n${r.body}\n\nContribution: ${r.contribution ?? "Historical contribution unknown"}${r.note ? `\n\nModel claim: ${r.note}` : ""}`).join("\n\n") }\n`;
   return `${heading} ${title(card.title)}\n\n${heading}# Summary\n\n${card.summary}\n\n${heading}# Body\n\n${card.body}\n\n${heading}# Contribution\n\n${card.contribution}\n\n${heading}# Relationships\n\n${relationships || "None"}\n${inheritance}${provenance}${history}`;
 }
 

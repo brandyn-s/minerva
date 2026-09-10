@@ -1592,4 +1592,3 @@ label {
 .revision-diff { white-space: pre-wrap; overflow-wrap: anywhere; }
 .revision-diff ins { background: #dce9dc; text-decoration: underline; }
 .revision-diff del { background: #f0ddd5; }
-.revision-badge { display: block; font: var(--guide-type-note); margin: 5px 18px 0; color: var(--muted); }

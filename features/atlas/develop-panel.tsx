@@ -1,4 +1,5 @@
 "use client";
+import { receiptSchema } from "../experiments/contracts";
 import { useEffect, useRef, useState } from "react";
 import { Button, Input, Select } from "../../components/ui/controls";
 import PanelHeader from "../../components/ui/panel-header";
@@ -24,7 +25,7 @@ export default function DevelopPanel({ card, intents, remember, commit, close }:
     setIntent(frozen); remember(frozen); setNotes([]); setRunning(true);
     const request = new AbortController(); controller.current = request;
     const runId = crypto.randomUUID(); let current = card;
-    const priorSteps = card.revisions.filter(r => r.branch?.intent === frozen).map(r => ({ title: r.title, summary: r.summary, body: r.body, note: r.note ?? "", step: r.branch!.step }));
+    const priorSteps = card.revisions.filter(r => r.branch?.intent === frozen).map(r => ({ id:card.id, revision:r.number, title: r.title, summary: r.summary, body: r.body, note: r.note ?? "", step: r.branch!.step }));
     try {
       for (let step = 1; step <= steps; step++) {
         setStatus(`Developing step ${step} of ${steps}…`);
@@ -34,9 +35,9 @@ export default function DevelopPanel({ card, intents, remember, commit, close }:
         if (request.signal.aborted) return;
         if (!response.ok) throw new Error(result.error || "Develop failed.");
         const output = developmentResultSchema.parse(result);
-        const next = reviseCard(current, { ...cardEdit(current), title: output.title, summary: output.summary, body: output.body }, `branch step ${step} of ${frozen}`, { note: output.note, branch: { intent: frozen, step, runId } });
+        const next = reviseCard(current, { ...cardEdit(current), title: output.title, summary: output.summary, body: output.body }, `branch step ${step} of ${frozen}`, { note: output.note, ...(result.receipt ? { receipt: receiptSchema.parse(result.receipt) } : {}), branch: { intent: frozen, step, runId } });
         commit(current, next); current = next;
-        priorSteps.push({ ...output, step }); setNotes(previous => [...previous, output.note]);
+        priorSteps.push({ ...output, step, id:next.id, revision:next.revision }); setNotes(previous => [...previous, output.note]);
       }
       setStatus(`${steps} ${steps === 1 ? "step" : "steps"} completed. Revisions are kept in History.`);
     } catch (error) {

@@ -79,10 +79,12 @@ test("atlas: shared controls survive panel navigation without provider calls", a
   await browse.getByRole("button",{name:"Close panel",exact:true}).click();
   await page.getByRole("button",{name:"Expedition panel",exact:true}).click();
   const expedition=page.getByRole("dialog",{name:"Expedition",exact:true});
-  await expect(expedition.getByRole("heading",{name:"A food hall",exact:true})).toBeVisible();
-  await expedition.getByRole("textbox").fill("Explore shared kitchens");
-  await expedition.getByRole("radio",{name:"3",exact:true}).check();
-  await expect(expedition.getByRole("button",{name:"Start expedition"})).toBeEnabled();
+  await expect(expedition.getByText("Starting material: A food hall. Independent roots see only the brief.")).toBeVisible();
+  await expedition.getByLabel("Exploration goal",{exact:true}).fill("Explore shared kitchens");
+  await expedition.getByLabel("Maximum calls, including assessments",{exact:true}).fill("12");
+  await expect(expedition.getByLabel("Execution",{exact:true})).toHaveValue("fixture");
+  // Offline configuration must prevent starting work; connected runs have a separate replay.
+  await expect(expedition.getByRole("button",{name:"Start expedition"})).toBeDisabled();
   await page.screenshot({path:testInfo.outputPath("expedition.png")});
   await expedition.getByRole("button",{name:"Close panel",exact:true}).click();
   await page.getByRole("button",{name:"Read as text",exact:true}).click();
