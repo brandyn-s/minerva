@@ -71,6 +71,12 @@ an existing Chromium executable, and `MINERVA_ARTIFACTS` selects screenshot outp
 typecheck, domain/document/configuration tests and production build; browser
 verification is separate because it needs a running app and installed Chromium.
 
+Older checkouts built before PR #86 may retain gitignored generated
+`app/.well-known/workflow` routes that import the removed Workflow runtime.
+If a build fails on those imports, remove only that generated directory
+(`rm -rf app/.well-known/workflow` from the repository root), then rerun
+`npm run check`. Do not remove the entire `app/.well-known` directory.
+
 ## Resuming an existing checkpoint
 
 Read AGENTS, the selected package, relevant capability rows and the short handoff.

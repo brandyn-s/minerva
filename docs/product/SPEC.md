@@ -189,7 +189,13 @@ contract, not five labels for one prompt. Experimental constraints stay
 experimental. They share generation, review, context and admission machinery.
 These are selectable instruments, not a taxonomy every Wander idea must fit.
 
-### C10: Wander
+### C10: Expedition exploration policy
+
+Current operation names: Wander creates related ideas, Weave recombines selected
+sources, and Develop revises one idea using an intent. Expedition coordinates
+these same operations. The former autonomous Wander contract below belongs to
+Expedition; it does not create another user-facing feature.
+
 
 Run bounded durable exploration with brief-only independent roots, a frontier,
 archive-aware development, distant recombination and targeted interventions.
@@ -222,10 +228,10 @@ an explicit reason not to act. A challenge is not automatically fact or a
 permanent constraint. Stale readings are marked; even fresh narrative is not
 authoritative hidden context.
 
-### C12: Agent Drive
+### C12: Expedition goal-pursuit policy
 
 Pursue an explicit goal with permitted operation scope, observable stopping
-condition and attempt/spend allowance. Its policy is distinct from Wander,
+condition and attempt/spend allowance. Its policy is distinct from open-ended exploration,
 but shares operations and execution. Record rationale and observed effects;
 model-estimated progress is not an observed satisfied condition. Stop on
 completion, user stop, exhausted allowance or bounded stagnation, preserving

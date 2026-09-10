@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-09-10T04:46:38.978846+00:00",
+  "minervaRevision": "6f148242c93f2cd44868c6374178ef12a8876586",
+  "scorebookRevision": "b22a1dd65b0ca3d0d85498c09edf6d34f0e19be4",
+  "privateLocation": "/Users/brandyn.schult/research/private/scorebook-preservation",
+  "git": {
+    "refCountExcludingHEAD": 52,
+    "bundleVerification": "passed; complete reachable history",
+    "restoreClone": "restore-check",
+    "restoredHeadVerified": true,
+    "fsck": "passed"
+  },
+  "metadataCounts": {
+    "issues-and-prs.json": 29,
+    "issue-comments.json": 29,
+    "pr-comments.json": 0,
+    "releases.json": 0
+  },
+  "historicalData": {
+    "projects": {
+      "status": "not exported; access unavailable",
+      "count": null
+    },
+    "snapshots": {
+      "status": "not exported; access unavailable",
+      "count": null
+    },
+    "searchlightRuns": {
+      "status": "not exported; access unavailable",
+      "count": null
+    },
+    "rawEvaluationReceipts": {
+      "status": "not located within scoped checkout search",
+      "count": null
+    },
+    "browserUnsyncedState": {
+      "status": "not inspected",
+      "count": null
+    }
+  },
+  "validation": {
+    "scorebookExportTests": "5 synthetic export/projection tests passed on bundle-restored source",
+    "minervaNativeChecks": "v3 synthetic roundtrip, v2 migration, append-only Revert passed; contribution omission and Merge duplicate reproduced",
+    "historicalWorkspaceRestore": "not performed; none recovered",
+    "staleWorkflow": "reproduced module-not-found errors using old generated files in isolated checkout; removed only copied generated subtree",
+    "minervaRepositoryChecks": "final npm run check passed: lint, typecheck, 28 tests, production build"
+  },
+  "files": [
+    {
+      "name": "baseline-checks.json",
+      "bytes": 420,
+      "sha256": "b0b0f89b30c1075233a0ec6926ba5828bbe8a75a7a66b681e9a6b6a214830304",
+      "kind": "source/metadata/check evidence"
+    },
+    {
+      "name": "issue-comments.json",
+      "bytes": 172667,
+      "sha256": "d547de08dac9759a68b75d0f0aed5b81b865ae6fd796d5c0b41f3274037011dc",
+      "kind": "source/metadata/check evidence"
+    },
+    {
+      "name": "issues-and-prs.json",
+      "bytes": 114455,
+      "sha256": "cd9cae5983b415c150ae36b6456044d58234f212a1f0c26f81b1d2293b87fc28",
+      "kind": "source/metadata/check evidence"
+    },
+    {
+      "name": "minerva-check-final.log",
+      "bytes": 4305,
+      "sha256": "4b8058a1d78f52e2780d8394d60136ab5d953f26606896b1ca7560c0a8388741",
+      "kind": "source/metadata/check evidence"
+    },
+    {
+      "name": "minerva-check.log",
+      "bytes": 4300,
+      "sha256": "324a04bf1860beea79338b046b4937ee8d695b6b2cecf5ce87629e3fa342d72f",
+      "kind": "source/metadata/check evidence"
+    },
+    {
+      "name": "minerva-pr86.json",
+      "bytes": 2527,
+      "sha256": "2e99d2eb78547297f04bcf9a9f8594f7852969eab0b05cea11247cd122d79752",
+      "kind": "source/metadata/check evidence"
+    },
+    {
+      "name": "minerva-synthetic-v3.json",
+      "bytes": 11311,
+      "sha256": "6e2ac1c7a985b450a89168094b70ff3ed50b0b8060f8def994a0e12e98c75f8d",
+      "kind": "synthetic workspace"
+    },
+    {
+      "name": "pr-comments.json",
+      "bytes": 4,
+      "sha256": "cf1cbb66a638b4860a516671fb74850e6ccf787fe6c4c8d29e9c04efe880bd05",
+      "kind": "source/metadata/check evidence"
+    },
+    {
+      "name": "refs.txt",
+      "bytes": 3620,
+      "sha256": "7917bfc09e4e836cef54d559c4383993d3731f46baedb060ed0b4d65a1c73061",
+      "kind": "source/metadata/check evidence"
+    },
+    {
+      "name": "releases.json",
+      "bytes": 4,
+      "sha256": "cf1cbb66a638b4860a516671fb74850e6ccf787fe6c4c8d29e9c04efe880bd05",
+      "kind": "source/metadata/check evidence"
+    },
+    {
+      "name": "repository.json",
+      "bytes": 5757,
+      "sha256": "21d8b32554f64173b97cedbea19e5dcffeda8843b19b48957ff612ee704e1011",
+      "kind": "source/metadata/check evidence"
+    },
+    {
+      "name": "restore-fsck.log",
+      "bytes": 399,
+      "sha256": "b59d31f93ccb5ae854c716a225e2db34cf6b9e67394303c1d1685508cf73c8ba",
+      "kind": "source/metadata/check evidence"
+    },
+    {
+      "name": "scorebook-api.bundle",
+      "bytes": 51876434,
+      "sha256": "805281dc5044f649d7827895b69629fd8ee36eea6df34a22631093207f427b32",
+      "kind": "source/metadata/check evidence"
+    },
+    {
+      "name": "scorebook-export-tests.log",
+      "bytes": 559,
+      "sha256": "bf96b588bf1c2e4a5004a0fbcb5e4d599158df447890b84bd33042cb2bbeba02",
+      "kind": "source/metadata/check evidence"
+    },
+    {
+      "name": "stale-workflow-build.log",
+      "bytes": 5123,
+      "sha256": "12213fd503080301e1b8209481ef348c843f1caa9c29f6f8e33e0bdf6f59f41b",
+      "kind": "source/metadata/check evidence"
+    }
+  ],
+  "coverageExclusions": [
+    "unadvertised/deleted Git objects",
+    "Git LFS objects not independently exported",
+    "Actions artifacts/logs",
+    "complete PR review objects",
+    "deployment settings and secrets",
+    "external and browser state"
+  ]
+}

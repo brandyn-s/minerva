@@ -8,10 +8,10 @@ export function cardEdit(card: Thought): CardEdit {
   const { revision, title, summary, body, contribution } = card;
   return { revision, title, summary, body, contribution };
 }
-export function firstRevision(card: Pick<Thought, "title" | "summary" | "body">, cause = "starting material", time = new Date().toISOString()): CardRevision {
-  return { number: 1, time, cause, title: card.title, summary: card.summary, body: card.body };
+export function firstRevision(card: Pick<Thought, "title" | "summary" | "body"> & Partial<Pick<Thought, "contribution">>, cause = "starting material", time = new Date().toISOString()): CardRevision {
+  return { number: 1, time, cause, title: card.title, summary: card.summary, body: card.body, ...(card.contribution === undefined ? {} : { contribution: card.contribution }) };
 }
-export function reviseCard(card: Thought, edit: CardEdit, cause = "edited", details: Pick<CardRevision, "note" | "branch"> = {}): Thought {
+export function reviseCard(card: Thought, edit: CardEdit, cause = "edited", details: Pick<CardRevision, "note" | "branch" | "experiment" | "receipt"> = {}): Thought {
   if (edit.revision !== card.revision)
     throw new Error(
       "This card changed while you were editing. Cancel to load its current version.",
@@ -25,7 +25,7 @@ export function reviseCard(card: Thought, edit: CardEdit, cause = "edited", deta
     title: edit.title.trim(),
     revision: card.revision + 1,
     revisions: [...card.revisions, { number: card.revision + 1, time: new Date().toISOString(), cause,
-      title: edit.title.trim(), summary: edit.summary, body: edit.body, ...details }],
+      title: edit.title.trim(), summary: edit.summary, body: edit.body, contribution: edit.contribution, ...details }],
   };
   delete revised.assessment;
   return revised;
@@ -50,7 +50,7 @@ export function cardConnections(id: string, edges: Relationship[]) {
 export function revertCard(card: Thought, number: number): Thought {
   const revision = card.revisions.find(r => r.number === number);
   if (!revision) throw new Error("That revision is unavailable.");
-  return reviseCard(card, { ...cardEdit(card), title: revision.title, summary: revision.summary, body: revision.body }, `reverted to revision ${number}`);
+  return reviseCard(card, { ...cardEdit(card), title: revision.title, summary: revision.summary, body: revision.body, contribution: revision.contribution ?? card.contribution }, `reverted to revision ${number}${revision.contribution === undefined ? " (historical contribution unknown; current retained)" : ""}`);
 }
 // Hirschberg LCS keeps memory linear even for long imported text.
 export function wordDiff(before: string, after: string): { kind: "same" | "added" | "removed"; text: string }[] {

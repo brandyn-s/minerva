@@ -1,0 +1,11 @@
+# Prepared live comparison protocol
+
+Status: not executed; requires a concrete authorized spend ceiling and verified per-call model ceiling. Do not enable live calls from this document alone.
+
+Compare independent sampling, Scorebook-style behavior-targeting approximation and Minerva diversity policy on three development seeds (1, 2, 3) and three held-out seeds (11, 12, 13), using the exact briefs and constraints in [live-evaluation-config.json](live-evaluation-config.json). That configuration pins model, prompt/schema source hashes, capacity, output location and stopping conditions. Verify those hashes before execution; a changed prompt or schema requires a new protocol version. Do not tune using held-out results.
+
+Maximum: 3 briefs × 3 policies × 6 seeds × 24 calls = 1,296 generation/assessment calls. Every retry consumes this allowance; current implementation performs none automatically. Reserve 1,296 × independently verified per-call maximum in USD, with the owner's total ceiling no lower than this bound or reduce the protocol before execution. Use the current configured Gateway model for generation and separately recorded assessment calls; a different calibrated assessor and blinded human review must be separately specified/budgeted before claiming independent validation.
+
+Record all candidates, rejected/failed outcomes, context manifests, operation versions, assessments, costs and selection decisions. Report distinct supported mechanisms at stated thresholds, retained alternatives, constraint violations, unassessed outcomes, recurrence relative to exposure, intervention outcomes and evaluator disagreement. Human grouping of blinded sampled artifacts is needed to validate mechanism equivalence. Token usage is observed telemetry; unknown charges retain their conservative allowance.
+
+Stop per-run on its cap, explicit user control, or three failed/uncertain attempts; include exhausted/failed runs in reporting. Freeze protocol/brief hashes before the first call. Store raw evidence under a private output directory, never in tracked source. A valid null or negative result is an acceptable outcome; the C1 audit remains historical context rather than evidence about this new protocol.

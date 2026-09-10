@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { operationSchema, receiptSchema } from "../experiments/contracts";
+import { stableJson } from "./stable-json";
 import { expeditionStepSchema, readingSchema, validateReading } from "./expedition";
 import { themesSchema, cardHash } from "./themes";
 import { mallFixture } from "./fixture";
@@ -8,11 +10,13 @@ const point = z.object({ x: z.number(), y: z.number() });
 const camera = point.extend({ zoom: z.number().min(.03).max(1.6) });
 const view = z.enum(["Lineage", "Evolution", "Constellation"]);
 export const revisionSchema = z.object({ number: z.number().int().positive(), time: z.iso.datetime(), cause: z.string(),
-  title: z.string(), summary: z.string(), body: z.string(), note: z.string().optional(),
+  title: z.string(), summary: z.string(), body: z.string(), contribution: z.string().optional(), prepared: z.boolean().optional(), note: z.string().optional(),
+  receipt: receiptSchema.optional(),
+  experiment: z.object({ candidateId: z.string(), operation: operationSchema }).optional(),
   branch: z.object({ intent: z.string(), step: z.number().int().min(1).max(3), runId: z.string() }).optional() });
 const thought = z.object({
   revisions: z.array(revisionSchema).min(1),
-  id, revision: z.number().int().nonnegative(), title: z.string(), summary: z.string(), body: z.string(),
+  id, importedFromId: id.optional(), revision: z.number().int().nonnegative(), title: z.string(), summary: z.string(), body: z.string(),
   kind: z.enum(["brief", "proposal", "recombination", "exploration"]),
   contribution: z.string(), move: z.object({ title: z.string(), question: z.string(), preview: z.string() }),
   provenance: z.object({ feature: z.string(), tag: z.string(), sourceTitles: z.array(z.string()), moveTitle: z.string().optional() }).optional(),
@@ -43,7 +47,7 @@ const saveV3 = z.object({
   const fail = (message: string) => ctx.addIssue({ code: "custom", message });
   for (const card of save.thoughts) {
     const last = card.revisions.at(-1)!;
-    if (!last || card.revisions.some((r, i) => r.number !== i + 1) || card.revision !== last.number || (["title", "summary", "body"] as const).some(key => card[key] !== last[key])) fail("Invalid card revision history");
+    if (!last || (last.contribution !== undefined && card.contribution !== last.contribution) || card.revisions.some((r, i) => r.number !== i + 1) || card.revision !== last.number || (["title", "summary", "body"] as const).some(key => card[key] !== last[key])) fail("Invalid card revision history");
   }
   if (new Set(save.intents.map(i => i.id)).size !== save.intents.length) fail("Duplicate intent ids");
   if (ids.size !== save.thoughts.length) fail("Duplicate card ids");
@@ -150,17 +154,30 @@ async function restoreFromDatabase(): Promise<{ save: AtlasSave; notice: string 
 }
 export async function mergeAtlas(current: AtlasSave, incoming: AtlasSave) {
   const merged = structuredClone(current);
-  const contentHash = (c: AtlasSave["thoughts"][number]) => cardHash({ title: c.title, body: JSON.stringify([c.summary, c.body, c.revisions]) });
-  const hashes = new Map(await Promise.all(current.thoughts.map(async c => [await contentHash(c), c.id] as const)));
+  // Identity is independent of text. Preserve divergent histories as deterministic forks.
   const ids = new Map<string, string>();
-  let added = 0;
+  let added = 0, updated = 0;
+  const prefix = (a: typeof current.thoughts[number], b: typeof a) =>
+    a.revisions.length <= b.revisions.length && a.revisions.every((revision, i) => stableJson(revision) === stableJson(b.revisions[i]));
   for (const card of incoming.thoughts) {
-    const hash = await contentHash(card);
-    const existing = hashes.get(hash);
-    const newId = existing ?? crypto.randomUUID(); ids.set(card.id, newId);
-    if (existing) continue;
-    hashes.set(hash, newId); added++;
-    merged.thoughts.push({ ...card, id: newId });
+    const candidates = merged.thoughts.filter(c => c.id === card.id || c.importedFromId === card.id);
+    const compatible = candidates.find(c => prefix(c, card) || prefix(card, c));
+    let newId = compatible?.id ?? card.id;
+    if (compatible) {
+      if (card.revisions.length > compatible.revisions.length) {
+        const index = merged.thoughts.indexOf(compatible);
+        merged.thoughts[index] = { ...card, id: compatible.id, importedFromId: compatible.importedFromId };
+        updated++;
+      }
+      ids.set(card.id, newId); continue;
+    }
+    if (merged.thoughts.some(c => c.id === newId)) {
+      const digest = await cardHash({ title: card.id, body: stableJson(card.revisions) });
+      newId = `fork-${digest}`;
+      if (merged.thoughts.some(c => c.id === newId)) throw new Error("Conflicting imported identity");
+    }
+    ids.set(card.id, newId); added++;
+    merged.thoughts.push({ ...card, id: newId, ...(newId !== card.id ? { importedFromId: card.id } : {}) });
     for (const perspective of ["Lineage", "Evolution", "Constellation"] as const) {
       const position = incoming.positions[perspective][card.id];
       if (position) merged.positions[perspective][newId] = position;
@@ -184,7 +201,7 @@ export async function mergeAtlas(current: AtlasSave, incoming: AtlasSave) {
   for (const intent of incoming.intents) if (!merged.intents.some(i => i.text === intent.text)) merged.intents.push({ ...intent, id: crypto.randomUUID() });
   merged.layoutHistory = emptyHistory();
   merged.folds = [...new Set([...merged.folds, ...incoming.folds.map(id => ids.get(id)!)])];
-  return { save: atlasSaveSchema.parse(merged), added, skipped: incoming.thoughts.length - added };
+  return { save: atlasSaveSchema.parse(merged), added, updated, skipped: incoming.thoughts.length - added - updated };
 }
 
 export async function recoveryCopies(): Promise<{ key: string; value: unknown }[]> {
