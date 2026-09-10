@@ -893,7 +893,8 @@ summary {
   box-shadow: inset 0 0 0 1px #b18a5833;
 }
 .field-tools .expedition-control:hover,
-.field-tools .expedition-control[aria-expanded="true"] {
+.field-tools .expedition-control[aria-expanded="true"],
+.field-tools .layout-icon-menu[open] > summary {
   background: var(--paper);
   box-shadow: 0 0 0 2px #b18a58;
 }
