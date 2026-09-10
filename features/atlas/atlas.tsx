@@ -1272,13 +1272,14 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
             <Button onClick={() => selected.length === 1 ? focus(selected[0]) : void flow.fitView({ nodes: selected.map(id => ({ id })), padding: .25, maxZoom: 1 })}><Crosshair aria-hidden="true" />{selected.length === 1 ? "Focus" : selected.length === 2 ? "Focus both" : "Focus selection"}</Button>
             {selected.length === 1 && <>
               <Button onClick={() => { setActive(selected[0]); setPanel("develop"); }}>Develop</Button>
-              <Button className="wander-action" disabled={busy} onClick={() => move(selected)} aria-busy={busy && live?.feature === "wander"}>{busy && live?.feature === "wander" ? <span className="generation-spinner" aria-hidden="true" /> : <GitFork aria-hidden="true" />}{busy && live?.feature === "wander" ? "Wandering…" : "Wander"}</Button>
-              <Button disabled={busy} onClick={() => open("expedition")}><Compass aria-hidden="true" />Expedition</Button>
+              {!busy && <Button className="wander-action" onClick={() => move(selected)}><GitFork aria-hidden="true" />Wander</Button>}
+              {!busy && <Button onClick={() => open("expedition")}><Compass aria-hidden="true" />Expedition</Button>}
             </>}
             {selected.length === 2 && <>
               <Button onClick={() => open("compare")}><Copy aria-hidden="true" />Compare</Button>
-              <Button className="wander-action" disabled={busy} onClick={() => void generate("weave", selected.map((id) => byId.get(id)!))} aria-busy={busy && live?.feature === "weave"}>{busy && live?.feature === "weave" ? <span className="generation-spinner" aria-hidden="true" /> : <Shuffle aria-hidden="true" />}{busy && live?.feature === "weave" ? "Weaving…" : "Weave"}</Button>
+              {!busy && <Button className="wander-action" onClick={() => void generate("weave", selected.map((id) => byId.get(id)!))}><Shuffle aria-hidden="true" />Weave</Button>}
             </>}
+
 
             <Button
               className="selection-close"

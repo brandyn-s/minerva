@@ -41,6 +41,16 @@ Focused mocked desktop/mobile replay covers suggestions, failure/retry, hide/sho
 free exploration and chosen moves. Repository and desktop/touch UI checks pass.
 No paid calls. Owner authorized commit and merge after required CI.
 
+## Rectangular loading follow-up
+Release branch `fix/preview-loading` in `/Users/brandyn.schult/code/minerva-development`.
+Rectangular Constellation previews pulse along their bottom edge; circles retain the ring.
+Reduced motion disables animation. Mocked Weave verified the loading state in `next start`.
+`npm run check` (tests/build), `npm run test:ui` (4 tests), and diff checks pass.
+Start with the Node/npm prefix above: `npm run start -- --port 56102`.
+No paid calls or manual deployment. Owner authorized commit and merge after CI.
+Selection toolbar hides unavailable actions for selection size and generation activity.
+Mocked browser checks cover one card, two cards and active Weave; repository/UI checks pass.
+
 ## Weave output contract
 Weave sends an exact one-card schema and one contribution per selected source
 to the provider. Wander uses its requested count; root and Develop require one.
