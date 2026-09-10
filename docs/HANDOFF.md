@@ -1,50 +1,32 @@
-# Root atlas: layout controls and graph navigation
-Branch: `demo-layout-navigation`, from `origin/main` at `83844e4`, integrated through `16f39b7`.
-Worktree: `/Users/brandyn.schult/code/minerva-layout-navigation`.
-Scope ends after merge and deployment to https://minerva-eight.vercel.app/; one operator-started Fable review follows.
+# Expedition theme standard
 
-## Behavior
-Working-zoom cards have resize handles; positions and sizes are saved per card and perspective.
-Layout uses a four-tile medallion with a shared tooltip and compact Undo, Redo and Arrange grid controls.
-Each perspective retains its last 50 layout changes across reloads, including its redo stack.
-Ctrl/Cmd+Z and Shift+Z work in the field; text controls retain their native editing shortcuts.
-Card text edits, generation, import and reset clear layout history and cannot be undone.
-Ancestors and descendants follow only derivation/recombination edges, transitively, with cycle protection.
-Focus highlights the chain and dims other cards/edges; links list the origin, then nearest to farthest relatives.
-A second press clears the focus; Clear chain also clears it while following links.
-Fold descendants hides the full descendant set and incident edges in every perspective, with a counted marker.
-Folded thoughts remain searchable, inspectable and selectable in Thoughts; the index names every folding ancestor and offers Unfold.
-Unfold restores the original positions. Folding is local, persisted and included in JSON export/import.
-Version 2 adds sizes, per-perspective layout history and folded roots; version 1 saves/files migrate with empty values.
-Merge remaps imported sizes/folds, clears history and reports added/skipped card counts in one line.
-Reset and Replace use in-page Confirm/Keep current atlas buttons in Menu.
-Current main header, Wander toolbar, compact card preview, regroup preview, text reader, plain overview nodes, association styling and thought catalogue are preserved.
-Recovery copies have a list in the import area with Export and Discard; dev-mode restore shares one pending read.
-No model routes, /workspaces, database or Workflow code changed. No dependencies added.
+Branch: `feat/expedition-theme`.
+Worktree: `/Users/brandyn.schult/code/minerva-expedition-theme`.
+Base candidate: `f184531` (current changes are uncommitted).
+
+## Outcome
+Expedition is the shared visual standard for Layout, Read as text and Browse
+thoughts. `FieldGuideHeading` supplies each instrument's medallion, mono title
+and close control. `field-guide` and `--guide-*` tokens share paper, borders,
+inputs, primary actions and selection accents. DESIGN owns this convention.
+The reader retains contents/article navigation; Browse retains filtering,
+selection, disclosure and downloads; Layout retains arrange/undo/redo.
+Open Layout stays above selected-card previews on narrow screens.
+Typography uses shared role tokens: titles 20px, body 15px, inputs/actions 16px,
+labels 12px and notes/header names 11px. Compact widths: Expedition/Browse 440px,
+Layout 340px, reader 880px. Desktop controls 36px; touch targets remain 44px.
+Header icons, control heights and responsive spacing follow the same scale.
+No backend changes, paid model calls, commits, pushes or deployment.
 
 ## Verification
-`npm run check` and complete mocked replays passed through `npm run dev` and `next start`.
-Final operator handoff supplies the exact release SHA and hosted verification.
-Browser artifacts: `/tmp/minerva-layout-dev` and `/tmp/minerva-layout-start`.
-Existing `scripts/verify-atlas.mjs` covers layout, transitive focus/folds, migration, merge counts and confirmations.
-All model responses in replay are mocked; no live model calls authorized or made.
+`npm run check`: lint, TypeScript, 15 tests and production build passed.
+In-app browser: search, selection, disclosure, reader contents/next navigation,
+Layout arrange/undo/redo, close and Escape checked using the local fixture.
+Desktop 1280x720 and narrow 390x844 visual checks; see `design-qa.md`.
+No browser console warnings or errors observed. Provider behavior was not retested.
 
 ## Startup and next role
-Use `npx --yes --package=node@24.20.0 --package=npm@12.0.2` before npm commands.
-Dev: `npm run dev -- --port 3050`; production: `npm run build`, then `npm run start -- --port 3061`.
-Replay: `MINERVA_URL=http://127.0.0.1:3061 npm run test:browser` (3050 for dev).
-Next: operator-started Fable 5.1 at low effort, exact released candidate, read-only, C02/C03 and named carry-overs.
-Use docs/setup.md's bounded launch prompt, a separate checkout/port and fresh synthetic browser data.
-No paid model calls. No further batch is authorized; stop after this release.
-
-## Wander exploration-first pane
-Explore freely is the primary action, with source context and collapsible
-suggestions. Loading placeholders, fallback and retry are preserved.
-Implementation f1db13c; local checks and browser fixture checks passed.
-No paid provider calls; live generation quality was not retested.
-
-## Layout icon and menu
-Branch: `feat/layout-icon`; worktree: `/Users/brandyn.schult/code/minerva-regroup-selection`.
-Shared hover/focus tooltip, native disclosure and shorter history copy implemented.
-Full `npm run check` passed; local browser appearance and disclosure verified on port 4320.
-Next: verify the authorized release, then await owner direction.
+Development preview: http://127.0.0.1:3077/.
+Use `npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run dev -- --port 3077`
+with the same launcher.
+Next role: owner visual acceptance. No further feature or critic work queued.

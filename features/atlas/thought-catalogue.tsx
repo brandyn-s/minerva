@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { FileText, Lightbulb, GitMerge, Compass, ChevronRight, ChevronDown, MoreHorizontal, X } from "lucide-react";
+import { FileText, Lightbulb, GitMerge, Compass, ChevronRight, ChevronDown, MoreHorizontal } from "lucide-react";
 import type { Thought, Relationship } from "./domain";
+import FieldGuideHeading from "./field-guide-heading";
 import DownloadButton from "./download-button";
 
 const typeIcons = { brief: FileText, proposal: Lightbulb, recombination: GitMerge, exploration: Compass };
@@ -17,9 +18,8 @@ export default function ThoughtCatalogue({ cards, relationships, selected, selec
   const visible = cards.filter(card => card.title.toLowerCase().includes(query.trim().toLowerCase()));
   return <>
     <div className="catalogue-sticky">
-      <header className="catalogue-header">
-        <h2>Browse thoughts <span>{cards.length}</span></h2>
-        {downloadable && <details className="catalogue-menu" onKeyDown={event => {
+      <FieldGuideHeading title="Browse thoughts" image="/images/thoughts-olive.png" close={close} actions={
+        downloadable && <details className="catalogue-menu" onKeyDown={event => {
           if (event.key === "Escape" && event.currentTarget.open) {
             event.stopPropagation(); event.currentTarget.open = false;
             event.currentTarget.querySelector("summary")?.focus();
@@ -27,10 +27,10 @@ export default function ThoughtCatalogue({ cards, relationships, selected, selec
         }}>
           <summary aria-label="Thought options"><MoreHorizontal size={20} /></summary>
           <div><DownloadButton cards={cards} relationships={relationships} /></div>
-        </details>}
-        <button aria-label="Close panel" onClick={close}><X size={20} /></button>
-      </header>
+        </details>} />
+      <label className="field-guide-label">Find a thought
       <input aria-label="Find a thought" type="search" autoComplete="off" placeholder="Search titles" value={query} onChange={event => setQuery(event.target.value)} />
+      </label>
     </div>
     <div className="catalogue-list">
       {visible.map(card => {
@@ -57,6 +57,6 @@ export default function ThoughtCatalogue({ cards, relationships, selected, selec
       })}
       {visible.length === 0 && <p className="catalogue-empty">No thoughts match “{query}”. Try another title.</p>}
     </div>
-    <footer className="catalogue-footer" aria-live="polite">{query.trim() && `${visible.length} of ${cards.length} thoughts · `}{selected.length} selected</footer>
+    <footer className="catalogue-footer" aria-live="polite">{query.trim() ? `${visible.length} of ${cards.length} thoughts · ` : `${cards.length} thoughts · `}{selected.length} selected</footer>
   </>;
 }
