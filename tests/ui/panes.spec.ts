@@ -40,6 +40,9 @@ test("five panes share a frame and retain their navigation", async ({ page }, te
   await page.locator(".selection-bar").getByRole("button", { name: "Wander", exact: true }).click();
   await check("wander");
   await button("Close panel").click();
+  await page.getByRole("button", { name: /^Thoughts / }).click();
+  await page.locator(".catalogue-entry").filter({ has: page.getByText("A shared tool library", { exact: true }) }).getByRole("checkbox").check();
+  await button("Close panel").click();
   await page.locator(".selection-bar").getByRole("button", { name: "Compare", exact: true }).click();
   await check("compare", true);
   await button("Close panel").click();
