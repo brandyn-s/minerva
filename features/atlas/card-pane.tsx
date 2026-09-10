@@ -5,7 +5,6 @@ import { Button, Summary, Input, Textarea } from "../../components/ui/controls";
 import { useEffect, useRef, useState } from "react";
 import {
   CornersOut,
-  X,
   Compass,
   PencilSimple,
   DotsThree,
@@ -18,6 +17,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Thought, Relationship } from "./domain";
 import { cardConnections, cardEdit, wordDiff, type CardEdit } from "./card-revisions";
+import PanelHeader from "../../components/ui/panel-header";
 import DownloadButton from "./download-button";
 
 type Props = {
@@ -126,7 +126,7 @@ export default function CardPane(props: Props) {
     : card.body;
   return (
     <aside
-      className="detail-panel card-inspector"
+      className="detail-panel card-inspector unified-pane"
       role="dialog"
       aria-modal="false"
       aria-label={card.title}
@@ -143,21 +143,7 @@ export default function CardPane(props: Props) {
       }}
     >
       <header className="card-pane-header">
-        <div className="card-pane-top">
-          <span className="instrument-label">Card</span>
-          <div>
-            <Button
-              className="card-pane-focus"
-              onClick={() => props.focus(card.id)}
-            >
-              <CornersOut aria-hidden="true" />
-              Focus on canvas
-            </Button>
-            <Button aria-label="Close panel" onClick={props.close}>
-              <X aria-hidden="true" />
-            </Button>
-          </div>
-        </div>
+        <PanelHeader title="Card" close={props.close} actions={<Button variant="quiet" onClick={() => props.focus(card.id)}><CornersOut aria-hidden="true" />Focus on canvas</Button>} />
         <h2>{card.title}</h2>
         <p className="card-pane-meta">
           {card.provenance?.feature ??
@@ -443,7 +429,7 @@ export default function CardPane(props: Props) {
                 Cancel
               </Button>
               <Button
-                className="card-pane-primary"
+                variant="primary" className="card-pane-primary"
                 type="submit"
                 form="card-edit-form"
                 disabled={!dirty || !draft.title.trim()}
@@ -454,9 +440,9 @@ export default function CardPane(props: Props) {
           ) : (
             <>
               <Button onClick={props.develop}>Develop</Button>
-              <Button className="card-pane-primary" onClick={props.explore}>
+              <Button variant="primary" className="card-pane-primary" aria-label="Explore this idea" onClick={props.explore}>
                 <Compass aria-hidden="true" />
-                Explore this idea
+                Explore
               </Button>
               <Button
                 onClick={() => {

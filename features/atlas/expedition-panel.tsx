@@ -35,8 +35,9 @@ export default function ExpeditionPanel({open,close,sources,brief,entries,inspec
  async function start(){const created=await act({action:"start",input:{id:crypto.randomUUID(),limitMicros:Math.round(savedLimit*1000000),direction,brief:brief.slice(0,1600),sources:sources.slice(0,8).map(({id,revision,title,summary,body,contribution})=>({id,revision,title,summary,body,contribution}))}});if(created){setActive(created.id);setCursor(0);setSelected(undefined);setReading(undefined);setItems([]);setRun(created);}}
  async function detail(c:Candidate){setAssessment(undefined);try{const response=await fetch(`/api/expedition/runs?id=${active}&candidateId=${c.id}`);const data=await response.json();if(!response.ok)throw new Error(data.error);setSelected(data.candidate);setAssessment(data.assessments[0]);}catch(e){setError(e instanceof Error?e.message:String(e));}}
  async function onAtlas(c:Candidate){try{const response=await fetch(`/api/expedition/runs?id=${active}&candidateId=${c.id}`);const data=await response.json();if(!response.ok||!data.operation)throw new Error(data.error??"Operation unavailable");inspect(data.candidate,data.operation);}catch(e){setError(e instanceof Error?e.message:String(e));}}
- return <aside ref={heading} tabIndex={-1} hidden={!open} className="detail-panel field-guide expedition-panel" role="dialog" aria-label="Expedition" onKeyDown={e=>{if(e.key==="Escape"){e.stopPropagation();close();}}}>
-  <FieldGuideHeading title="Expedition" image="/images/expedition-compass.png" close={close}/>
+ return <aside ref={heading} tabIndex={-1} hidden={!open} className="detail-panel expedition-panel unified-pane" role="dialog" aria-label="Expedition" onKeyDown={e=>{if(e.key==="Escape"){e.stopPropagation();close();}}}>
+  <FieldGuideHeading title="Expedition" close={close}/>
+  <div className="pane-body">
   {error&&<p role="alert">{error}</p>}{transportError&&<p role="alert">{transportError}</p>}
   {!active?<>
    <h2>Explore further</h2>
@@ -70,5 +71,6 @@ export default function ExpeditionPanel({open,close,sources,brief,entries,inspec
    </section>}
    {interventions.map(i=><section key={i.id}><h4>Intervention: {i.status}</h4><p>{i.challenge}</p><p>{i.outcome??"Pending experiment; challenge is not assumed true."}</p></section>)}
   </>}
+  </div>
  </aside>;
 }

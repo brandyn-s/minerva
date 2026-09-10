@@ -48,3 +48,9 @@ Final cardinality validation remains in place for malformed provider responses.
 Regression tests cover SDK schema conversion, valid outputs and rejection paths.
 Verification uses synthetic providers; no paid generation calls.
 Worktree: `/Users/brandyn.schult/code/minerva-weave-count`, branch `fix/weave-output-count`.
+
+## Shared pane layout
+Card, Wander, Develop and Expedition share a compact 540px frame; Compare is wider.
+Headers, close controls, typography and scrolling match; Wander toolbar is neutral.
+Card tabs and footer remain. Desktop/touch pane tests and mocked generation replays cover behavior.
+Owner authorized commit and merge on `fix/shared-pane-layout` after required CI.

@@ -296,3 +296,13 @@ flex: 0 0 var(--ui-control-height); }
 @media (max-width: 600px) {
   .masthead [data-variant="header"] { padding: 10px 12px; font-size: 12px; }
 }
+
+/* Unified panes share control appearance despite older feature selectors. */
+.unified-pane .ui-panel-header { background: transparent; min-height: 44px; margin: 0; padding: 0; position: static; }
+.unified-pane .ui-panel-header .ui-panel-title h2 { font: var(--ui-note-font); margin: 0; letter-spacing: .1em; }
+.unified-pane .ui-button { min-height: 44px; font: var(--ui-control-font); }
+.unified-pane .ui-panel-header .ui-button { margin: 0; }
+.unified-pane .ui-panel-header .ui-button:not([data-icon-only]) { width: auto; height: auto; padding: 8px 12px; }
+.unified-pane .ui-button[data-variant="primary"] { background: var(--guide-selected); color: var(--guide-input); border-color: var(--guide-selected); font: var(--ui-control-font); }
+.unified-pane .ui-button[data-variant="primary"]:hover:not(:disabled) { background: #354f43; }
+.unified-pane .ui-input { font: var(--ui-control-font); }

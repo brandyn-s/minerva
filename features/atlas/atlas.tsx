@@ -1342,7 +1342,7 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
           id={panel === "guide" ? "atlas-guide" : undefined}
           ref={panelRef}
           tabIndex={-1}
-          className={`detail-panel ${panel === "moves" ? "wander-panel" : ""} ${panel === "guide" ? "guide-panel" : ""} ${panel === "index" ? "catalogue-panel field-guide" : ""} ${panel === "text" ? "text-reader field-guide" : ""} ${panel === "compare" || panel === "text" ? "wide-panel" : ""}`}
+          className={`detail-panel ${panel === "moves" ? "wander-panel unified-pane" : ""} ${panel === "guide" ? "guide-panel" : ""} ${panel === "index" ? "catalogue-panel field-guide" : ""} ${panel === "text" ? "text-reader field-guide" : ""} ${panel === "compare" ? "compare-panel unified-pane" : panel === "text" ? "wide-panel" : ""}`}
           role="dialog"
           aria-modal="false"
           aria-label={
@@ -1363,7 +1363,8 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
         >
           {panel === "text" && <FieldGuideHeading title="Read as text" image="/images/read-scroll.png" close={close} />}
           {panel === "moves" && <FieldGuideHeading title="Wander" close={close} />}
-          {panel !== "index" && panel !== "text" && panel !== "moves" && <div className="panel-heading">
+          {panel === "compare" && <FieldGuideHeading title="Compare" close={close} />}
+          {panel !== "index" && panel !== "text" && panel !== "moves" && panel !== "compare" && <div className="panel-heading">
             <span className="instrument-label">
               {panel === "guide" ? "Guide" : "Selected contributions"}
             </span>
@@ -1401,8 +1402,8 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
           </div>}
           {panel === "index" && <ThoughtCatalogue cards={nodes.map(n => n.data.thought)} relationships={relationships} selected={selected} select={select} focus={focus} close={close} downloadable={true} foldedUnder={foldedUnder} unfold={id => setFolds(current => current.filter(key => !foldedUnder.get(id)?.includes(key)))} />}
           {panel === "compare" && (
-            <>
-              <h2>Hold the differences in view.</h2>
+            <div className="pane-body">
+              <h2>Selected ideas</h2>
               <p>
                 Your selection and viewpoint remain in place when you close this
                 panel.
@@ -1417,10 +1418,10 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
                   </section>
                 ))}
               </div>
-              <Button onClick={() => move(selected)}>
+              <Button variant="primary" onClick={() => move(selected)}>
                 Weave selected contributions · preview
               </Button>
-            </>
+            </div>
           )}
           {panel === "moves" && selected.length === 1 && <MovesPanel
             key={selected[0]} source={{ ...byId.get(selected[0])!, relationships: relationshipsFor(selected[0], relationships) }}
