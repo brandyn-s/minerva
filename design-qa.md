@@ -1,52 +1,50 @@
-# Shared compact UI QA
+# Compact Card pane integration QA
 
-Visual direction: the owner's Expedition reference, with the subsequently
-requested compact density. Shared palette, serif content and monospaced labels
-remain. Control sizes are 36px desktop and 44px for coarse pointers; functional
-icons use one 18px family. Source medallion artwork remains.
+final result: passed
 
-## Scope
-Shared controls replace raw buttons, fields and disclosure triggers throughout
-Atlas, Layout, Expedition, Browse, reader, Talk, Voice, Guide and existing
-workspace/exploration screens. Canvas markers retain zoom-dependent geometry.
-Shared control defaults use a lower layer; existing feature styling is preserved.
+## Target and evidence
 
-## Evidence
-`npm run check` passes lint, typecheck, 17 Node tests and production build.
-`npm run test:ui` passes four browser tests at 1280x800 desktop and 390x844 touch.
-The gallery verifies disabled/busy/pressed states, keyboard tooltip dismissal,
-native form behavior, radio arrow navigation and disclosure activation.
-Axe reports no violations on the gallery; this is not a full application audit.
-Atlas journeys verify Browse search and selection, Expedition configuration,
-reader navigation, Layout undo/redo and Talk composer availability.
-Provider routes are intercepted. No paid calls are made.
+Source: `/Users/brandyn.schult/code/minerva-card-pane-prototype/evidence/compact-preview.png`
+(884x784, compact Content state selected by the owner).
+Implementation: `evaluation-artifacts/card-pane/content-desktop.png` (884x784).
+Additional evidence: `evaluation-artifacts/card-pane/connections-desktop.png`
+and `evaluation-artifacts/card-pane/mobile.png` (390x844).
+Screenshots are browser-rendered, at density 1. The source and implementation were
+inspected together. Actual atlas chrome reserves vertical room; the pane retains
+its 540px width and compact spacing. Real card content and relationship counts
+replace the prototype's synthetic layout examples; no new testing claims are invented.
 
-Computed-style regression contracts live in `tests/ui/snapshots` and cover
-fonts, colors, borders, spacing and target sizes. These are not pixel baselines.
-Screenshots beneath `test-results/ui` include gallery, Browse, Expedition,
-reader and Talk for both viewports. Narrow Expedition and Talk were visually
-inspected for clipping and control consistency. The local in-app gallery and
-Browse were also inspected. No horizontal document overflow in tested journeys.
-Production `/dev/ui` returns HTTP 404.
-Focused mocked voice replay passed, including hold/release, mute, close/Escape,
-retained sessions and explicit End. Tooltip dismissal preserves panel Escape.
+## Fidelity surfaces
 
-## Maintenance
-ESLint rejects feature-owned raw controls, direct icon imports, inline control
-paint and feature stylesheets. Rule tests verify allowed and rejected examples.
-CI runs the repository checks and the UI browser suite.
-New reusable variants must be added to the gallery and verified there.
+- Typography: 28px title (26px narrow), 19px summary, 17px reading text, compact
+  mono tabs and labels. Matches the owner's compact refinement.
+- Layout: title and horizontal tabs above a scrolling body, persistent relationship
+  summary and footer. Focus/close and 44px actions remain reachable.
+- Colors: existing Minerva paper/ink tokens, restrained bronze primary action.
+- Assets: existing Phosphor icons, no new raster assets or custom icon approximations.
+- Content: all actual card body text retained, Markdown rendered, exact parent
+  contributions and source revision labels retained. Context is separate from lineage.
+  Current revision replaces the prototype's generic Synthetic label.
 
-## Limits
-Local verification only; no deployment or physical microphone acceptance.
-Whole-screen pixel regression coverage is not included. Composition changes
-still need visual inspection of screenshots and affected workflows.
+## Findings and iterations
 
-The broader mocked replay currently stops at its existing export assertion for
-`## Decision`; the unchanged exporter no longer includes that metadata section.
-This prevents claiming a complete full-replay pass. Navigation assertions were
-updated for decorative icons, compact targets and current lineage controls.
+1. P2 mobile Menu overlapped the inspector's close control. Raised the narrow
+   inspector above the Menu's stacking level. Subsequent mobile screenshot shows
+   the entire close control and Focus action unobscured.
+2. Post-fix visual comparison: no remaining P0/P1/P2 findings. Important details
+   are readable in full-pane captures, so additional region crops were unnecessary.
 
-Regression correction: restored feature styling after shared defaults overrode
-reader layout, composer controls and other specialized elements. Actual reader
-and Talk style assertions supplement gallery coverage.
+## Interaction checks
+
+Real root-atlas cards: Content/Connections/History, both recombination parents,
+shared context, dismiss/reopen unsaved draft, Save revision 2, review revision 1,
+restore as revision 3, Cancel, arrow-key tabs and existing Wander entry point.
+No paid generation executed. Current browser text persistence is inherited;
+session revision histories intentionally clear on reload.
+
+Console: one existing Next Image LCP warning for the Minerva cameo; no new Card
+pane error observed. Download implementation is reused, not independently replayed.
+The full legacy browser replay was not run and contains selectors for the old pane.
+
+Follow-up polish: original mock uses a full-height isolated surface; actual atlas
+retains its existing rounded overlay, app header and visible spatial field.

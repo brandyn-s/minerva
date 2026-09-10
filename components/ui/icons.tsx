@@ -1,3 +1,10 @@
+import { Volume2 as ShapeVolume2 } from "lucide-react";
+import { Settings2 as ShapeSettings2 } from "lucide-react";
+import { CircleDashed as ShapeCircleDashed } from "lucide-react";
+import { Circle as ShapeCircle } from "lucide-react";
+import { GitBranch as ShapeGitBranch } from "lucide-react";
+import { Pencil as ShapePencil } from "lucide-react";
+import { Maximize as ShapeMaximize } from "lucide-react";
 import { ArrowLeft as ShapeArrowLeft, ArrowDown as ShapeArrowDown, ArrowRight as ShapeArrowRight, ArrowUp as ShapeArrowUp, AudioLines as ShapeAudioLines, Check as ShapeCheck, ChevronDown as ShapeChevronDown, ChevronRight as ShapeChevronRight, Compass as ShapeCompass, Copy as ShapeCopy, Crosshair as ShapeCrosshair, Download as ShapeDownload, ExternalLink as ShapeExternalLink, FileText as ShapeFileText, GitFork as ShapeGitFork, GitMerge as ShapeGitMerge, GripVertical as ShapeGripVertical, LayoutGrid as ShapeLayoutGrid, Lightbulb as ShapeLightbulb, LoaderCircle as ShapeLoaderCircle, Mic as ShapeMic, MicOff as ShapeMicOff, Minus as ShapeMinus, MoreHorizontal as ShapeMoreHorizontal, PhoneOff as ShapePhoneOff, Plus as ShapePlus, Redo2 as ShapeRedo2, RotateCw as ShapeRotateCw, Shuffle as ShapeShuffle, Undo2 as ShapeUndo2, X as ShapeX } from "lucide-react";
 import type { LucideIcon, LucideProps } from "lucide-react";
 
@@ -40,3 +47,19 @@ export const Check = standardIcon(ShapeCheck);
 export const ExternalLink = standardIcon(ShapeExternalLink);
 export const ArrowLeft = standardIcon(ShapeArrowLeft);
 export const ArrowDown = standardIcon(ShapeArrowDown);
+
+export const CornersOut = standardIcon(ShapeMaximize);
+
+export const PencilSimple = standardIcon(ShapePencil);
+
+export const DotsThree = standardIcon(ShapeMoreHorizontal);
+
+export const GitBranch = standardIcon(ShapeGitBranch);
+
+export const Circle = standardIcon(ShapeCircle);
+
+export const CircleDashed = standardIcon(ShapeCircleDashed);
+
+export const Settings2 = standardIcon(ShapeSettings2);
+
+export const Volume2 = standardIcon(ShapeVolume2);

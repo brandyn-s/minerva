@@ -1,9 +1,9 @@
 "use client";
 
-import { Button, Input, Textarea, Select, Summary } from "../../components/ui/controls";
+import { Button, Summary, Input, Select } from "../../components/ui/controls";
 
 import Image from "next/image";
-import { ChevronDown, GitFork, Copy, Compass, Shuffle, Undo2, Redo2, LayoutGrid, GripVertical, Plus, Minus, Check, ArrowLeft, ExternalLink } from "../../components/ui/icons";
+import { ChevronDown, GitFork, Copy, Compass, Shuffle, Undo2, Redo2, LayoutGrid } from "../../components/ui/icons";
 import {
   createContext,
   useContext,
@@ -35,7 +35,6 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import type { AtlasFixture, Thought, Relationship } from "./domain";
-import type { AtlasSession, LayoutRecord } from "../workspaces/graph-domain";
 import { CaretDown, ArrowRight, ArrowClockwise, Crosshair, CaretRight, X } from "../../components/ui/icons";
 import { relationshipsFor } from "./domain";
 import { mallFixture } from "./fixture";
@@ -45,25 +44,27 @@ import { atlasSaveSchema, emptyHistory, recoveryCopies, discardRecovery, fixture
 import TalkPanel from "./talk-panel";
 import RegroupPanel from "./regroup-panel";
 import { applyRegroup } from "./regroup-layout";
-import DownloadButton from "./download-button";
+import { constellationLayout, constellationHeading } from "./constellation-layout";
+import CardPane from "./card-pane";
+import { reviseCard, type CardEdit } from "./card-revisions";
 import FieldGuideHeading from "./field-guide-heading";
 import ThoughtCatalogue from "./thought-catalogue";
 import MovesPanel from "./moves-panel";
 import ExpeditionPanel from "./expedition-panel";
 import GuideContent from "./guide-content";
 import { overviewDiameter, overviewLabels, overviewName } from "./overview";
-import ExplorationPanel from "../exploration/panel";
 
 type CardNode = Node<{ thought: Thought; geometry?: { width: number; height: number; circular: boolean } }, "thought" | "theme">;
 // Keep screen-sized overview markers separated at the farthest zoom-out.
 const MIN_ZOOM = 0.03;
 
-type Panel = "guide" | "expedition" | "talk" | "inspect" | "compare" | "moves" | "index" | "text" | "explore" | null;
+type Panel = "guide" | "expedition" | "talk" | "inspect" | "compare" | "moves" | "index" | "text" | null;
 const Interaction = createContext<{
   live?: { sources: Thought[]; feature: LiveFeature; move?: ContextualMove; error?: string };
   busy?: boolean;
   retry?: () => void;
   scalable?: boolean;
+  constellation?: boolean;
   labels?: Set<string>;
   overview: boolean;
   zoom: number;
@@ -89,6 +90,7 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
   const { thought } = data;
   const ui = useContext(Interaction);
   const surface = useRef<HTMLElement>(null);
+  const preview = !!ui.constellation && ui.zoom >= .3;
   const measuredGeometry = useRef("");
   const { updateNodeData } = useReactFlow<CardNode>();
   useLayoutEffect(() => {
@@ -101,7 +103,7 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
       const geometry = {
         width: visible.offsetWidth / scale,
         height: visible.offsetHeight / scale,
-        circular: ui.overview && (ui.scalable || ui.compact),
+        circular: ui.overview && !preview && (ui.scalable || ui.compact),
       };
       const signature = JSON.stringify(geometry);
       if (measuredGeometry.current !== signature || !data.geometry) {
@@ -113,7 +115,7 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
     const observer = new ResizeObserver(measure);
     observer.observe(visible);
     return () => observer.disconnect();
-  }, [id, ui.overview, ui.compact, ui.zoom, ui.scalable, updateNodeData, data.geometry]);
+  }, [id, ui.overview, ui.compact, ui.zoom, ui.scalable, preview, updateNodeData, data.geometry]);
   const pendingOpen = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(
     () => () => {
@@ -192,10 +194,10 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
         <Button variant="canvas"
           aria-label={`Open ${thought.title}`}
           aria-description="Drag or use arrow keys to move"
-          className={`overview-target card-grip nopan ${ui.scalable ? "scale-target" : ui.compact ? "compact-target" : ""}`}
-          style={{ transform: `scale(${1 / ui.zoom})`, ...(ui.scalable ? { width: diameter, height: diameter, minHeight: diameter } : {}) }}
+          className={`overview-target card-grip nopan ${preview ? "constellation-preview" : ui.scalable ? "scale-target" : ui.compact ? "compact-target" : ""}`}
+          style={{ transform: `scale(${1 / ui.zoom})`, ...(preview ? { width: 290 * ui.zoom, height: "auto", minHeight: 44 } : ui.scalable ? { width: diameter, height: diameter, minHeight: diameter } : {}) }}
         >
-          {ui.scalable ? ui.labels?.has(id) && <span className="overview-name">{overviewName(thought)}</span> : ui.compact ? null : thought.title}
+          {preview ? <><span className="constellation-preview-title">{overviewName(thought)}</span><span className="constellation-preview-summary">{thought.summary}</span></> : ui.scalable ? ui.labels?.has(id) && <span className="overview-name">{overviewName(thought)}</span> : ui.compact ? null : thought.title}
         </Button>
       ) : (
         <div className="card-content">
@@ -203,19 +205,19 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
             <span>
               {thought.kind === "proposal" ? "Starting proposal" : thought.kind}
             </span>
-            <Button iconOnly variant="quiet"
+            <Button iconOnly
               className="card-grip"
               aria-label={`Move ${thought.title}`}
             >
-              <GripVertical aria-hidden="true" />
+              ⠿
             </Button>
-            <Button iconOnly variant="quiet"
+            <Button
               className="nodrag nopan select-card"
               aria-pressed={ui.selected.includes(thought.id)}
               aria-label={`Select ${thought.title}`}
               onClick={() => ui.select(thought.id)}
             >
-              {ui.selected.includes(thought.id) ? <Check aria-hidden="true" /> : <Plus aria-hidden="true" />}
+              {ui.selected.includes(thought.id) ? "✓" : "+"}
             </Button>
           </div>
           <Button variant="card-title" className="card-title nodrag">{thought.title}</Button>
@@ -281,7 +283,7 @@ function FloatingEdge(props: EdgeProps) {
 }
 const edgeTypes = { floating: FloatingEdge };
 function ThemeNode({ data }: NodeProps<CardNode>) {
-  return <section className="theme-heading"><Handle type="target" position={Position.Left} /><h2>{data.thought.title}</h2><p>{data.thought.summary}</p><Handle type="source" position={Position.Right} /></section>;
+  return <section className="theme-heading"><h2>{data.thought.title}</h2><p>{data.thought.summary}</p></section>;
 }
 const nodeTypes = { thought: ThoughtCard, theme: ThemeNode };
 function presentNodes(saved?: AtlasFixture): CardNode[] {
@@ -325,67 +327,18 @@ function GraphNavigation({ id, chain, chainIds, descendantCount, byId, folds, se
   </div>;
 }
 
-function Studio({ session, initial, restoreNotice = "", saveEnabled = true, replace }: { session?: AtlasSession; initial?: AtlasSave; restoreNotice?: string; saveEnabled?: boolean; replace?: (save: AtlasSave, notice?: string) => void }) {
-  const [savedGraph, setSavedGraph] = useState(session?.initial);
-  const fixture = useMemo(() => savedGraph ?? (initial ? { thoughts: initial.thoughts, relationships: initial.relationships, positions: initial.positions.Lineage } : mallFixture()), [savedGraph, initial]);
-  const [nodes, setNodes] = useState<CardNode[]>(() => presentNodes(session?.initial ?? (initial && { thoughts: initial.thoughts, relationships: initial.relationships, positions: initial.positions.Lineage })).map((node) => session ? {
-    ...node, style: { ...node.style, width: session.initial.layouts[node.id].width, height: session.initial.layouts[node.id].height },
-  } : node));
-  const dirtyText = useRef(new Set<string>());
-  const dirtyLayout = useRef(new Set<string>());
-  const graphRef = useRef(savedGraph);
-  const [layoutUndo, setLayoutUndo] = useState<{ id: string; before: LayoutRecord; after: LayoutRecord }[]>([]);
-  const [layoutRedo, setLayoutRedo] = useState<typeof layoutUndo>([]);
-  const [relationshipKind, setRelationshipKind] = useState<"association" | "derivation" | "recombination">("association");
-  const [relationshipLabel, setRelationshipLabel] = useState("Related idea");
-  const [layoutNotice, setLayoutNotice] = useState("");
-  useEffect(() => session?.subscribe((graph) => {
-    graphRef.current = graph;
-    setSavedGraph(graph);
-    setNodes((current) => {
-      const byId = new Map(current.map((node) => [node.id, node]));
-      return presentNodes(graph).map((node) => {
-        const previous = byId.get(node.id);
-        return { ...node, ...previous,
-          data: dirtyText.current.has(node.id) && previous ? previous.data : node.data,
-          position: (previous?.dragging || dirtyLayout.current.has(node.id)) && previous ? previous.position : node.position,
-          style: { ...previous?.style, width: graph.layouts[node.id].width, height: graph.layouts[node.id].height } };
-      });
-    });
-  }), [session]);
-  async function saveLayout(id: string, position: { x: number; y: number }, size?: { width: number; height: number }, remember = true) {
-    if (!session || !graphRef.current) return;
-    const previous = graphRef.current.layouts[id];
-    dirtyLayout.current.add(id);
-    await session.command({ operation: "set-layout", ideaId: id, expectedRevision: previous.revision,
-      ...position, width: size?.width ?? previous.width, height: size?.height ?? previous.height });
-    dirtyLayout.current.delete(id);
-    if (remember) {
-      setLayoutUndo((history) => [...history.slice(-49), { id, before: previous, after: graphRef.current!.layouts[id] }]);
-      setLayoutRedo([]);
-    }
-  }
-  async function restoreLayout(redo: boolean) {
-    const history = redo ? layoutRedo : layoutUndo;
-    const entry = history.at(-1);
-    if (!entry || !graphRef.current) return;
-    const expected = redo ? entry.before : entry.after;
-    const current = graphRef.current.layouts[entry.id];
-    if (["x", "y", "width", "height"].some((key) => current[key as keyof LayoutRecord] !== expected[key as keyof LayoutRecord])) {
-      setLayoutNotice("That card changed elsewhere. Undo will not overwrite its newer layout."); return;
-    }
-    const target = redo ? entry.after : entry.before;
-    await saveLayout(entry.id, target, target, false);
-    setNodes((nodes) => nodes.map((node) => node.id === entry.id ? { ...node, position: { x: target.x, y: target.y } } : node));
-    if (redo) { setLayoutRedo(history.slice(0, -1)); setLayoutUndo((h) => [...h, entry]); }
-    else { setLayoutUndo(history.slice(0, -1)); setLayoutRedo((h) => [...h, entry]); }
-  }
+function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { initial?: AtlasSave; restoreNotice?: string; saveEnabled?: boolean; replace?: (save: AtlasSave, notice?: string) => void }) {
+  const fixture = useMemo(() => initial ? { thoughts: initial.thoughts, relationships: initial.relationships, positions: initial.positions.Lineage } : mallFixture(), [initial]);
+  const [nodes, setNodes] = useState<CardNode[]>(() => presentNodes(initial && { thoughts: initial.thoughts, relationships: initial.relationships, positions: initial.positions.Lineage }));
+  const [cardDrafts, setCardDrafts] = useState<Record<string, CardEdit | undefined>>({});
+  const [cardRevisions, setCardRevisions] = useState<Thought[]>([]);
   const stackingOrder = useRef(0);
   const [focusedId, setFocusedId] = useState<string | null>(initial?.focusedId ?? null);
   const [connectionKind, setConnectionKind] = useState("parents");
   const [connectionPage, setConnectionPage] = useState(0);
   const [branchId, setBranchId] = useState<string | null>(null);
   const [selected, setSelected] = useState<string[]>(initial?.selected ?? []);
+  const [voiceFocusId, setVoiceFocusId] = useState<string | null>(null);
   const [active, setActive] = useState(initial?.active ?? "repair");
   const [panel, setPanel] = useState<Panel>(null);
   const [moveSources, setMoveSources] = useState<string[]>([]);
@@ -407,7 +360,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
   type Perspective = "Lineage" | "Evolution" | "Constellation";
   const [perspective, setPerspective] = useState<Perspective>(initial?.perspective ?? "Lineage");
   const perspectiveRef = useRef<Perspective>(initial?.perspective ?? "Lineage");
-  const fitPerspective = useRef(!session && !initial?.cameras[initial.perspective]);
+  const fitPerspective = useRef(!initial?.cameras[initial.perspective]);
   const [cameras, setCameras] = useState<Partial<Record<Perspective, Viewport>>>(initial?.cameras ?? {});
   const [positions, setPositions] = useState<Record<string, Record<string, { x: number; y: number }>>>(initial?.positions ?? {});
   const [sizes, setSizes] = useState<AtlasSave["sizes"]>(initial?.sizes ?? { Lineage: {}, Evolution: {}, Constellation: {} });
@@ -458,7 +411,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
     applyLayout(redo ? entry.after : entry.before);
     setHistory(current => ({ ...current, [perspective]: redo ? { undo: [...h.undo, entry], redo: h.redo.slice(0, -1) } : { undo: h.undo.slice(0, -1), redo: [...h.redo, entry] } }));
   }
-  function clearHistory() { if (!session) { gesture.current = null; setHistory(emptyHistory()); } }
+  function clearHistory() { gesture.current = null; setHistory(emptyHistory()); }
   const [themeCache, setThemeCache] = useState<{ groups: ThemeGroup[]; hashes: Record<string, string>; time: string } | undefined>(initial?.themeCache);
   const [regroupIds, setRegroupIds] = useState<string[] | null>(null);
   const [regroupedIds, setRegroupedIds] = useState<string[]>([]);
@@ -517,26 +470,44 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
   }
   const rows = new Map<number, number>();
   const groups = themeCache?.groups ?? [];
-  const groupFor = new Map(groups.flatMap((g, i) => g.memberIds.map(id => [id, i] as const)));
-  let ungrouped = 0;
+  const clustered = constellationLayout(groups, nodes.map(n => n.id));
   const renderedNodes = nodes.map<CardNode>((n) => {
     let position = n.position;
     if (perspective === "Evolution") {
       const column = depth(n.id), row = rows.get(column) ?? 0;
       rows.set(column, row + 1); position = { x: column * 440, y: row * 480 };
     } else if (perspective === "Constellation") {
-      const group = groupFor.get(n.id);
-      const row = group === undefined ? ungrouped++ : groups[group].memberIds.indexOf(n.id);
-      position = { x: (group ?? groups.length) * 760, y: 160 + row * 480 };
+      position = clustered[n.id];
     }
-    return { ...n, ...(!session ? { width: overview ? undefined : sizes[perspective][n.id]?.width, height: overview ? undefined : sizes[perspective][n.id]?.height } : {}), hidden: !session && foldedUnder.has(n.id), className: chain ? (chainSet.has(n.id) ? "chain-highlighted" : "chain-dimmed") : undefined,
+    return { ...n, ...({ width: overview ? undefined : sizes[perspective][n.id]?.width, height: overview ? undefined : sizes[perspective][n.id]?.height }), hidden: foldedUnder.has(n.id), className: chain ? (chainSet.has(n.id) ? "chain-highlighted" : "chain-dimmed") : undefined,
       position: perspective === "Lineage" ? position : positions[perspective]?.[n.id] ?? position,
-      style: { ...n.style, ...(!session ? { width: overview ? undefined : sizes[perspective][n.id]?.width, height: overview ? undefined : sizes[perspective][n.id]?.height } : {}), pointerEvents: overview ? "none" : "all" } };
+      style: { ...n.style, ...({ width: overview ? undefined : sizes[perspective][n.id]?.width, height: overview ? undefined : sizes[perspective][n.id]?.height }), pointerEvents: overview ? "none" : "all" } };
   });
-  const themeNodes: CardNode[] = perspective === "Constellation" ? groups.map((g, i) => ({ hidden: !g.memberIds.length, id: `theme-${i}`, type: "theme", className: chain ? "chain-dimmed" : undefined, position: { x: i * 760, y: -70 }, width: 440, height: 140, measured: { width: 440, height: 140 }, style: { width: 440, height: 140 }, draggable: false, data: { thought: { ...thought, title: g.name, summary: g.reason } } })) : [];
+  const constellationPositions = Object.fromEntries(renderedNodes.map(n => [n.id, n.position]));
+  const themeNodes: CardNode[] = perspective === "Constellation" ? groups.map((g, i) => {
+    const { x, y, width } = constellationHeading(g.memberIds, constellationPositions);
+    return { hidden: !g.memberIds.length, id: `theme-${i}`, type: "theme", className: chain ? "chain-dimmed" : undefined, position: { x, y }, width, height: 100, measured: { width, height: 100 }, style: { width, height: 100 }, draggable: false, selectable: false, data: { thought: { ...thought, title: g.name, summary: g.reason } } };
+  }) : [];
   const nodesInitialized = useNodesInitialized();
   useLayoutEffect(() => {
-    if (!fitPerspective.current || !nodesInitialized || themeBusy || (perspective === "Constellation" && !themeCache)) return;
+    if (!fitPerspective.current || themeBusy || (perspective === "Constellation" && !themeCache)) return;
+    if (perspective !== "Constellation" && !nodesInitialized) return;
+    if (perspective === "Constellation") {
+      const all = [...renderedNodes, ...themeNodes].filter(n => !n.hidden);
+      if (!all.length) return;
+      const bounds = all.map(n => ({ ...n.position,
+        width: n.type === "theme" ? n.width! : flow.getNode(n.id)?.measured?.width ?? 290,
+        height: n.type === "theme" ? 100 : Math.max(220, flow.getNode(n.id)?.measured?.height ?? 220),
+      }));
+      const x = Math.min(...bounds.map(n => n.x)), y = Math.min(...bounds.map(n => n.y)) - 60;
+      const frame = requestAnimationFrame(() => {
+        fitPerspective.current = false;
+        void flow.fitBounds({ x, y,
+          width: Math.max(...bounds.map(n => n.x + n.width)) - x,
+          height: Math.max(...bounds.map(n => n.y + n.height)) - y }, { padding: .14 });
+      });
+      return () => cancelAnimationFrame(frame);
+    }
     let frame = 0;
     const fitMeasured = () => {
       const all = [...renderedNodes, ...themeNodes].filter(n => !n.hidden);
@@ -573,7 +544,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
   const [importNotice, setImportNotice] = useState("");
   const [confirmation, setConfirmation] = useState<"reset" | "replace" | null>(null);
   const [recoveries, setRecoveries] = useState<{ key: string; value: unknown }[]>([]);
-  useEffect(() => { if (!session) void recoveryCopies().then(setRecoveries).catch(() => {}); }, [session]);
+  useEffect(() => { void recoveryCopies().then(setRecoveries).catch(() => {}); }, []);
   const savingPaused = useRef(false);
   const snapshot = useMemo<AtlasSave>(() => ({
     version: 2, sizes, layoutHistory: history, folds, thoughts: nodes.map(n => n.data.thought), relationships,
@@ -586,19 +557,19 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
   const latestSave = useRef(snapshot);
   useLayoutEffect(() => { latestSave.current = snapshot; }, [snapshot]);
   useEffect(() => {
-    if (session || !saveEnabled) return;
+    if (!saveEnabled) return;
     const timer = setTimeout(() => {
       if (!savingPaused.current) void writeSave(snapshot).catch(() => setStorageNotice("Changes could not be saved in this browser. Export a backup before leaving."));
     }, 200);
     return () => clearTimeout(timer);
-  }, [snapshot, session, saveEnabled]);
+  }, [snapshot, saveEnabled]);
   useEffect(() => {
-    if (session || !saveEnabled) return;
+    if (!saveEnabled) return;
     const flush = () => { if (!savingPaused.current) void writeSave(latestSave.current).catch(() => {}); };
     const hidden = () => { if (document.visibilityState === "hidden") flush(); };
     window.addEventListener("pagehide", flush); document.addEventListener("visibilitychange", hidden);
     return () => { window.removeEventListener("pagehide", flush); document.removeEventListener("visibilitychange", hidden); };
-  }, [session, saveEnabled]);
+  }, [saveEnabled]);
   async function resetFixture() {
 
     savingPaused.current = true;
@@ -641,12 +612,12 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
     : (branchId ? relationPage.filter(e => e.id === branchId) : relationPage).map(e => e.id));
   const highlighting = !!chain || selected.length > 0 || focusedId !== null;
   const labels = overviewLabels(renderedNodes, viewport, [...(focusedId ? [focusedId] : []), ...selected]);
-  const edges = relationships.filter(edge => !foldedUnder.has(edge.from) && !foldedUnder.has(edge.to)).filter(edge => perspective !== "Constellation" || chain || (edge.kind === "association" && groupFor.has(edge.from) && groupFor.has(edge.to) && groupFor.get(edge.from) !== groupFor.get(edge.to))).map((edge) => ({
+  const edges = relationships.filter(edge => !foldedUnder.has(edge.from) && !foldedUnder.has(edge.to)).filter(edge => perspective !== "Constellation" || chain || (edge.kind === "association")).map((edge) => ({
     id: edge.id,
-    source: perspective === "Constellation" && !chain ? `theme-${groupFor.get(edge.from)}` : edge.from,
-    target: perspective === "Constellation" && !chain ? `theme-${groupFor.get(edge.to)}` : edge.to,
-    type: perspective === "Constellation" && !chain ? "default" : "floating",
-    label: !showRelationshipLabels || overview || (!session && highlighting && !highlighted.has(edge.id)) ? undefined : edge.label,
+    source: edge.from,
+    target: edge.to,
+    type: "floating",
+    label: !showRelationshipLabels || overview || (highlighting && !highlighted.has(edge.id)) ? undefined : edge.label,
     markerEnd:
       edge.kind === "association" || edge.kind === "context"
         ? undefined
@@ -654,12 +625,12 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
             type: MarkerType.ArrowClosed,
             color: "#28686a",
             markerUnits: "userSpaceOnUse",
-            width: (overview && !session ? 10 : 16) / viewport.zoom,
-            height: (overview && !session ? 10 : 16) / viewport.zoom,
+            width: (overview ? 10 : 16) / viewport.zoom,
+            height: (overview ? 10 : 16) / viewport.zoom,
           },
     className: `thread ${edge.kind} ${panel === "inspect" && (edge.from === active || edge.to === active) ? "emphasized" : ""}`,
     style: {
-      opacity: perspective === "Constellation" && !chain ? 1 : session ? 1 : highlighting ? (highlighted.has(edge.id) ? 1 : .12) : overview ? .7 : 1,
+      opacity: perspective === "Constellation" && !chain ? 1 : highlighting ? (highlighted.has(edge.id) ? 1 : .12) : overview ? .7 : 1,
       stroke:
         edge.kind === "association"
           ? "#755584"
@@ -667,7 +638,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
             ? "#645f51"
             : "#28686a",
       strokeWidth:
-        (!session && overview ? (highlighted.has(edge.id) ? 2 : 1) : panel === "inspect" && (edge.from === active || edge.to === active)
+        (overview ? (highlighted.has(edge.id) ? 2 : 1) : panel === "inspect" && (edge.from === active || edge.to === active)
           ? 3
           : edge.kind === "recombination" || edge.kind === "association"
             ? 2.5
@@ -681,7 +652,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
     },
   }));
   async function generate(feature: LiveFeature, sources: Thought[], contextualMove?: ContextualMove) {
-    if (session || generating.current || (feature === "wander" ? sources.length !== 1 : sources.length < 2)) return;
+    if (generating.current || (feature === "wander" ? sources.length !== 1 : sources.length < 2)) return;
     clearHistory();
     generating.current = true;
     setBusy(true);
@@ -759,6 +730,11 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
     return thought;
   }
   function fit() {
+    if (perspective === "Constellation") {
+      fitPerspective.current = true;
+      setViewport({ ...flow.getViewport() });
+      return;
+    }
     void flow.fitView({
       padding: 0.18,
       maxZoom: 1,
@@ -770,6 +746,10 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
     setRegroupIds(null);
     setPanel(next);
     setPreview(false);
+  }
+  function togglePanel(next: Panel) {
+    if (panel === next) close();
+    else open(next);
   }
   function close() {
     setPanel(null);
@@ -786,23 +766,26 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
   function inspect(id: string) {
     if (!byId.has(id)) return;
     bringForward(id);
+    setVoiceFocusId(id);
     setActive(id);
     open("inspect");
   }
   function select(id: string) {
     const next = selected.includes(id) ? selected.filter(item => item !== id) : [...selected, id];
-    if (!session) { setFocusedId(next.at(-1) ?? null); setConnectionPage(0); setBranchId(null); }
+    { setFocusedId(next.at(-1) ?? null); setConnectionPage(0); setBranchId(null); }
     bringForward(id);
     setSelected(next);
+    setVoiceFocusId(next.at(-1) ?? null);
   }
   function focus(id: string) {
-    if (!session) { setFocusedId(id); setConnectionPage(0); setBranchId(null); }
+    setVoiceFocusId(id);
+    { setFocusedId(id); setConnectionPage(0); setBranchId(null); }
     bringForward(id);
     const node = flow.getNode(id);
     if (node) {
       const bounds = field.current?.getBoundingClientRect();
       // Reserve space below the readable card for mobile connection navigation.
-      const offsetY = !session && bounds && bounds.width <= 600 ? Math.max(0, bounds.height / 2 - 220) : 0;
+      const offsetY = bounds && bounds.width <= 600 ? Math.max(0, bounds.height / 2 - 220) : 0;
       void flow.setCenter(node.position.x + 145, node.position.y + 130 + offsetY, { zoom: 1 });
     }
     setActive(id);
@@ -814,7 +797,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
     );
   }
   function move(ids: string[]) {
-    if (!session) setSelected(ids);
+    setSelected(ids);
     setMoveSources(ids);
     open("moves");
   }
@@ -929,7 +912,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
       if (pinch && event.touches.length >= 2) {
         const p = point(event.touches);
         const z = Math.max(
-          session ? .24 : MIN_ZOOM,
+          MIN_ZOOM,
           Math.min(
             1.6,
             (pinch.viewport.zoom * p.distance) / Math.max(1, pinch.distance),
@@ -997,9 +980,9 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
       element.removeEventListener("click", click, true);
       element.removeEventListener("pointerdown", down, true);
     };
-  }, [flow, session]);
+  }, [flow]);
   return (
-    <main className={`studio ${session ? "" : "scalable-atlas"}`}>
+    <main className={`studio ${"scalable-atlas"} ${perspective === "Constellation" ? "constellation-atlas" : ""}`}>
       <a className="skip-link" href="#atlas-tools">
         Skip to atlas controls
       </a>
@@ -1009,11 +992,11 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           <span>Minerva</span>
         </div>
         <div className="workspace-heading">
-          <span className="instrument-label">{session ? `Studio / ${perspective}` : "Saved in this browser"}</span>
-          <h1>{session ? "Saved idea atlas" : "The mall, reconsidered"}</h1>
+          <span className="instrument-label">{"Saved in this browser"}</span>
+          <h1>{"The mall, reconsidered"}</h1>
         </div>
-        {!session && <nav className="perspective-switch" aria-label="Atlas perspective">{(["Lineage", "Evolution", "Constellation"] as const).map(view => <Button variant="header" key={view} aria-pressed={perspective === view} onClick={() => switchPerspective(view)}>{view}</Button>)}</nav>}
-      {!session && <div className="atlas-header-actions">
+        {<nav className="perspective-switch" aria-label="Atlas perspective">{(["Lineage", "Evolution", "Constellation"] as const).map(view => <Button variant="header" key={view} aria-pressed={perspective === view} onClick={() => switchPerspective(view)}>{view}</Button>)}</nav>}
+      {<div className="atlas-header-actions">
         <Button variant="header" className="guide-launcher" aria-haspopup="dialog" aria-expanded={panel === "guide"} aria-controls="atlas-guide" onClick={event => {
           if (storageMenu.current) storageMenu.current.open = false;
           if (panel === "guide") close();
@@ -1046,7 +1029,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
         ref={field}
         tabIndex={0}
         onKeyDown={(event) => {
-          if (!session && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z" && !(event.target as HTMLElement).closest("input,textarea,select,[contenteditable=true]")) { event.preventDefault(); undoLayout(event.shiftKey); return; }
+          if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z" && !(event.target as HTMLElement).closest("input,textarea,select,[contenteditable=true]")) { event.preventDefault(); undoLayout(event.shiftKey); return; }
           if (event.target !== event.currentTarget) return;
           if (event.key === "0") fit();
           else if (event.key === "+" || event.key === "=") void flow.zoomIn();
@@ -1075,7 +1058,8 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
             live,
             busy,
             retry: () => { if (live) void generate(live.feature, live.sources, live.move); },
-            scalable: !session,
+            scalable: true,
+            constellation: perspective === "Constellation",
             labels,
             overview,
             compact,
@@ -1086,8 +1070,8 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
             focus,
             folded: foldedCounts,
             unfold: id => setFolds(current => current.filter(key => key !== id)),
-            resizeStart: () => { if (!session) gesture.current = captureLayout(); },
-            resize: session ? (id, size) => { void saveLayout(id, size, size).catch(() => {}); } : (id, size) => {
+            resizeStart: () => { gesture.current = captureLayout(); },
+            resize: (id, size) => {
               const before = gesture.current ?? captureLayout();
               const after = captureLayout(); after.positions[id] = { x: size.x, y: size.y }; after.sizes[id] = { width: size.width, height: size.height };
               applyLayout(after); rememberLayout("resize", before, after);
@@ -1100,7 +1084,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
             nodeTypes={nodeTypes}
             edgeTypes={edgeTypes}
             onNodesChange={(changes) => {
-              if (!session) {
+              {
                 const resizing = changes.flatMap(c => c.type === "dimensions" && c.resizing && c.dimensions ? [[c.id, c.dimensions] as const] : []);
                 if (resizing.length) setSizes(current => ({ ...current, [perspective]: { ...current[perspective], ...Object.fromEntries(resizing) } }));
               }
@@ -1110,13 +1094,12 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
               // or discarding measurements that arrived while geometry was publishing.
               setNodes((current) => applyNodeChanges(changes.filter(c => (!("id" in c) || !c.id.startsWith("theme-")) && (perspective === "Lineage" || c.type !== "position")).map(c => c.type === "replace" ? { ...c, item: { ...c.item, measured: changes.flatMap(change => change.type === "dimensions" && change.id === c.id && change.dimensions ? [change.dimensions] : []).at(-1) ?? current.find(n => n.id === c.id)?.measured ?? c.item.measured, position: current.find(n => n.id === c.id)?.position ?? c.item.position } } : c), current));
             }}
-            onNodeDragStart={() => { if (!session) gesture.current = captureLayout(); }}
-            onNodeDragStop={(_, node) => { if (session) void saveLayout(node.id, node.position).catch(() => {});
-              else { const before = gesture.current; const after = captureLayout(); after.positions[node.id] = node.position; if (before) rememberLayout("move", before, after); } }}
-            fitView={session ? !savedGraph?.viewpoint.revision : !initial?.cameras[initial.perspective]}
-            defaultViewport={session?.initial.viewpoint ?? initial?.cameras[initial.perspective]}
+            onNodeDragStart={() => { gesture.current = captureLayout(); }}
+            onNodeDragStop={(_, node) => { { const before = gesture.current; const after = captureLayout(); after.positions[node.id] = node.position; if (before) rememberLayout("move", before, after); } }}
+            fitView={!initial?.cameras[initial.perspective]}
+            defaultViewport={initial?.cameras[initial.perspective]}
             fitViewOptions={{ padding: 0.18, maxZoom: 1 }}
-            minZoom={session ? .24 : MIN_ZOOM}
+            minZoom={MIN_ZOOM}
             maxZoom={1.6}
             nodesConnectable={false}
             nodesFocusable={false}
@@ -1149,46 +1132,11 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
                   const id = (event.target as HTMLElement)
                     .closest("[data-id]")
                     ?.getAttribute("data-id");
-                  if (!session) {
+                  {
                     const before = captureLayout(), after = structuredClone(before), node = id && after.positions[id];
                     if (node) { node.x += event.key === "ArrowRight" ? 25 : event.key === "ArrowLeft" ? -25 : 0; node.y += event.key === "ArrowDown" ? 25 : event.key === "ArrowUp" ? -25 : 0; applyLayout(after); rememberLayout("move", before, after); }
                     return;
                   }
-                  if (perspective !== "Lineage") {
-                    const node = renderedNodes.find(n => n.id === id);
-                    if (node) setPositions(current => ({ ...current, [perspective]: { ...current[perspective], [node.id]: { x: node.position.x + (event.key === "ArrowRight" ? 25 : event.key === "ArrowLeft" ? -25 : 0), y: node.position.y + (event.key === "ArrowDown" ? 25 : event.key === "ArrowUp" ? -25 : 0) } } }));
-                    return;
-                  }
-                  const moved = nodes.find((n) => n.id === id);
-                  if (moved) void saveLayout(moved.id, {
-                    x: moved.position.x + (event.key === "ArrowRight" ? 25 : event.key === "ArrowLeft" ? -25 : 0),
-                    y: moved.position.y + (event.key === "ArrowDown" ? 25 : event.key === "ArrowUp" ? -25 : 0),
-                  }).catch(() => {});
-                  setNodes((current) =>
-                    current.map((n) =>
-                      n.id === id
-                        ? {
-                            ...n,
-                            position: {
-                              x:
-                                n.position.x +
-                                (event.key === "ArrowRight"
-                                  ? 25
-                                  : event.key === "ArrowLeft"
-                                    ? -25
-                                    : 0),
-                              y:
-                                n.position.y +
-                                (event.key === "ArrowDown"
-                                  ? 25
-                                  : event.key === "ArrowUp"
-                                    ? -25
-                                    : 0),
-                            },
-                          }
-                        : n,
-                    ),
-                  );
                 }
                 return;
               }
@@ -1220,47 +1168,29 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           id="atlas-tools"
           aria-label="Atlas controls"
         >
-          <Button variant="medallion" className="expedition-control thoughts-control" aria-label={`Thoughts ${nodes.length}`} title="Browse thoughts" aria-haspopup="dialog" aria-expanded={panel === "index"} onClick={() => open("index")}>
+          <Button iconOnly className="expedition-control thoughts-control" aria-label={`Thoughts ${nodes.length}`} title="Browse thoughts" aria-haspopup="dialog" aria-expanded={panel === "index"} onClick={() => togglePanel("index")}>
             <Image className="thoughts-medallion" src="/images/thoughts-olive.png" width={44} height={44} alt="" />
             <span className="thought-count" aria-hidden="true">{nodes.length}</span>
           </Button>
-          <Button variant="medallion" className="expedition-control" aria-label="Read as text" title="Read as text" aria-haspopup="dialog" aria-expanded={panel === "text"} onClick={() => open("text")}>
+          <Button iconOnly className="expedition-control" aria-label="Read as text" title="Read as text" aria-haspopup="dialog" aria-expanded={panel === "text"} onClick={() => togglePanel("text")}>
             <Image className="scroll-medallion" src="/images/read-scroll.png" width={44} height={44} alt="" />
           </Button>
-          {!session && <Button variant="medallion" className="expedition-control" aria-label="Expedition panel" title="Open expedition panel" aria-haspopup="dialog" aria-expanded={panel === "expedition"} onClick={() => open("expedition")}><Image src="/images/expedition-compass.png" width={44} height={44} alt="" /></Button>}
+          {<Button iconOnly className="expedition-control" aria-label="Expedition panel" title="Open expedition panel" aria-haspopup="dialog" aria-expanded={panel === "expedition"} onClick={() => togglePanel("expedition")}><Image src="/images/expedition-compass.png" width={44} height={44} alt="" /></Button>}
 
-          {!session && <details className="layout-menu layout-icon-menu" onKeyDown={event => { if (event.key === "Escape") { event.stopPropagation(); event.currentTarget.open = false; event.currentTarget.querySelector<HTMLElement>("summary")?.focus(); } }}><Summary variant="medallion" aria-label="Layout" title="Arrange layout"><Image src="/images/layout-medallion.png" width={48} height={48} alt="" /></Summary>
+          {<details className="layout-menu layout-icon-menu" onKeyDown={event => { if (event.key === "Escape") { event.stopPropagation(); event.currentTarget.open = false; event.currentTarget.querySelector<HTMLElement>("summary")?.focus(); } }}><Summary aria-label="Layout" title="Arrange layout"><Image src="/images/layout-medallion.png" width={48} height={48} alt="" /></Summary>
             <div className="layout-popover field-guide"><FieldGuideHeading title="Layout" image="/images/layout-medallion.png" close={() => { const menu = document.querySelector<HTMLDetailsElement>(".layout-icon-menu[open]"); if (menu) { menu.open = false; menu.querySelector<HTMLElement>("summary")?.focus(); } }} /><p>Undo up to 50 layout changes in this view.</p><div className="layout-actions">
             <Button disabled={!history[perspective].undo.length} onClick={() => undoLayout()}><Undo2 aria-hidden="true" />Undo</Button>
             <Button disabled={!history[perspective].redo.length} onClick={() => undoLayout(true)}><Redo2 aria-hidden="true" />Redo</Button>
-            <Button variant="primary" className="layout-arrange" onClick={() => { const before = captureLayout(), after = structuredClone(before); const visible = renderedNodes.filter(n => !n.hidden);
+            <Button className="layout-arrange" onClick={() => { const before = captureLayout(), after = structuredClone(before); const visible = renderedNodes.filter(n => !n.hidden);
               const widths = [0, 1, 2].map(column => Math.max(290, ...visible.filter((_, i) => i % 3 === column).map(n => sizes[perspective][n.id]?.width ?? n.measured?.width ?? 290)) + 90);
               let y = 0;
               visible.forEach((n, i) => { if (i && i % 3 === 0) y += Math.max(...visible.slice(i - 3, i).map(n => sizes[perspective][n.id]?.height ?? n.measured?.height ?? 320)) + 90; after.positions[n.id] = { x: widths.slice(0, i % 3).reduce((a, b) => a + b, 0), y }; }); applyLayout(after); rememberLayout("arrange", before, after); }}><LayoutGrid aria-hidden="true" />Arrange grid</Button>
             </div><small>Editing ideas, generating, importing or resetting clears history.</small></div>
           </details>}
-          {session && <>
-            <label className="relationship-label-toggle"><Input type="checkbox" checked={showRelationshipLabels} onChange={event => setShowRelationshipLabels(event.target.checked)} /> Relationship labels</label>
-            <Button onClick={() => { void session.command({ operation: "seed-mall" }).catch(() => {}); }} disabled={nodes.length > 0}>Load prepared mall</Button>
-            <Button onClick={() => { void session.command({ operation: "create-idea", ideaId: crypto.randomUUID(), title: "New idea", body: "Write your idea here." }).catch(() => {}); }}>New idea</Button>
-            <Button onClick={() => { void session.command({ operation: "set-viewpoint", expectedRevision: savedGraph!.viewpoint.revision, ...viewport }).catch(() => {}); }}>Save view</Button>
-            <Button onClick={() => open("explore")}>Develop alternatives</Button>
-            <details className="layout-menu layout-icon-menu" onKeyDown={event => { if (event.key === "Escape") { event.stopPropagation(); event.currentTarget.open = false; event.currentTarget.querySelector<HTMLElement>("summary")?.focus(); } }}><Summary variant="medallion" aria-label="Layout" title="Arrange layout"><Image src="/images/layout-medallion.png" width={48} height={48} alt="" /></Summary>
-              <div className="layout-popover field-guide"><FieldGuideHeading title="Layout" image="/images/layout-medallion.png" close={() => { const menu = document.querySelector<HTMLDetailsElement>(".layout-icon-menu[open]"); if (menu) { menu.open = false; menu.querySelector<HTMLElement>("summary")?.focus(); } }} /><p>Undo up to 50 card moves or resizes.</p><div className="layout-actions">
-              <Button disabled={!layoutUndo.length} onClick={() => { void restoreLayout(false).catch(() => {}); }}><Undo2 aria-hidden="true" />Undo</Button>
-              <Button disabled={!layoutRedo.length} onClick={() => { void restoreLayout(true).catch(() => {}); }}><Redo2 aria-hidden="true" />Redo</Button>
-              <Button onClick={() => { void (async () => {
-                for (const [index, node] of nodes.entries()) await saveLayout(node.id, { x: (index % 3) * 440, y: Math.floor(index / 3) * 380 });
-              })().catch(() => {}); }}><LayoutGrid aria-hidden="true" />Arrange grid</Button>
-              <Button onClick={() => { void (async () => {
-                for (const node of nodes) if (session.initial.layouts[node.id]) await saveLayout(node.id, session.initial.layouts[node.id], session.initial.layouts[node.id]);
-              })().catch(() => {}); }}>Restore initial layout</Button>
-              </div>{layoutNotice && <p role="status">{layoutNotice}</p>}</div>
-            </details>
-          </>}
+
         </nav>
-        {!session && focusedId && <section className="focus-navigation" aria-label="Focused card connections">
-          <div className="focus-heading"><strong>{byId.get(focusedId)?.title}</strong><Button iconOnly variant="quiet" aria-label="Close focused connections" onClick={() => setFocusedId(null)}><X aria-hidden="true" /></Button></div>
+        {focusedId && <section className="focus-navigation" aria-label="Focused card connections">
+          <div className="focus-heading"><strong>{byId.get(focusedId)?.title}</strong><Button aria-label="Close focused connections" onClick={() => setFocusedId(null)}><X aria-hidden="true" /></Button></div>
           <p className="focus-summary">{byId.get(focusedId)?.summary}</p>
           <div className="focus-actions">
             <Button className="focus-open" onClick={() => inspect(focusedId)}>Open card <ArrowRight aria-hidden="true" /></Button>
@@ -1273,7 +1203,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
             <option value="parents">Parents</option><option value="children">Children</option><option value="associations">Associations</option><option value="context">Shared brief</option>
           </Select></label>
           <p className="small-note">{focusedRelations.length ? `${focusedRelations.length} connection${focusedRelations.length === 1 ? "" : "s"}` : `No ${connectionKind === "context" ? "shared brief connections" : connectionKind}.`}</p>
-          <ul>{relationPage.map(edge => <li key={edge.id}><Button variant="content" className="relative-link" onClick={() => focus(edge.otherId)}>{byId.get(edge.otherId)?.title} <ExternalLink /></Button><Button aria-label={`Highlight only ${byId.get(edge.otherId)?.title}`} aria-pressed={branchId === edge.id} onClick={() => setBranchId(branchId === edge.id ? null : edge.id)}>Trace</Button></li>)}</ul>
+          <ul>{relationPage.map(edge => <li key={edge.id}><Button className="relative-link" onClick={() => focus(edge.otherId)}>{byId.get(edge.otherId)?.title} ↗</Button><Button aria-label={`Highlight only ${byId.get(edge.otherId)?.title}`} aria-pressed={branchId === edge.id} onClick={() => setBranchId(branchId === edge.id ? null : edge.id)}>Trace</Button></li>)}</ul>
           {focusedRelations.length > 6 && <div><Button disabled={!connectionPage} onClick={() => { setConnectionPage(p => p - 1); setBranchId(null); }}>Previous connections</Button><Button disabled={(connectionPage + 1) * 6 >= focusedRelations.length} onClick={() => { setConnectionPage(p => p + 1); setBranchId(null); }}>Next connections</Button></div>}
         </details>
         </section>}
@@ -1282,7 +1212,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           {themeBusy && <span role="status">Grouping themes…</span>}
           {themeError && <><span role="alert">{themeError}</span><Button disabled={themeBusy} onClick={() => void groupThemes(themeRetryFull.current)}>Retry</Button></>}
           <Button data-regroup-trigger aria-busy={themeBusy} title={themeBusy ? "Finding themes…" : selected.length ? `Regroup ${selected.length} selected ideas` : "Regroup all ideas"} disabled={themeBusy || !themeCache} onClick={() => { setPanel(null); setFocusedId(null); setRegroupIds(selected.length ? selected : nodes.map(n => n.id)); }}><ArrowClockwise className={themeBusy ? "composer-spinner" : undefined} aria-hidden="true" />{themeBusy ? "Finding themes…" : "Regroup"}{!themeBusy && selected.length > 0 ? ` ${selected.length} selected` : ""}</Button>
-          {selected.length > 0 && <Button onClick={() => setSelected([])}>Clear selection</Button>}
+          {selected.length > 0 && <Button onClick={() => { setSelected([]); setVoiceFocusId(null); }}>Clear selection</Button>}
           {regroupedIds.length > 0 && <><span role="status">Regrouped {regroupedIds.length} ideas</span><Button onClick={() => void flow.fitView({ nodes: [...regroupedIds, ...themeCache!.groups.flatMap((g, i) => g.memberIds.some(id => regroupedIds.includes(id)) ? [`theme-${i}`] : [])].map(id => ({ id })), padding: .3, maxZoom: 1 })}>View regrouped ideas</Button></>}
           {themeUndo && <Button onClick={() => { clearHistory(); setThemeCache(themeUndo.cache); setPositions(themeUndo.positions); void flow.setViewport(themeUndo.viewport); setThemeUndo(undefined); setRegroupedIds([]); }}>Undo regroup</Button>}
         </section>}
@@ -1293,7 +1223,8 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
             clearHistory();
             setThemeUndo({ cache: themeCache, positions, viewport: flow.getViewport() });
             setRegroupedIds(regroupIds);
-            const { groups: next, layout } = applyRegroup(themeCache.groups, incoming, regroupIds, renderedNodes);
+            const regrouped = applyRegroup(themeCache.groups, incoming, regroupIds, renderedNodes);
+            const { groups: next, layout } = applyRegroup(themeCache.groups, incoming, regroupIds, renderedNodes, constellationLayout(regrouped.groups, nodes.map(n => n.id)));
             setPositions(current => ({ ...current, Constellation: layout }));
             setThemeCache({ ...themeCache, groups: next, time: new Date().toLocaleString() });
             setRegroupIds(null);
@@ -1322,57 +1253,62 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           </div>}
         </div>
         {selected.length > 0 && !regroupIds && (
-          <div className={`selection-bar${session ? "" : " light-selection-dock"}`}>
+          <div className={`selection-bar${" light-selection-dock"}`}>
             <span className="selection-count">{selected.length} selected</span>
             {selected.length === 1 && <Button onClick={() => focus(selected[0])}><Crosshair aria-hidden="true" />Focus</Button>}
-            {session ? <><Button onClick={() => open("compare")}>Compare</Button><Button onClick={() => move(selected)}>Weave · preview</Button></> : <>
+            {<>
               <Button className="wander-action" disabled={busy || selected.length !== 1} onClick={() => move(selected)} aria-busy={busy && live?.feature === "wander"}>{busy && live?.feature === "wander" ? <span className="generation-spinner" aria-hidden="true" /> : <GitFork aria-hidden="true" />}{busy && live?.feature === "wander" ? "Wandering…" : "Wander"}</Button>
               <Button onClick={() => open("compare")}><Copy aria-hidden="true" />Compare</Button>
               <Button disabled={selected.length !== 1} onClick={() => open("expedition")}><Compass aria-hidden="true" />Expedition</Button>
               <Button disabled={busy || selected.length < 2} onClick={() => void generate("weave", selected.map((id) => byId.get(id)!))} aria-busy={busy && live?.feature === "weave"}>{busy && live?.feature === "weave" ? <span className="generation-spinner" aria-hidden="true" /> : <Shuffle aria-hidden="true" />}{busy && live?.feature === "weave" ? "Weaving…" : "Weave"}</Button>
             </>}
-            {session && selected.length === 2 && <details className="layout-menu"><Summary>Connect selected</Summary>
-              <p>From {byId.get(selected[0])?.title} to {byId.get(selected[1])?.title}</p>
-              <label>Relationship<Select value={relationshipKind} onChange={(e) => setRelationshipKind(e.target.value as typeof relationshipKind)}>
-                <option value="association">Semantic association</option><option value="derivation">Derivation</option><option value="recombination">Recombination parent</option>
-              </Select></label>
-              <label>Contribution or link label<Input maxLength={200} value={relationshipLabel} onChange={(e) => setRelationshipLabel(e.target.value)} /></label>
-              <Button onClick={() => { void session.command({ operation: "connect-ideas", edgeId: crypto.randomUUID(), from: selected[0], to: selected[1],
-                sourceRevision: byId.get(selected[0])!.revision, targetRevision: byId.get(selected[1])!.revision,
-                kind: relationshipKind, label: relationshipLabel, contribution: relationshipLabel }).catch(() => {}); }}>Save relationship</Button>
-            </details>}
-            <Button iconOnly variant="quiet"
+
+            <Button
               className="selection-close"
               aria-label="Clear selection"
               title="Clear selection"
-              onClick={() => { setSelected([]); setFocusedId(null); if (panel === "moves") setPanel(null); }}
+              onClick={() => { setSelected([]); setVoiceFocusId(null); setFocusedId(null); if (panel === "moves") setPanel(null); }}
             >
-              <X aria-hidden="true" />
+              {<X aria-hidden="true" />}
             </Button>
           </div>
         )}
         <div className="field-footer">
           <div className="zoom-controls">
-            <Button iconOnly aria-label="Zoom out" onClick={() => void flow.zoomOut()}>
-              <Minus aria-hidden="true" />
+            <Button aria-label="Zoom out" onClick={() => void flow.zoomOut()}>
+              −
             </Button>
             <output aria-label="Zoom level">
               {Math.round(viewport.zoom * 100)}%
             </output>
-            <Button iconOnly aria-label="Zoom in" onClick={() => void flow.zoomIn()}>
-              <Plus aria-hidden="true" />            </Button>
+            <Button aria-label="Zoom in" onClick={() => void flow.zoomIn()}>
+              +
+            </Button>
             <Button onClick={fit}>Fit</Button>
           </div>
         </div>
       </div>
-      {!session && <Button variant="medallion" className={`minerva-launcher${selected.length ? " has-selection" : ""}`} aria-label="Talk to Minerva" aria-haspopup="dialog" aria-expanded={panel === "talk"} aria-controls="minerva-talk" onClick={() => open("talk")}>
+      {<Button className={`minerva-launcher${selected.length ? " has-selection" : ""}`} aria-label="Talk to Minerva" aria-haspopup="dialog" aria-expanded={panel === "talk"} aria-controls="minerva-talk" onClick={() => open("talk")}>
         <Image src="/images/minerva-engraved-cameo.png" alt="" width={64} height={64} sizes="64px" />
         <span className="minerva-launcher-label" aria-hidden="true">Talk to Minerva</span>
       </Button>}
-      {!session && <TalkPanel messages={messages} setMessages={update => { clearHistory(); setMessages(update); }} open={panel === "talk"} close={close} selectedIds={selected} cards={nodes.map(({ id, data }) => ({ ...data.thought, relationships: relationshipsFor(id, relationships) }))} />}
-      {!session && <ExpeditionPanel entries={expeditions} setEntries={update => { clearHistory(); setExpeditions(update); }} activeEntry={activeExpedition} setActiveEntry={setActiveExpedition} open={panel === "expedition"} close={close} source={selected.length === 1 ? byId.get(selected[0]) : undefined}
+      {<TalkPanel focusedId={voiceFocusId && byId.has(voiceFocusId) ? voiceFocusId : null} messages={messages} setMessages={update => { clearHistory(); setMessages(update); }} open={panel === "talk"} close={close} selectedIds={selected} cards={nodes.map(({ id, data }) => ({ ...data.thought, relationships: relationshipsFor(id, relationships) }))} />}
+      {<ExpeditionPanel entries={expeditions} setEntries={update => { clearHistory(); setExpeditions(update); }} activeEntry={activeExpedition} setActiveEntry={setActiveExpedition} open={panel === "expedition"} close={close} source={selected.length === 1 ? byId.get(selected[0]) : undefined}
         cards={nodes.map(n => n.data.thought)} add={addExpeditionCard} focus={id => { focus(id); setPanel("expedition"); }} />}
-      {panel && panel !== "talk" && panel !== "expedition" && (
+      {panel === "inspect" && <CardPane key={thought.id}
+        card={thought} cards={nodes.map(n => n.data.thought)} relationships={relationships} revisions={cardRevisions}
+        draft={cardDrafts[thought.id]} setDraft={draft => setCardDrafts(current => ({ ...current, [thought.id]: draft }))}
+        save={edit => {
+          const revised = reviseCard(thought, edit);
+          clearHistory();
+          setCardRevisions(current => [...current, thought]);
+          setNodes(current => current.map(n => n.id === thought.id ? { ...n, data: { ...n.data, thought: revised } } : n));
+        }}
+        inspect={inspect} focus={focus} explore={() => move([thought.id])} close={close}
+        folded={folds.includes(thought.id)} descendantCount={trace(thought.id, "descendants").length}
+        toggleFold={() => setFolds(current => current.includes(thought.id) ? current.filter(id => id !== thought.id) : [...current, thought.id])}
+        showBranch={() => { setChain({ id: thought.id, direction: "descendants" }); setFolds(current => current.filter(id => id !== thought.id && !trace(thought.id, "descendants").includes(id))); focus(thought.id); }} />}
+      {panel && panel !== "talk" && panel !== "expedition" && (panel !== "inspect") && (
         <aside
           key={panel === "guide" ? "guide" : "detail"}
           id={panel === "guide" ? "atlas-guide" : undefined}
@@ -1382,10 +1318,8 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           role="dialog"
           aria-modal="false"
           aria-label={
-            panel === "guide" ? "Guide to Minerva" : panel === "inspect"
-              ? thought.title
-              : panel === "moves"
-                ? (session ? "Contextual moves" : "Wander")
+            panel === "guide" ? "Guide to Minerva" : panel === "moves"
+                ? ("Wander")
                 : panel === "index"
                   ? "Thought index"
                   : panel === "compare"
@@ -1400,132 +1334,19 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
           }}
         >
           {panel === "text" && <FieldGuideHeading title="Read as text" image="/images/read-scroll.png" close={close} />}
-          {panel !== "index" && panel !== "text" && <FieldGuideHeading
-            title={panel === "guide" ? "Guide" : panel === "inspect" ? "Thought / source material" : panel === "moves" ? "Wander" : "Selected contributions"}
-            close={close} />}
-
+          {panel !== "index" && panel !== "text" && <div className="panel-heading">
+            <span className="instrument-label">
+              {panel === "guide" ? "Guide" : panel === "moves"
+                  ? ("Wander")
+                  : "Selected contributions"}
+            </span>
+            <Button aria-label="Close panel" onClick={close}>
+              ×
+            </Button>
+          </div>}
           {panel === "guide" && <GuideContent />}
-          {panel === "explore" && session && <ExplorationPanel workspaceId={savedGraph!.workspaceId}
-            sources={selected.map((id) => byId.get(id)!).filter(Boolean)} inspect={inspect} />}
-          {panel === "inspect" && (
-            <>
-              <h2>{thought.title}</h2>
-              {!session && <GraphNavigation id={thought.id} chain={chain} chainIds={chainIds} descendantCount={trace(thought.id, "descendants").length} byId={byId} folds={folds} setChain={setChain} setFolds={setFolds} focus={focus} />}
-              {!session && <DownloadButton key={thought.id} card={thought} cards={nodes.map((node) => node.data.thought)} relationships={relationships} />}
-              <p className="body-copy">{thought.body}</p>
-              {thought.generation && <details><Summary>Generation context and mechanism</Summary>
-                <p>{thought.generation.mechanism}</p>
-                <p>Prerequisites: {thought.generation.prerequisites.join("; ")}</p>
-                <p>Uncertainties: {thought.generation.uncertainties.join("; ")}</p>
-                <p>Requested: {thought.generation.requestedChange}</p>
-                <p>Observed: {thought.generation.observedChange}</p>
-                <p className="small-note">Original generation · {thought.generation.model} · input {thought.generation.manifestId}</p>
-              </details>}
-              {thought.assessment && <details><Summary>Assessment of this revision</Summary>
-                <p>{thought.assessment.goalFidelity}</p><p>{thought.assessment.constraints}</p>
-                <p>{thought.assessment.causalDependencies}</p><p>{thought.assessment.transformation}</p>
-                <p>Model assessment; real-world feasibility remains unverified.</p>
-              </details>}
-              {!session && relationships.some(e => e.to === active && (e.kind === "derivation" || e.kind === "recombination")) && <section aria-label="Inheritance"><h3>Inheritance</h3>{relationships.filter(e => e.to === active && (e.kind === "derivation" || e.kind === "recombination")).map(e => <div key={e.id}><h4>{byId.get(e.from)?.title ?? e.from}</h4><p>{e.contribution || "Not specified"}</p>{thought.provenance?.moveTitle && <p>Move: {thought.provenance.moveTitle}</p>}</div>)}</section>}
-              {!session && thought.provenance && <section aria-label="Provenance"><h3>Provenance</h3><p>{thought.provenance.feature} · {thought.provenance.tag}</p><p>Sources at generation: {thought.provenance.sourceTitles.join("; ")}</p></section>}
-              <h3>Contribution</h3>
-              <p>{thought.contribution}</p>
-              <h3>Relationships</h3>
-              <p className="small-note">
-                Shared brief is context, not parentage. Associations do not
-                establish inheritance.
-              </p>
-              <ul className="relationship-list">
-                {relationshipsFor(active, relationships).map((edge) => (
-                  <li key={edge.id}>
-                    <span className="instrument-label">
-                      {edge.direction} / {edge.kind}
-                    </span>
-                    <Button onClick={() => inspect(edge.otherId)}>
-                      {byId.get(edge.otherId)?.title}{" "}
-                      {edge.direction === "incoming" ? <ArrowLeft /> : <ArrowRight />}
-                    </Button>
-                    <p>
-                      {edge.label}
-                      {edge.kind !== "association" && edge.kind !== "context"
-                        ? ` · source revision ${edge.sourceRevision}`
-                        : ""}
-                    </p>
-                    {edge.contribution && (
-                      <blockquote>{edge.contribution}</blockquote>
-                    )}
-                    {savedGraph && <details><Summary>Exact source revision {edge.sourceRevision}</Summary>
-                      <p>{savedGraph.revisions.find((r) => r.id === edge.from && r.revision === edge.sourceRevision)?.body ?? "Source revision unavailable"}</p>
-                    </details>}
-                  </li>
-                ))}
-              </ul>
-              <details>
-                <Summary>{session ? "Edit idea" : "Edit prepared text"}</Summary>
-                <label>
-                  Title
-                  <Input
-                    value={thought.title}
-                    onChange={(e) => {
-                      clearHistory();
-                      dirtyText.current.add(active);
-                      setNodes((current) =>
-                        current.map((n) =>
-                          n.id === active
-                            ? {
-                                ...n,
-                                data: {
-                                  thought: {
-                                    ...n.data.thought,
-                                    title: e.target.value,
-                                  },
-                                },
-                              }
-                            : n,
-                        ),
-                      );
-                    }}
-                  />
-                </label>
-                <label>
-                  Body
-                  <Textarea
-                    rows={6}
-                    value={thought.body}
-                    onChange={(e) => {
-                      clearHistory();
-                      dirtyText.current.add(active);
-                      setNodes((current) =>
-                        current.map((n) =>
-                          n.id === active
-                            ? {
-                                ...n,
-                                data: {
-                                  thought: {
-                                    ...n.data.thought,
-                                    body: e.target.value,
-                                  },
-                                },
-                              }
-                            : n,
-                        ),
-                      );
-                    }}
-                  />
-                </label>
-                <p className="small-note">
-                  {session ? "Save a new revision; earlier source revisions remain available." : "Local text rehearsal. Prepared source excerpts stay fixed; revision history and persistence arrive later."}
-                </p>
-                {session && <Button onClick={() => {
-                  void session.command({ operation: "revise-idea", ideaId: active, expectedRevision: thought.revision,
-                    title: thought.title, body: thought.body }).then(() => {
-                      dirtyText.current.delete(active);
-                      setNodes((current) => current.map((n) => n.id === active ? { ...n, data: { ...n.data, thought: { ...n.data.thought, revision: thought.revision + 1 } } } : n));
-                    }).catch(() => {});
-                }}>Save idea revision</Button>}
-              </details>
-            </>
-          )}
+
+
           {panel === "text" && <div className="reader-layout">
             <nav className="reader-contents" aria-label="Ideas">
               {nodes.map(n => <Button key={n.id} aria-current={n.id === thought.id ? "true" : undefined} onClick={() => setActive(n.id)}>{n.data.thought.title}</Button>)}
@@ -1542,8 +1363,8 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
                 </details>
                 <div className="reader-actions">
                   <label><Input type="checkbox" checked={selected.includes(thought.id)} onChange={() => select(thought.id)} /> Select</label>
-                  <Button variant="primary" className="reader-open" onClick={() => inspect(thought.id)}>Open card</Button>
-                  <Button variant="quiet" className="reader-center" onClick={() => focus(thought.id)}>Center on canvas</Button>
+                  <Button className="reader-open" onClick={() => inspect(thought.id)}>Open card</Button>
+                  <Button className="reader-center" onClick={() => focus(thought.id)}>Center on canvas</Button>
                 </div>
               </article>
               <nav className="reader-pagination" aria-label="Reading navigation">
@@ -1551,7 +1372,7 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
               </nav>
             </div>
           </div>}
-          {panel === "index" && <ThoughtCatalogue cards={nodes.map(n => n.data.thought)} relationships={relationships} selected={selected} select={select} focus={focus} close={close} downloadable={!session} foldedUnder={foldedUnder} unfold={id => setFolds(current => current.filter(key => !foldedUnder.get(id)?.includes(key)))} />}
+          {panel === "index" && <ThoughtCatalogue cards={nodes.map(n => n.data.thought)} relationships={relationships} selected={selected} select={select} focus={focus} close={close} downloadable={true} foldedUnder={foldedUnder} unfold={id => setFolds(current => current.filter(key => !foldedUnder.get(id)?.includes(key)))} />}
           {panel === "compare" && (
             <>
               <h2>Hold the differences in view.</h2>
@@ -1574,13 +1395,13 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
               </Button>
             </>
           )}
-          {panel === "moves" && !session && selected.length === 1 && <MovesPanel
+          {panel === "moves" && selected.length === 1 && <MovesPanel
             key={selected[0]} source={{ ...byId.get(selected[0])!, relationships: relationshipsFor(selected[0], relationships) }}
             prepared={byId.get(selected[0])!.move} busy={busy} error={live?.move ? live.error : undefined}
             explore={() => void generate("wander", [byId.get(selected[0])!])}
             choose={(move) => void generate("wander", [byId.get(selected[0])!], move)}
             retryGeneration={() => { if (live) void generate(live.feature, live.sources, live.move); }} />}
-          {panel === "moves" && (session || selected.length !== 1) && (
+          {panel === "moves" && (selected.length !== 1) && (
             <>
               <h2>
                 {moveSources.length > 1
@@ -1605,11 +1426,11 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
                   </span>
                 </section>
               ))}
-              <Button variant="primary" className="move-choice" onClick={() => setPreview(true)}>
+              <Button className="move-choice" onClick={() => setPreview(true)}>
                 {moveSources.length > 1
                   ? "Preview a shared occasion"
                   : byId.get(moveSources[0])!.move.title}{" "}
-                <ArrowRight />
+                →
               </Button>
               {preview && (
                 <div className="prepared-result" aria-live="polite">
@@ -1644,6 +1465,6 @@ function LocalAtlas() {
   return <ReactFlowProvider key={loaded.key}><Studio initial={loaded.save} restoreNotice={loaded.notice} saveEnabled={loaded.saveEnabled}
     replace={(save, notice = "") => setLoaded(current => ({ save, notice, saveEnabled: true, key: (current?.key ?? 0) + 1 }))} /></ReactFlowProvider>;
 }
-export default function Atlas({ session }: { session?: AtlasSession }) {
-  return session ? <ReactFlowProvider><Studio session={session} /></ReactFlowProvider> : <LocalAtlas />;
+export default function Atlas() {
+  return <LocalAtlas />;
 }

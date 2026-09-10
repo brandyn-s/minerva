@@ -360,29 +360,22 @@ try {
   await page.getByRole("dialog").waitFor();
   const dialog = page.getByRole("dialog");
   assert.equal(await dialog.locator(".status-line").count(), 0, "default draft and unknown evidence labels stay hidden");
-  assert.equal(await dialog.locator(".relationship-list li").count(), 2);
-  await dialog
-    .getByRole("button", { name: "A food hall", exact: true })
-    .click();
-  assert.match(await dialog.innerText(), /outgoing \/ recombination/i);
-  await dialog
-    .getByRole("button", {
-      name: "Repair, then stay for supper",
-      exact: true,
-    })
-    .click();
-  await dialog
-    .getByRole("button", { name: "A shared tool library", exact: true })
-    .click();
-  await dialog
-    .getByRole("button", { name: "A shopfront for six weeks", exact: true })
-    .click();
+  const connections = () => dialog.getByRole("tab", { name: /^Connections/ }).click();
+  await connections();
+  assert.equal(await dialog.locator(".card-pane-lineage > section").first().locator(".card-pane-relation").count(), 2);
+  await dialog.getByRole("button", { name: "A food hall", exact: true }).click();
+  await connections();
+  assert.match(await dialog.locator(".card-pane-lineage > section").nth(2).innerText(), /Repair, then stay for supper/);
+  await dialog.getByRole("button", { name: "Repair, then stay for supper", exact: true }).click();
+  await connections();
+  await dialog.getByRole("button", { name: "A shared tool library", exact: true }).click();
+  await connections();
+  await dialog.getByRole("button", { name: "A shopfront for six weeks", exact: true }).click();
   assert.doesNotMatch(await dialog.innerText(), /Evidence: unknown/);
   assert.doesNotMatch(await dialog.innerText(), /\bkept\b/, "inspection omits the redundant kept label");
-  await dialog
-    .getByRole("button", { name: "A shared tool library", exact: true })
-    .click();
-  const textSelection = await dialog.locator(".body-copy").evaluate((e) => {
+  await connections();
+  await dialog.getByRole("button", { name: "A shared tool library", exact: true }).click();
+  const textSelection = await dialog.locator(".card-pane-markdown").evaluate((e) => {
     const r = document.createRange();
     r.selectNodeContents(e);
     const s = getSelection();
@@ -450,8 +443,7 @@ try {
         const bar = await toolbar.boundingBox();
         const dismiss = await toolbar.getByRole("button", { name: "Clear selection", exact: true }).boundingBox();
         assert.ok(bar.x >= 0 && bar.x + bar.width <= width, "toolbar fits viewport");
-        const minimumTarget = await page.evaluate(() => matchMedia("(pointer: coarse)").matches ? 44 : 36);
-        assert.ok(dismiss.width >= minimumTarget && dismiss.height >= minimumTarget, "dismissal uses the shared pointer target size");
+        assert.ok(dismiss.width >= 44 && dismiss.height >= 44, "small X keeps a full click target");
         assert.ok(dismiss.x >= bar.x && dismiss.y >= bar.y && dismiss.x + dismiss.width <= bar.x + bar.width && dismiss.y + dismiss.height <= bar.y + bar.height, "dismissal remains inside the light selection dock");
         await page.screenshot({ path: `${artifacts}/wander-toolbar-${width}.png` });
       }
@@ -534,21 +526,26 @@ try {
       assert.ok(result.title && result.summary && result.body);
       await inspectFromIndex(result.title);
       const inspection = page.getByRole("dialog");
-      assert.equal(await inspection.locator(".body-copy").innerText(), result.body);
-      const links = inspection.locator(".relationship-list li");
+      assert.equal(await inspection.locator(".card-pane-markdown").innerText(), result.body);
+      await inspection.getByRole("tab", { name: /^Connections/ }).click();
+      const links = inspection.locator(".card-pane-lineage > section").first().locator(".card-pane-relation");
       assert.equal(await links.count(), feature === "wander" ? 1 : 3);
-      assert.match(await links.first().innerText(), feature === "wander" ? /incoming \/ derivation/i : /incoming \/ recombination/i);
+      assert.match(await links.first().innerText(), /source revision 1/i);
       if (feature === "weave") {
-        await inspection.getByRole("button", { name: "Show ancestors", exact: true }).click();
-        const wovenId = (await storedSave()).thoughts.find(c => c.title === result.title).id;
-        assert.deepEqual((await page.locator(".react-flow__node.chain-highlighted").evaluateAll(nodes => nodes.map(n => n.dataset.id))).sort(), [wovenId, "food", "tools", "retail"].sort());
-        assert.deepEqual(await inspection.getByRole("list", { name: "ancestors chain" }).getByRole("button").allTextContents(), ["A food hall", "A shared tool library", "Independent retail shops"]);
-        assert.equal(await page.locator(".react-flow__node.chain-dimmed").count(), total - 4);
-        await inspection.getByRole("button", { name: "Clear", exact: true }).click();
-        assert.equal(await page.locator(".chain-highlighted").count(), 0);
         assert.equal(evidence.weaveInput.length, 3);
         assert.equal(output.contributions.length, 3);
         for (const contribution of output.contributions) assert.ok((await links.allInnerTexts()).join(" ").includes(contribution));
+        await focusInspected(page);
+        const navigation = page.getByRole("region", { name: "Focused card connections" });
+        await navigation.locator(".focus-connections > summary").click();
+        await navigation.getByRole("button", { name: "Show ancestors", exact: true }).click();
+        const wovenId = (await storedSave()).thoughts.find(c => c.title === result.title).id;
+        assert.deepEqual((await page.locator(".react-flow__node.chain-highlighted").evaluateAll(nodes => nodes.map(n => n.dataset.id))).sort(), [wovenId, "food", "tools", "retail"].sort());
+        assert.deepEqual(await navigation.getByRole("list", { name: "ancestors chain" }).getByRole("button").allTextContents(), ["A food hall", "A shared tool library", "Independent retail shops"]);
+        assert.equal(await page.locator(".react-flow__node.chain-dimmed").count(), total - 4);
+        await navigation.getByRole("button", { name: "Clear", exact: true }).click();
+        assert.equal(await page.locator(".chain-highlighted").count(), 0);
+        await button("Open card").click();
       }
       await close();
     }
@@ -669,8 +666,9 @@ try {
   await page.waitForFunction((count) => document.querySelectorAll(".thought").length === count, total);
   await assertGenerationVisible();
   await inspectFromIndex("Morning repair table");
-  assert.match(await page.locator(".relationship-list").innerText(), /incoming \/ derivation/i);
-  assert.ok((await page.locator(".relationship-list").innerText()).includes(chosenMove.title));
+  await page.getByRole("tab", { name: /^Connections/ }).click();
+  assert.match(await page.locator(".card-pane-relation").innerText(), /source revision 1/i);
+  assert.ok((await page.locator(".card-pane-relation").innerText()).includes(chosenMove.title));
   assert.equal(moveCardAttempts, 2);
   await close();
   await page.unroute("**/api/moves");
@@ -688,8 +686,11 @@ try {
     };
   });
   await inspectFromIndex("Morning repair table");
-  assert.ok((await page.getByRole("region", { name: "Inheritance", exact: true }).innerText()).includes(chosenMove.title));
-  assert.ok((await page.getByRole("region", { name: "Provenance", exact: true }).innerText()).includes("feature:wander"));
+  await page.getByRole("dialog").getByText("Provenance", { exact: true }).click();
+  const provenance = page.getByRole("dialog").locator("details").filter({ has: page.getByText("Provenance", { exact: true }) });
+  assert.ok((await provenance.innerText()).includes(chosenMove.title));
+  assert.ok((await provenance.innerText()).includes("feature:wander"));
+  await button("More card actions").click();
   await page.evaluate(() => { window.failDownload = true; });
   await button("Download").click();
   await page.getByRole("dialog").getByRole("alert").waitFor();
@@ -698,8 +699,9 @@ try {
   assert.equal((await downloadedCard).suggestedFilename(), "morning-repair-table.md");
   const cardMarkdown = await page.evaluate(() => window.downloads[0]);
   for (const value of ["# Morning repair table", "## Summary", "Morning repair table summary", "## Body",
-    "Morning repair table concrete draft.", "## Decision", "unkept draft", "## Evidence", "unknown",
+    "Morning repair table concrete draft.", "## Contribution",
     "## Inheritance", "## Provenance", "feature:wander", "## Relationships", "incoming / derivation", chosenMove.title, "Contribution:"]) assert.ok(cardMarkdown.includes(value), value);
+  assert.doesNotMatch(cardMarkdown, /## Decision|## Evidence/, "exports omit retired decision and evidence labels");
   await close();
   await page.getByRole("button", { name: /^Thoughts / }).click();
   await page.getByPlaceholder("Search titles").fill("Morning repair table");
@@ -785,8 +787,8 @@ try {
   assert.equal(await page.locator(".react-flow__edge.derivation,.react-flow__edge.recombination").count(), 0);
   await button("Lineage").click();
   await inspectFromIndex("Morning repair table");
-  await page.getByText("Edit prepared text", { exact: true }).click();
-  await page.getByRole("dialog").locator("details textarea").fill("Edited theme content");
+  await page.getByRole("dialog").getByRole("button", { name: "Edit", exact: true }).click();
+  await page.getByRole("dialog").getByRole("textbox", { name: /^Body/ }).fill("Edited theme content"); await button("Save changes").click();
   await close();
   await button("Constellation").click(); await settle();
   assert.equal(themeRequests, 4);
@@ -926,8 +928,8 @@ try {
       }
       await button("Close panel").click();
       await inspectFromIndex(outputs[0].card.title);
-      await page.getByText("Edit prepared text", { exact: true }).click();
-      await page.getByRole("dialog").locator("details textarea").fill("Edited expedition card after the reading.");
+      await page.getByRole("dialog").getByRole("button", { name: "Edit", exact: true }).click();
+      await page.getByRole("dialog").getByRole("textbox", { name: /^Body/ }).fill("Edited expedition card after the reading."); await button("Save changes").click();
       await close(); await button("Expedition panel").click();
       await expPanel.getByText(/Stale reading/).waitFor();
       if (condition === "budget") {
@@ -950,8 +952,8 @@ try {
   await selectFromIndex("A shared tool library"); await button("Wander").click(); await button("Explore freely").click();
   await page.waitForFunction(() => document.querySelectorAll(".thought").length === 8);
   await inspectFromIndex("Repair apprenticeships");
-  await page.getByText("Edit prepared text", { exact: true }).click();
-  await page.getByRole("dialog").locator("details input").fill("Durable repair apprenticeships");
+  await page.getByRole("dialog").getByRole("button", { name: "Edit", exact: true }).click();
+  await page.getByRole("dialog").getByRole("textbox", { name: /^Title/ }).fill("Durable repair apprenticeships"); await button("Save changes").click();
   await close();
   await inspectFromIndex("Durable repair apprenticeships"); await focusInspected(page); await settle();
   const durableNode = page.locator('.react-flow__node').filter({ has: page.getByRole("button", { name: "Durable repair apprenticeships", exact: true }) });
@@ -1085,22 +1087,22 @@ try {
   const resized = await storedSave(); assert.ok(resized.sizes.Lineage.repair.width > 350);
   assert.notEqual(await page.locator('[data-id="food-repair"] path.react-flow__edge-path').getAttribute("d"), edgeBeforeResize);
   await assertAttached();
-  await page.locator(".layout-menu summary").click(); assert.equal(await button("Undo resize").isEnabled(), true);
-  await button("Undo resize").click(); await settle(); assert.deepEqual((await storedSave()).sizes, beforeResize.sizes);
-  assert.equal(await button("Redo resize").isEnabled(), true); await button("Redo resize").click(); await settle();
+  await page.locator(".layout-menu summary").click(); assert.equal(await button("Undo").isEnabled(), true);
+  await button("Undo").click(); await settle(); assert.deepEqual((await storedSave()).sizes, beforeResize.sizes);
+  assert.equal(await button("Redo").isEnabled(), true); await button("Redo").click(); await settle();
   assert.deepEqual((await storedSave()).sizes, resized.sizes);
   await page.reload(); await page.locator(".thought").first().waitFor(); await settle();
   assert.deepEqual((await storedSave()).sizes, resized.sizes); await assertAttached();
-  await page.locator(".layout-menu summary").click(); assert.equal(await button("Undo resize").isEnabled(), true);
+  await page.locator(".layout-menu summary").click(); assert.equal(await button("Undo").isEnabled(), true);
   await page.screenshot({ path: `${artifacts}/resized-card.png` });
   const lineageHistory = (await storedSave()).layoutHistory.Lineage;
   await button("Evolution").click(); await settle();
-  assert.equal(await button("Undo layout").isDisabled(), true);
+  assert.equal(await button("Undo").isDisabled(), true);
   assert.equal(await repairNode.evaluate(n => n.offsetWidth), 290);
-  await button("Arrange grid").click(); await settle(); assert.equal(await button("Undo arrange").isEnabled(), true);
+  await button("Arrange grid").click(); await settle(); assert.equal(await button("Undo").isEnabled(), true);
   const arranged = (await storedSave()).positions.Evolution;
-  await button("Undo arrange").click(); await settle(); assert.notDeepEqual((await storedSave()).positions.Evolution, arranged);
-  assert.equal(await button("Redo arrange").isEnabled(), true); await button("Redo arrange").click(); await settle();
+  await button("Undo").click(); await settle(); assert.notDeepEqual((await storedSave()).positions.Evolution, arranged);
+  assert.equal(await button("Redo").isEnabled(), true); await button("Redo").click(); await settle();
   assert.deepEqual((await storedSave()).positions.Evolution, arranged);
   await button("Lineage").click(); await settle();
   assert.deepEqual((await storedSave()).layoutHistory.Lineage, lineageHistory);
@@ -1108,17 +1110,17 @@ try {
   const beforeMove = (await storedSave()).positions.Lineage.repair;
   await repairNode.locator(".card-grip").focus(); await page.keyboard.press("ArrowRight"); await settle();
   assert.deepEqual((await storedSave()).positions.Lineage.repair, { ...beforeMove, x: beforeMove.x + 25 });
-  assert.equal(await button("Undo move").isEnabled(), true);
+  assert.equal(await button("Undo").isEnabled(), true);
   await cameraKey("Control+z"); await settle(); assert.deepEqual((await storedSave()).positions.Lineage.repair, beforeMove);
-  assert.equal(await button("Redo move").isEnabled(), true);
+  assert.equal(await button("Redo").isEnabled(), true);
   await cameraKey("Control+Shift+z"); await settle(); assert.equal((await storedSave()).positions.Lineage.repair.x, beforeMove.x + 25);
   await repairNode.locator(".card-grip").focus();
   for (let i = 0; i < 55; i++) await page.keyboard.press("ArrowRight");
   await settle(); assert.equal((await storedSave()).layoutHistory.Lineage.undo.length, 50);
   await page.reload(); await page.locator(".thought").first().waitFor(); await settle();
   assert.equal((await storedSave()).layoutHistory.Lineage.undo.length, 50);
-  await inspectFromIndex("Repair, then stay for supper"); await page.getByText("Edit prepared text", { exact: true }).click();
-  await page.getByRole("dialog").locator("details input").fill("Edited layout card"); await settle();
+  await inspectFromIndex("Repair, then stay for supper"); await page.getByRole("dialog").getByRole("button", { name: "Edit", exact: true }).click();
+  await page.getByRole("dialog").getByRole("textbox", { name: /^Title/ }).fill("Edited layout card"); await button("Save changes").click(); await settle();
   assert.ok(Object.values((await storedSave()).layoutHistory).every(h => !h.undo.length && !h.redo.length));
   await close();
 
@@ -1138,11 +1140,14 @@ try {
   let navigationCalls = 0;
   await page.route("**/api/**", route => { navigationCalls++; return route.abort(); });
   await inspectFromIndex("A food hall");
-  await page.getByRole("dialog").getByRole("button", { name: "Show descendants", exact: true }).click();
+  await focusInspected(page);
+  const foldNavigation = page.getByRole("region", { name: "Focused card connections" });
+  await foldNavigation.locator(".focus-connections > summary").click();
+  await foldNavigation.getByRole("button", { name: "Show descendants", exact: true }).click();
   assert.deepEqual((await page.locator(".react-flow__node.chain-highlighted").evaluateAll(nodes => nodes.map(n => n.dataset.id))).sort(), ["food", "repair", "rotation", "retail"].sort());
-  assert.deepEqual(await page.getByRole("list", { name: "descendants chain" }).getByRole("button").allTextContents(), ["A food hall", "Repair, then stay for supper", "A shopfront for six weeks", "Independent retail shops"]);
-  await page.getByRole("dialog").getByRole("button", { name: "Show descendants", exact: true }).click();
-  await page.getByRole("dialog").getByRole("button", { name: "Fold descendants", exact: true }).click(); await close(); await settle();
+  assert.deepEqual(await page.getByRole("list", { name: "descendants chain" }).getByRole("button").allTextContents(), ["Repair, then stay for supper", "A shopfront for six weeks", "Independent retail shops"]);
+  await foldNavigation.getByRole("button", { name: "Clear", exact: true }).click();
+  await foldNavigation.getByRole("button", { name: "Hide descendants", exact: true }).click(); await settle();
   const foldedPositions = (await storedSave()).positions;
   const assertFolded = async () => {
     assert.equal(await page.locator('.react-flow__node[data-id="food"] .fold-marker').textContent(), "+3 folded");
@@ -1650,7 +1655,7 @@ try {
       const config = events.find((event) => event.type === "session-update").config;
       assert.equal(config.turnDetection, null);
       assert.ok(config.instructions.includes("A shared tool library"), "voice receives the full canvas with no selection");
-      assert.ok(config.instructions.includes("Selected IDs: []"));
+      assert.ok(config.instructions.includes('"selectedIds":[]'));
       assert.deepEqual(config.providerOptions.gateway.tags, ["feature:voice"]);
       // A fresh press must stop queued output immediately, including a late reply.
       await vb("Hold to talk").focus();
@@ -1725,12 +1730,25 @@ try {
       const tracksBeforeNavigation = await voicePage.evaluate(() => window.voiceStats.stoppedTracks);
       await voicePage.locator('[data-id="food"] .card-title').click();
       await voicePage.locator("#minerva-talk").waitFor({ state: "hidden" });
+      await voicePage.waitForTimeout(100);
+      const focusedConfig = events.filter(event => event.type === "session-update").at(-1).config;
+      assert.ok(focusedConfig.instructions.includes('"focusedId":"food"'), "active voice receives the inspected card as the referent for this one");
+      assert.ok(focusedConfig.instructions.includes('"selectedIds":[]'), "inspection focus is independent of multi-selection");
+      assert.ok(focusedConfig.instructions.includes('"id":"food"'), "updated focus includes the card content");
+      assert.equal(focusedConfig.turnDetection, undefined, "context updates preserve the existing voice configuration");
+      await voicePage.locator('[data-id="food"] .select-card').click();
+      await voicePage.waitForTimeout(100);
+      assert.ok(events.filter(event => event.type === "session-update").at(-1).config.instructions.includes('"selectedIds":["food"]'), "selection changes reach the active voice session");
+      await voicePage.locator('[data-id="food"] .select-card').click();
+      await voicePage.waitForTimeout(100);
+      assert.ok(events.filter(event => event.type === "session-update").at(-1).config.instructions.includes('"focusedId":null'), "deselecting clears the voice referent");
       assert.equal(await voicePage.locator(".voice-control").count(), 1, "card inspection retains the voice session");
       await voicePage.waitForTimeout(300);
       assert.equal(await voicePage.evaluate(() => window.voiceStats.playbackStops), stopsBeforeInterrupt, "card interaction preserves queued audio");
       assert.equal(await voicePage.evaluate(() => window.voiceStats.stoppedTracks), tracksBeforeNavigation, "card interaction preserves microphone capture");
       emit({ type: "audio-transcript-delta", itemId: "canvas-reply", responseId: "canvas-reply", delta: "Voice continues while inspecting the canvas." });
       emit({ type: "audio-transcript-done", itemId: "canvas-reply", responseId: "canvas-reply", transcript: "Voice continues while inspecting the canvas." });
+      await vb("Close panel").click();
       await vb("Talk to Minerva").click();
       await voicePage.getByText("Voice continues while inspecting the canvas.", { exact: true }).waitFor();
       assert.ok(await vb("End voice mode").isVisible(), "reopening Talk retains active voice controls");

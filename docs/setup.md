@@ -40,30 +40,19 @@ runner and files; this is a small conversion step, not a testing framework.
 ## Local operation
 
 The prototype is single-user and browser-only with no sign-in. Dev/start bind
-to 127.0.0.1. Open localhost and work; internal server endpoints, Postgres,
-AI Gateway calls and durable runs remain. External REST/MCP APIs and accounts
-are excluded. Local operation is the development loop; the release target is the
-Vercel demonstration deployment described below.
+to 127.0.0.1. The root atlas saves its state per browser in IndexedDB and calls
+AI Gateway through the application’s model routes. External REST/MCP APIs and
+accounts are excluded. The release target is the Vercel demonstration below.
 
-Use the foundation choices and milestone timing in
-[ARCHITECTURE](./product/ARCHITECTURE.md#ownership-and-dependencies).
-
-Add dependencies and configuration only with their application slices. Document
-variables in `.env.example` without values. Use a local Postgres path or explicitly
-authorized managed service; never silently substitute browser-only persistence.
-Validate Host/Origin, reject cross-origin mutations and avoid permissive CORS.
-Unrelated websites must not read workspaces or trigger paid operations.
-
+Use the boundaries in [ARCHITECTURE](./product/ARCHITECTURE.md#ownership-and-dependencies).
+Configuration variable names are in `.env.example`; never commit credentials.
 Fixtures support the offline development loop but are not live AI evidence.
-Model/voice calls need configured providers and explicit bounded spend. Document
-which services must remain running: closing the browser does not stop work, but
-stopping local services halts local execution. Recover saved checkpoints and
-reconcile interrupted work after restart.
+Model and voice calls need configured providers and explicit bounded spend.
 
 ## M1 fixture verification
 
 The root route is the prepared mall atlas. It uses local in-memory data and no
-provider or database. Reload and scene switching restore the prepared data;
+provider. Reload and scene switching restore the prepared data;
 text edits, card positions and selection are not saved. The Thoughts index,
 Read as text and Denser study controls expose the M1 review material.
 
@@ -101,7 +90,7 @@ Prepare the intended committed candidate within the task's authorization.
 The operator opens Fable 5.1 in Claude on a separate checkout; two terminals
 on one mutable tree are not isolation.
 Existing checks may write ignored artifacts. Use separate ports and isolated
-synthetic data, not the builder's working database. A fix creates a new candidate.
+synthetic browser data. A fix creates a new candidate.
 
 Follow [AGENTS](../AGENTS.md#milestones-and-review) for review timing, independence
 and finding dispositions. When adapting a general builder prompt for Minerva,
@@ -253,51 +242,20 @@ Record the window's dates, audience, budget and teardown owner in `docs/HANDOFF.
   than tokens, so budget voice as session duration and check the current
   per-model hourly rate before opening the window.
 - **Platform spend.** Set the Spend Management amount the owner chooses. It
-  covers functions, bandwidth and workflow events, checks every few minutes and
-  does not cover Marketplace databases. Pausing production at that amount is
+  covers functions and bandwidth and checks every few minutes. Pausing production at that amount is
   the owner's call: it caps platform spend but shows judges a 503 for the rest
   of the window.
-- **Data.** Use a Marketplace Postgres or an authorized managed service with its
-  own spending cap. Use one non-production database for local and preview work
-  and a separate production database with its own credentials. Seed the
-  demonstration workspace before the window opens; judges start by duplicating
-  it, and re-running the seed restores it.
-
-  Connecting a Marketplace resource targets production, preview and development
-  together by default, which is the opposite of the split above, so the two
-  databases need deliberate scoping rather than two plain connections. Connect
-  the production store, then set the non-production connection string on the
-  preview and development targets so the same variable name resolves per
-  environment; a second store connected alongside takes a name prefix to avoid
-  collisions. Audit the result per environment before relying on it, because a
-  wrong value here is silent and points development at production data. Marking
-  the variable sensitive hides it from the dashboard but also withholds it from
-  the development target, so a local checkout can no longer pull it.
-- **Durable runs.** Vercel Workflows execute Wander, Agent Drive and other runs.
-  The demonstration is single-region, so the stable SDK line is sufficient;
-  multi-region run placement is what requires the beta line, and no demonstrated
-  requirement calls for it. Runs stay on the deployment and in the region that
-  created them, so deploying during the window does not disturb work in flight.
 - **Teardown.** When the window closes, pause or delete the deployment, which
-  ends its OIDC access to the Gateway, revoke the database credentials, export
-  or delete judge data, and record in the handoff what was preserved.
+  ends its OIDC access to the Gateway. Export
+  or clear the browser’s judge data, and record in the handoff what was preserved.
 
 See [ARCHITECTURE](./product/ARCHITECTURE.md#provider-and-deployment-boundaries)
 for the ownership and spend boundaries these steps implement.
 
-## Saved MVP operation
+## Root atlas operation
 
-Open `/workspaces` for managed persistence and bounded live generation; `/` is
-still the offline M1 fixture. Copy the variable names from `.env.example` and
-obtain development credentials with the linked Vercel environment. Neon Free
-is connected to development/preview only. Run `npm run db:migrate` explicitly
-when applying the checked-in migrations. No database backup/restore feature is
-included. Full workspace JSON exports include execution records.
-
-Host/Origin guards allow configured exact origins; preview builds also accept
-the immutable hostname supplied by `VERCEL_URL`. Other local ports need
-`MINERVA_ORIGINS` configured accordingly. A local production build also needs
-that setting. Generated Workflow routes and local execution data are ignored.
-Keep the Next server running for local Workflow execution, independently of the
-browser. Project and application spending limits are in HANDOFF; no automatic
-budget reset or provider retry is configured.
+Open `/` for the demo. Copy the variable names from `.env.example` and obtain
+authorized development credentials for model and voice calls. IndexedDB holds
+per-browser atlas data; Export atlas and Import atlas transfer the saved state.
+Run the local server while using the demo. Application and platform spending
+limits are owner-controlled; no automatic budget reset is configured.
