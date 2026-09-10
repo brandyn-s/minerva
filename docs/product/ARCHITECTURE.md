@@ -6,9 +6,8 @@ AI Gateway model routes. [CAPABILITIES](./CAPABILITIES.md) records verified scop
 ## System shape
 
 The Next.js/React/TypeScript application serves the atlas. The browser
-owns its editable atlas and IndexedDB save. Optional local durable Expedition
-execution uses a separate worker and SQLite WAL store for immutable experiments;
-it is not configured for hosted/serverless execution. Model route handlers call AI Gateway;
+owns its editable atlas and IndexedDB save. Durable Expedition uses the existing Neon resource and Vercel Workflow for hosted
+execution, with SQLite and a separate worker retained for local use. Model route handlers call AI Gateway;
 voice uses a server-minted token and a browser realtime connection.
 
 ## Ownership and dependencies
@@ -33,10 +32,10 @@ perspective positions and cameras, selection, themes, Talk and Expedition state
 in versioned IndexedDB saves. Import validates shape and references; Merge follows artifact identity and compatible revision history, extends known
 histories and preserves divergent histories as deterministic forks. Recovery copies and Export are browser-owned.
 Lineage, Evolution and Constellation share card IDs and have independent layout
-state. The server does not persist the editable atlas. The optional local experiment
+state. The server does not persist the editable atlas. The experiment
 store owns frozen inputs, operations, outcomes, assessments and readings.
 Materialization preserves source identity when its frozen revision still matches;
-otherwise it retains a separate result. See [local execution](../scorebook-transition/implementation.md).
+otherwise it retains a separate result. See [Expedition execution](../expedition.md).
 
 ## Context compilation
 

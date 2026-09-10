@@ -1,3 +1,2 @@
-const nextConfig = {};
-
-export default nextConfig;
+import { withWorkflow } from "workflow/next";
+export default withWorkflow({});

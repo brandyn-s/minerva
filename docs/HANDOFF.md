@@ -1,34 +1,34 @@
-# Scorebook transition: local implementation candidate
+# Expedition: simple start and hosted execution
 
-Branch: `docs/scorebook-transition-batch-00`.
+Branch: `feat/expedition-simple-start`, base `3d1dfc9`.
 Worktree: `/Users/brandyn.schult/code/minerva-scorebook-transition`.
-Base SHA: `6f148242c93f2cd44868c6374178ef12a8876586`.
-Candidate is uncommitted; no new candidate SHA, push or deployment.
-The owner authorized all remaining transition batches, extending the demo scope.
+This follow-up is uncommitted; the prior population extension is merged in PR #92.
 
-## Outcome
-Batches 01–08 implement local experiment persistence, shared operations,
-separate durable worker, population selection, readings, interventions,
-bounded browser/model context and reproducible synthetic evaluation.
-Existing Wander, Weave and Develop use the same operation contracts as Expedition.
-Revision contribution history, append-only Revert and identity-aware Merge remain.
-Batch 09 is complete: Scorebook archived at ed2a81c after accessible exports were recovered.
-Remaining unknown historical coverage has an explicit owner disposition; services remain running.
+Select ideas, optionally add a direction, then Start. Source revisions and the
+workspace brief are automatic. Policy, execution provider and call accounting
+are system-owned; an optional remembered overall limit remains available.
 
-## Evidence and limits
-See [verification](scorebook-transition/verification.md) for exact outcomes.
-No paid calls or fresh hosted checks were performed.
-Synthetic evidence verifies software behavior, not discovery efficacy.
-Separate assessment currently uses the same configured model, not independent validation.
-SQLite/worker durability is local to one host; hosted durable infrastructure is absent.
-Voice replay fails at the same microphone assertion on this candidate and clean base.
+Hosted execution uses the existing Neon resource in a separate expedition schema
+and Vercel Workflow. SQLite remains supported locally. Cookie ownership isolates
+browser runs. Exact sequence/budget checks reject stale reservations.
 
-## Startup and next role
-Use Node 24.20.0 / npm 12.0.2 via the repository npx prefix.
-In two terminals set MINERVA_EXPERIMENT_DB to the same absolute private SQLite path.
-Run `npm run dev -- --port 3086` and `npm run expedition:worker`.
-Open http://127.0.0.1:3086 and select Expedition / Synthetic rehearsal.
-Full bounded commands: [implementation](scorebook-transition/implementation.md#local-startup).
-Next role: owner reviews the uncommitted Minerva candidate; Scorebook archival is complete.
-Live comparison configuration is prepared but requires an explicit numeric budget.
-No further implementation, commit, deployment or paid execution is granted by this handoff.
+Verification: 42 unit tests, typecheck, lint and local production build pass;
+four desktop/touch UI checks pass. Native PostgreSQL concurrency/control/rollback
+and stale-budget checks pass. Connected synthetic workflow, intervention,
+reassessment, reload and materialization pass. Selection-only start and cross-browser
+isolation pass; desktop/mobile captures are in ignored evaluation-artifacts/simple-start.
+Suggestion follow-up: one bounded live LLM call returned three selectable directions.
+Reopening reused them; no expedition or efficacy experiment was started.
+
+Startup: `npm run dev -- --port 3086` with EXPEDITION_DATABASE_URL loaded.
+Synthetic rehearsal: set MINERVA_EXPERIMENT_PROVIDER=fixture on a test server.
+One-time schema setup and bounded test commands: [Expedition](expedition.md).
+Production build uses webpack after a Vercel-only Workflow loader resolution failure.
+Production: https://www.thalient.ai (deployment minerva-nell7x3un-thalient.vercel.app).
+Hosted synthetic preview passes the complete run and browser-isolation checks.
+Production read-only browser check passes: configured storage, live provider,
+selection-only Start, one optional direction and remembered limit; zero API writes.
+Next role: owner reviews the delivered experience; no new research scope is opened.
+
+Three context-tailored LLM suggestion buttons fill the editable direction;
+custom input remains available. Local checks and live verification pass.

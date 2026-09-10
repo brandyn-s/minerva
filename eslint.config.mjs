@@ -12,6 +12,7 @@ export default defineConfig([
   },
   globalIgnores([
     ".next/**",
+    "app/.well-known/workflow/**",
     "out/**",
     "build/**",
     "next-env.d.ts",

@@ -1300,7 +1300,7 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
         <span className="minerva-launcher-label" aria-hidden="true">Talk to Minerva</span>
       </Button>}
       {<TalkPanel focusedId={voiceFocusId && byId.has(voiceFocusId) ? voiceFocusId : null} messages={messages} setMessages={update => { clearHistory(); setMessages(update); }} open={panel === "talk"} close={close} selectedIds={selected} cards={nodes.map(({ id, data }) => ({ ...data.thought, relationships: relationshipsFor(id, relationships) }))} />}
-      <ExpeditionPanel entries={expeditions} open={panel === "expedition"} close={close} source={selected.length === 1 ? byId.get(selected[0]) : undefined} inspect={inspectExperiment} />
+      <ExpeditionPanel entries={expeditions} open={panel === "expedition"} close={close} sources={selected.map(id=>byId.get(id)).filter((thought): thought is Thought=>!!thought)} brief={[...byId.values()].find(thought=>thought.kind==="brief")?.body??""} inspect={inspectExperiment} />
       {panel === "inspect" && <CardPane key={thought.id}
         card={thought} cards={nodes.map(n => n.data.thought)} relationships={relationships}
         draft={cardDrafts[thought.id]} setDraft={draft => setCardDrafts(current => ({ ...current, [thought.id]: draft }))}
