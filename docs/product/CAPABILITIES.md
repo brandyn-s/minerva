@@ -11,9 +11,9 @@ backlog.
 | ID | Capability | Status | Evidence / owning surface |
 |---|---|---|---|
 | C01 | Recoverable state | works locally | The root demo uses versioned per-browser IndexedDB storage for atlas records, layout, Talk and Expedition state, with import/export and recovery copies. There is no server persistence or workflow. [Implementation](../../features/atlas/local-state.ts). |
-| C02 | Spatial canvas and view controls | works locally | Root atlas: resize handles at working zoom; bounds-aware edges; positions/sizes and 50 layout-only undo/redo entries per perspective persist in browser save v2. Controls name move/resize/arrange; field Ctrl/Cmd+Z and Shift+Z preserve native text editing. Text edits, generation, import/reset clear history. Existing saved-workspace controls remain unchanged. [Browser replay](../../scripts/verify-atlas.mjs) covers resize/reload, edge attachment, move undo/redo and text-edit invalidation. |
+| C02 | Spatial canvas and view controls | works locally | Root atlas: resize handles at working zoom; bounds-aware edges; positions/sizes and 50 layout-only undo/redo entries per perspective persist in browser save v2. Undo and Redo apply to layout changes; field Ctrl/Cmd+Z and Shift+Z preserve native text editing. Text edits, generation, import/reset clear history. [Browser replay](../../scripts/verify-atlas.mjs) covers resize/reload, edge attachment, move undo/redo and text-edit invalidation. |
 | C03 | Visible relationships | works locally | Root atlas: ancestor/descendant focus traverses derivation/recombination only, highlights/dims and lists linked chains. Persistent folded roots hide transitive descendants/edges in every perspective; counted markers and Thoughts index Unfold preserve discoverability and positions. Version 2 JSON includes folds and accepts v1 migration. [Browser replay](../../scripts/verify-atlas.mjs) covers a Weave ancestor chain, three transitive descendants, all perspectives, reload/export/import and zero navigation model calls. |
-| C04 | History, inheritance and genome | works locally | Root demo inspection and Markdown show parent titles, stored contributions, contextual move names and frozen generation feature/tag/source titles from memory; replay covers generated cards. Existing saved revision/manifests remain; rich genome workflows are open. |
+| C04 | History, inheritance and genome | works locally | Root demo inspection and Markdown show parent titles, stored contributions, contextual move names and frozen generation feature/tag/source titles from memory; replay covers generated cards. |
 | C05 | Branch development and reusable intent | not started | No application implementation |
 | C06 | Comparison and Weave | works locally | Root demo: two or more selected cards generate one live recombination draft with every parent edge and one-line contributions. A real three-parent Sonnet 5 call and browser error/retry, three-parent lineage and reload-reset checks passed. In memory only; no saved recombination. |
 | C07 | Three perspectives | works locally | Root Lineage/Evolution/Constellation share cards, selection, comparison and Talk with separate in-memory cameras/layouts. Themes use validated Sonnet 5 groups, incremental SHA-256 cache, Regroup and failure Retry; compact theme shelves, readable zoom previews and idea-to-idea association edges; fixture browser smoke and layout/regroup tests pass. |
@@ -149,22 +149,7 @@ https://minerva-eight.vercel.app. The atlas is published through
 [PR #5](https://github.com/brandyn-s/minerva/pull/5); it has not been reviewed,
 accepted or behaviorally verified on that URL. The M6 demonstration window is closed.
 
-## Next outcome
-
-M2 is explicitly authorized, with the next review after package 10 before
-packages 11–12. Total incremental spending allowance is $5, including authorized
-previews on the existing Vercel project and required development database.
-Recoverable workspace deletion and complete versioned JSON export are agreed;
-backup/restore is excluded by the owner. Managed Postgres is selected.
-The saved MVP now integrates persistence, frozen context, Workflow/Gateway generation, assessment and explicit decisions. One browser live smoke run completed four calls for an estimated $0.0035978, kept a revision, reloaded and exported all run records. This was builder verification, not owner acceptance. Required checks pass (14 tests plus lint/typecheck/build). Neon Free is provisioned for development/preview and a $4 non-refreshing Gateway budget is active under the $5 total cap. Broader M2 fault/input checks are not claimed; the owner requested streamlined MVP verification. See [HANDOFF](../HANDOFF.md) for exact evidence, open scope and the committed candidate.
-
-Owner judgment on the live proposals (2026-09-09): both are useful enough to show
-that the working flow is becoming concrete, but they converge too heavily on
-the same mechanism. Alternative 2 varies scheduling rather than providing a
-meaningfully different participation model. This records qualified usefulness
-and a variation limitation for review, not full M2 acceptance.
-
-### Overview follow-up
+## Overview follow-up
 
 The owner requested title-only overview cards and reported rectangular ghosting
 while zoomed out. A held-drag regression reproduced the detailed-card shadow on
