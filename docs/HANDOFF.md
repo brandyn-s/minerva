@@ -37,3 +37,12 @@ Verification: `npm run check` passed (25 tests, lint, types, build); browser fix
 Theme responses were mocked for visual verification; no paid provider calls.
 Startup: use Node 24.20.0 / npm 12.0.2, then `npm run start -- --port 56020`.
 Next role: owner; no additional implementation or critic requested.
+
+## Voice settings layout
+Branch `fix/voice-settings-layout`, base `aeeae8f`; owner authorized commit and merge.
+Worktree: `/Users/brandyn.schult/code/minerva-constellation-release`.
+Shared instrument header, consistent controls, bounded scroll and persistent footer.
+Listening controls expand on demand; checkbox widths and textarea focus are isolated from Talk.
+Checks: 25 tests, lint, types, build; mocked settings replay at 390px and 1280px.
+Local production preview: `npm run start -- --port 56023` with Node 24/npm 12.
+Next role: owner reviews the UI; no live audio calls in this task.
