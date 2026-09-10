@@ -10,10 +10,10 @@ No server persistence or durable execution engine is included.
 Build output lists only `/`, model API routes, the icon and the not-found page.
 `npm ls esbuild --all` is empty; no esbuild version below 0.25 is installed.
 Local production requests to `/workspaces` and `/internal/graph` return 404.
-The unchanged atlas replay fails at line 363 in both dev and production startup.
-Untouched base `3f2034f` reproduces the same failure; captured UI text is identical.
-Logs: `/tmp/minerva-root-check.log`, `/tmp/minerva-root-{dev,start,baseline}.log`.
-The release decision for the pre-existing replay failure is pending owner direction.
+The atlas replay passes against both dev and production startup.
+Replay interactions use the current card pane, edit, export and layout controls.
+Preview requests to `/workspaces` and `/internal/graph` return 404.
+Logs: `/tmp/minerva-root-check.log`, `/tmp/minerva-root-{dev,start}.log`.
 
 ## Operation
 Prefix npm/node with `npx --yes --package=node@24.20.0 --package=npm@12.0.2`.
