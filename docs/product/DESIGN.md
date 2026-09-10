@@ -163,3 +163,15 @@ equivalent. Failed or denied audio playback leaves the interface functional.
 This is a product behavior contract. The starter itself has native disclosure
 interactions, an icon and styling; it contains no audio engine, model calls,
 microphone activation or simulated creative workspace.
+
+## Compact Card inspection
+
+The root atlas Card pane uses the owner's selected manuscript design: title-first
+reading, horizontal Content / Connections / History tabs, a persistent relationship
+summary and local Explore / Edit actions. Its 540px maximum width, 28px title,
+17px reading text and 44px action targets are the approved Card-specific exception
+to the instrument type scale above. Connections orders parents, current idea and
+children, with associations and shared context separate. Full original content,
+source excerpts and generation provenance remain available. Save and Cancel are
+explicit; unsaved drafts survive pane dismissal during the session. History reviews
+and restores session revisions without replacing earlier source records.

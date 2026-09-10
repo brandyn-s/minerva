@@ -45,6 +45,8 @@ import RegroupPanel from "./regroup-panel";
 import { applyRegroup } from "./regroup-layout";
 import { constellationLayout, constellationHeading } from "./constellation-layout";
 import DownloadButton from "./download-button";
+import CardPane from "./card-pane";
+import { reviseCard, type CardEdit } from "./card-revisions";
 import FieldGuideHeading from "./field-guide-heading";
 import ThoughtCatalogue from "./thought-catalogue";
 import MovesPanel from "./moves-panel";
@@ -334,6 +336,8 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
     ...node, style: { ...node.style, width: session.initial.layouts[node.id].width, height: session.initial.layouts[node.id].height },
   } : node));
   const dirtyText = useRef(new Set<string>());
+  const [cardDrafts, setCardDrafts] = useState<Record<string, CardEdit | undefined>>({});
+  const [cardRevisions, setCardRevisions] = useState<Thought[]>([]);
   const dirtyLayout = useRef(new Set<string>());
   const graphRef = useRef(savedGraph);
   const [layoutUndo, setLayoutUndo] = useState<{ id: string; before: LayoutRecord; after: LayoutRecord }[]>([]);
@@ -1404,7 +1408,20 @@ function Studio({ session, initial, restoreNotice = "", saveEnabled = true, repl
       {!session && <TalkPanel focusedId={voiceFocusId && byId.has(voiceFocusId) ? voiceFocusId : null} messages={messages} setMessages={update => { clearHistory(); setMessages(update); }} open={panel === "talk"} close={close} selectedIds={selected} cards={nodes.map(({ id, data }) => ({ ...data.thought, relationships: relationshipsFor(id, relationships) }))} />}
       {!session && <ExpeditionPanel entries={expeditions} setEntries={update => { clearHistory(); setExpeditions(update); }} activeEntry={activeExpedition} setActiveEntry={setActiveExpedition} open={panel === "expedition"} close={close} source={selected.length === 1 ? byId.get(selected[0]) : undefined}
         cards={nodes.map(n => n.data.thought)} add={addExpeditionCard} focus={id => { focus(id); setPanel("expedition"); }} />}
-      {panel && panel !== "talk" && panel !== "expedition" && (
+      {!session && panel === "inspect" && <CardPane key={thought.id}
+        card={thought} cards={nodes.map(n => n.data.thought)} relationships={relationships} revisions={cardRevisions}
+        draft={cardDrafts[thought.id]} setDraft={draft => setCardDrafts(current => ({ ...current, [thought.id]: draft }))}
+        save={edit => {
+          const revised = reviseCard(thought, edit);
+          clearHistory();
+          setCardRevisions(current => [...current, thought]);
+          setNodes(current => current.map(n => n.id === thought.id ? { ...n, data: { ...n.data, thought: revised } } : n));
+        }}
+        inspect={inspect} focus={focus} explore={() => move([thought.id])} close={close}
+        folded={folds.includes(thought.id)} descendantCount={trace(thought.id, "descendants").length}
+        toggleFold={() => setFolds(current => current.includes(thought.id) ? current.filter(id => id !== thought.id) : [...current, thought.id])}
+        showBranch={() => { setChain({ id: thought.id, direction: "descendants" }); setFolds(current => current.filter(id => id !== thought.id && !trace(thought.id, "descendants").includes(id))); focus(thought.id); }} />}
+      {panel && panel !== "talk" && panel !== "expedition" && (session || panel !== "inspect") && (
         <aside
           key={panel === "guide" ? "guide" : "detail"}
           id={panel === "guide" ? "atlas-guide" : undefined}
