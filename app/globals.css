@@ -1329,3 +1329,13 @@ summary {
 
 .regroup-loading, .regroup-preview { display: flex; align-items: center; gap: 8px; }
 .regroup-loading svg, .regroup-preview svg { flex-shrink: 0; }
+
+/* Keep semantic zoom immediate, with only a short opacity fade at the switch. */
+.scalable-atlas .thought { animation: card-appear 120ms ease-out; }
+.scalable-atlas .thought.thought-overview { animation-name: node-appear; }
+@keyframes card-appear { from { opacity: 0; } to { opacity: 1; } }
+@keyframes node-appear { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .scalable-atlas .thought,
+  .scalable-atlas .thought.thought-overview { animation: none; }
+}
