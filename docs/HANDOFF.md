@@ -23,3 +23,11 @@ Production: https://minerva-eight.vercel.app/.
 Local start: prefix commands with `npx --yes --package=node@24.20.0 --package=npm@12.0.2`,
 then run `npm run build` and `npm run start -- --port 54426`.
 Next role: owner inspects the released cards; no critic requested.
+
+## Voice canvas continuity release
+Active voice survives card inspection hiding Talk; reopening retains controls and transcript.
+Explicit Talk close, Escape and End voice mode still end the session.
+Branch `fix/voice-canvas-continuity`; worktree `/Users/brandyn.schult/code/minerva-voice-canvas`.
+`npm run check` and focused mocked voice replay passed; artifacts `/tmp/minerva-voice-release`.
+Production startup: `npm run start -- --port 3299`; replay with `MINERVA_VOICE_ONLY=1`.
+Owner authorized merge and deployment; verify hosted behavior, then owner review.
