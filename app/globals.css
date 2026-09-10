@@ -973,7 +973,7 @@ summary {
 /* Root atlas layout and transitive navigation. */
 .scalable-atlas .thought:not(.thought-overview) { position: relative; }
 .scalable-atlas .card-content { height: 100%; overflow: auto; border-radius: 3px; }
-.scalable-atlas .react-flow__resize-control.handle { width: 10px; height: 10px; border-color: var(--card); background: var(--teal); }
+.scalable-atlas .react-flow__resize-control.handle { width: 10px; height: 10px; border-color: transparent; background: transparent; }
 .chain-dimmed { opacity: .18; }
 .fold-marker { pointer-events: all; position: absolute; top: -28px; right: 0; white-space: nowrap; z-index: 3; background: var(--card); }
 .chain-controls { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0; }
@@ -1329,3 +1329,224 @@ summary {
 
 .regroup-loading, .regroup-preview { display: flex; align-items: center; gap: 8px; }
 .regroup-loading svg, .regroup-preview svg { flex-shrink: 0; }
+
+/* Expedition is the shared field-guide template for atlas instruments. */
+:root {
+  --guide-paper: #f5eddb;
+  --guide-input: #fbf7ec;
+  --guide-border: #aaa084;
+  --guide-line: #c9bea3;
+  --guide-accent: #417975;
+  --guide-selected: #273e35;
+  --guide-radius: 9px;
+  --guide-space: 14px;
+  --guide-font-content: Georgia, "Times New Roman", serif;
+  --guide-font-label: ui-monospace, SFMono-Regular, monospace;
+  --guide-type-title: 400 20px/1.25 var(--guide-font-content);
+  --guide-type-body: 400 15px/1.45 var(--guide-font-content);
+  --guide-type-control: 400 16px/1.35 var(--guide-font-content);
+  --guide-type-label: 400 12px/1.4 var(--guide-font-label);
+  --guide-type-note: 400 11px/1.4 var(--guide-font-label);
+}
+.field-guide {
+  background: var(--guide-paper);
+  border-color: var(--guide-border);
+  border-radius: var(--guide-radius);
+  color: var(--ink);
+}
+.field-guide-heading {
+  background: var(--guide-paper);
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  gap: 10px;
+}
+.field-guide-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.field-guide-brand img { display: block; flex-shrink: 0; object-fit: contain; border-radius: 50%; }
+.field-guide-brand h2.instrument-label { margin: 0; font: 10px/1.6 ui-monospace, SFMono-Regular, monospace; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.field-guide-heading-actions { display: flex; align-items: center; gap: 8px; }
+.field-guide .field-guide-heading-actions > button {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; min-height: 44px; margin: 0; padding: 0;
+  border: 1px solid var(--guide-line); border-radius: 3px; background: var(--card);
+}
+.field-guide button:disabled { opacity: .45; cursor: not-allowed; }
+.field-guide-label { display: grid; gap: 12px; font: 14px/1.5 ui-monospace, monospace; }
+.field-guide input[type="search"], .field-guide textarea, .field-guide select {
+  background: var(--guide-input); border: 1px solid var(--guide-line); border-radius: 5px;
+  padding: 9px 12px; font: 20px/1.5 Georgia, serif;
+}
+.field-guide button:not(:disabled):hover { border-color: var(--bronze); }
+.field-guide .expedition-start, .field-guide .reader-open, .field-guide .layout-arrange, .field-guide .catalogue-actions > button {
+  background: var(--guide-selected); color: var(--guide-input); border: 1px solid #887952;
+  border-radius: 6px; min-height: 36px; padding: 7px 12px; font: 20px/1.4 Georgia, serif; outline: none;
+}
+.field-guide .expedition-start:hover:not(:disabled), .field-guide .reader-open:hover, .field-guide .layout-arrange:hover, .field-guide .catalogue-actions > button:hover { background: var(--ink); }
+.field-guide .expedition-segments input:checked + span { background: var(--guide-selected); color: var(--guide-input); }
+.field-guide .expedition-source { border-color: var(--guide-line); border-left-color: var(--guide-accent); }
+
+.layout-popover.field-guide { width: min(340px, calc(100vw - 40px)); padding: var(--guide-space); max-height: calc(100dvh - 190px); overflow: auto; box-shadow: 0 10px 45px #273a3525; }
+.layout-popover .field-guide-heading { position: static; }
+.layout-popover > p { font: 16px/1.5 Georgia, serif; margin: 0 0 20px; }
+.layout-popover .layout-actions { gap: 0; }
+.layout-popover .layout-actions button { min-height: 36px; border-color: var(--guide-line); font-size: 16px; }
+.layout-popover .layout-actions button:first-child { border-radius: 6px 0 0 6px; }
+.layout-popover .layout-actions button:nth-child(2) { border-radius: 0 6px 6px 0; border-left: 0; }
+.layout-popover .layout-actions .layout-arrange { margin-top: 20px; font-size: 20px; }
+.layout-popover small { font: 12px/1.5 ui-monospace, monospace; margin-top: 16px; }
+
+.detail-panel.catalogue-panel.field-guide { width: min(440px, calc(100vw - 40px)); padding: 0 var(--guide-space) var(--guide-space); }
+.catalogue-sticky { background: var(--guide-paper); padding: var(--guide-space) 0; }
+.catalogue-sticky .field-guide-heading { position: static; }
+.catalogue-sticky .field-guide-label input { margin: 0; }
+.field-guide .catalogue-menu, .field-guide .catalogue-menu > summary { width: 36px; height: 36px; flex-basis: 36px; }
+.field-guide .catalogue-menu > div { background: var(--guide-paper); border-radius: 6px; top: 54px; }
+.field-guide .catalogue-entry { border: 1px solid var(--guide-line); border-left: 5px solid var(--guide-line); border-radius: 6px; padding: 6px 8px; margin-bottom: 4px; }
+.field-guide .catalogue-entry.is-selected { border-left-color: var(--guide-accent); background: var(--guide-input); }
+.field-guide .catalogue-disclosure strong { font-size: 20px; line-height: 1.35; }
+.field-guide .catalogue-preview p { font-size: 18px; line-height: 1.5; }
+.field-guide .catalogue-footer { font: 12px/1.5 ui-monospace, monospace; }
+
+.detail-panel.text-reader.field-guide { border-radius: var(--guide-radius); }
+.text-reader.field-guide > .field-guide-heading { padding: var(--guide-space); margin: 0; border-bottom: 1px solid var(--guide-line); }
+.field-guide .reader-contents { border-color: var(--guide-line); padding: 12px; }
+.field-guide .reader-contents button { border: 1px solid transparent; border-left: 5px solid transparent; border-radius: 6px; padding: 8px; margin-bottom: 4px; }
+.field-guide .reader-contents button[aria-current] { background: var(--guide-input); border-color: var(--guide-line); border-left-color: var(--guide-accent); }
+.field-guide .reader-summary { border: 1px solid var(--guide-line); border-left: 9px solid var(--guide-accent); border-radius: 6px; padding: 9px 12px; color: var(--muted); }
+.field-guide .reader-details { border-color: var(--guide-line); border-radius: 6px; }
+.field-guide .reader-pagination { border-color: var(--guide-line); }
+@media (max-height: 800px) {
+  .field-guide-heading { margin-bottom: 10px; padding-bottom: 0; }
+  .field-guide-brand img { width: 32px; height: 32px; }
+}
+@media (max-width: 650px) {
+  .field-guide { --guide-space: 14px; }
+  .detail-panel.catalogue-panel.field-guide { width: calc(100vw - 20px); }
+  .field-guide-brand { gap: 10px; }
+  .field-guide-brand img { width: 32px; height: 32px; }
+  .field-guide-heading { gap: 8px; }
+  .field-guide .reader-contents { padding: 8px; }
+  .field-guide .reader-contents button { margin-bottom: 0; }
+  .field-guide input[type="search"] { font-size: 18px; }
+  .layout-popover.field-guide { position: fixed; top: 150px; left: 10px; width: min(340px, calc(100vw - 20px)); }
+}
+/* Keep an open Layout above the selected-card preview, including on narrow screens. */
+.field-tools:has(.layout-icon-menu[open]) { z-index: 19; }
+
+/* One type scale and one control vocabulary across all field-guide panes.
+   These roles intentionally supersede the older instrument-specific rules. */
+.field-guide { font: var(--guide-type-body); }
+.field-guide :is(p, li, .body-copy, .catalogue-preview p, .expedition-source p, .reader-summary) {
+  font: var(--guide-type-body); letter-spacing: normal;
+}
+.field-guide :is(h2, h3, h4, .reader-article h2, .expedition-source h2, .catalogue-disclosure strong) {
+  font: var(--guide-type-title); letter-spacing: normal;
+}
+.field-guide :is(label, legend, .field-guide-label, .expedition-source-label, .expedition-destination) {
+  font: var(--guide-type-label); letter-spacing: normal;
+}
+.field-guide :is(.small-note, .expedition-budget p, .catalogue-footer, .layout-popover small),
+.layout-popover.field-guide > small {
+  font: var(--guide-type-note); color: var(--muted);
+}
+.field-guide .instrument-label {
+  font: var(--guide-type-note); letter-spacing: .08em; text-transform: uppercase;
+}
+.field-guide .field-guide-brand h2.instrument-label {
+  font: var(--guide-type-note); letter-spacing: .12em;
+}
+.field-guide :is(button, summary, .reader-details summary, .reader-details button, .reader-pagination button, .reader-contents button, .catalogue-actions button) {
+  font: var(--guide-type-control); letter-spacing: normal;
+}
+.field-guide :is(.expedition-start, .reader-open, .layout-arrange, .layout-actions button, .catalogue-actions > button) {
+  font: var(--guide-type-control); min-height: 36px;
+}
+.field-guide :is(input[type="search"], textarea, select) {
+  font: var(--guide-type-control); padding: 9px 12px;
+}
+.field-guide .expedition-segments span { font: var(--guide-type-control); min-height: 36px; padding: 7px; }
+.field-guide .field-guide-heading { margin-bottom: 14px; padding-bottom: 0; min-height: 36px; }
+.field-guide .field-guide-brand img { width: 32px; height: 32px; }
+.field-guide .field-guide-heading-actions > button,
+.field-guide .catalogue-menu > summary { width: 36px; height: 36px; min-height: 36px; border-radius: 5px; background: var(--guide-paper); }
+.field-guide .catalogue-menu { height: 36px; }
+.detail-panel.expedition-panel.field-guide { padding: var(--guide-space); }
+.field-guide .expedition-destination { margin: 14px 0; gap: 12px; }
+.field-guide .expedition-budget { margin-bottom: 14px; }
+.field-guide .expedition-source, .field-guide .reader-summary {
+  padding: 9px 12px; border-left-width: 5px; color: var(--ink);
+}
+.field-guide .expedition-source p { color: var(--ink); }
+.field-guide .reader-article { padding: var(--guide-space); }
+.field-guide .reader-article h2 { margin: 8px 0 12px; }
+.field-guide .reader-summary { margin-bottom: 14px; }
+.field-guide .reader-details { padding: 0 12px; margin: 14px 0; }
+.field-guide .reader-details > summary { padding: 9px 0; }
+.field-guide .reader-actions { gap: 12px; }
+.field-guide .reader-center { border: 1px solid var(--guide-line); background: var(--guide-paper); border-radius: 6px; padding: 7px 12px; min-height: 36px; text-decoration: none; }
+.field-guide .reader-pagination { gap: 12px; padding: var(--guide-space); }
+.field-guide .reader-pagination button { border: 1px solid var(--guide-line); border-radius: 6px; padding: 12px; }
+.field-guide .catalogue-preview { margin-top: 12px; padding-top: 8px; }
+.field-guide .catalogue-actions > div button { min-height: 36px; border: 1px solid var(--guide-line); border-radius: 6px; padding: 7px 12px; text-decoration: none; color: var(--ink); }
+.text-reader.field-guide > .field-guide-heading { margin: 0; padding: var(--guide-space); }
+@media (max-width: 650px) {
+  .field-guide { --guide-type-title: 400 20px/1.25 var(--guide-font-content); }
+  .field-guide .reader-contents button { font: var(--guide-type-body); }
+  .field-guide .field-guide-brand { gap: 10px; }
+}
+@media (max-height: 800px) {
+  .field-guide { --guide-space: 14px; }
+  .field-guide .field-guide-heading { margin-bottom: 14px; }
+  .text-reader.field-guide > .field-guide-heading { margin-bottom: 0; }
+  .field-guide .expedition-destination { margin: 14px 0; gap: 8px; }
+  .field-guide .expedition-budget { margin-bottom: 14px; }
+  .field-guide .expedition-source, .field-guide .reader-summary { padding: 9px 12px; }
+  .field-guide textarea { height: 96px; min-height: 96px; padding: 9px 12px; }
+}
+@media (max-width: 650px) {
+  .field-guide .reader-contents { max-height: 132px; }
+  .field-guide .reader-contents button { flex-basis: 180px; }
+}
+
+/* Compact default; preserve generous hit areas on touch devices. */
+.detail-panel.expedition-panel.field-guide { width: min(440px, calc(100vw - 40px)); }
+.detail-panel.catalogue-panel.field-guide { bottom: auto; max-height: calc(100dvh - 112px); }
+.detail-panel.text-reader.field-guide { width: min(880px, calc(100vw - 40px)); height: min(520px, calc(100dvh - 112px)); }
+.field-guide .reader-layout { grid-template-columns: 210px minmax(0, 1fr); }
+.field-guide .catalogue-disclosure { padding: 2px 0; min-height: 36px; }
+.field-guide .catalogue-disclosure .instrument-label { margin-top: 2px; }
+.field-guide .catalogue-preview { margin-top: 8px; padding-top: 4px; }
+.field-guide .catalogue-preview p { margin: 8px 0; }
+.field-guide .catalogue-footer { padding: 8px 0 0; }
+.field-guide .reader-contents { padding: 8px; }
+.field-guide .reader-pagination button { padding: 8px 10px; }
+.field-guide .layout-actions button { padding: 7px 12px; }
+.field-guide .layout-actions .layout-arrange { margin-top: 12px; }
+.layout-popover.field-guide > p { margin-bottom: 12px; }
+.layout-popover.field-guide > small { margin-top: 12px; }
+.field-guide .expedition-budget legend { margin-bottom: 6px; }
+.field-guide .expedition-budget p { margin-top: 6px; }
+.field-guide .expedition-source { margin-top: 6px; }
+.field-guide .expedition-destination textarea { height: 88px; min-height: 88px; }
+@media (max-width: 650px) {
+  .detail-panel.expedition-panel.field-guide, .detail-panel.text-reader.field-guide { width: calc(100vw - 20px); }
+  .field-guide .reader-layout { grid-template-columns: minmax(0, 1fr); }
+  .detail-panel.text-reader.field-guide { height: min(600px, calc(100dvh - 112px)); }
+  .field-guide .reader-contents { max-height: 108px; }
+  .field-guide .reader-contents button { flex-basis: 160px; }
+}
+@media (pointer: coarse) {
+  .field-guide button, .field-guide summary, .field-guide .catalogue-disclosure,
+  .field-guide .field-guide-heading-actions > button, .field-guide .catalogue-menu > summary { min-height: 44px; }
+  .field-guide .field-guide-heading-actions > button, .field-guide .catalogue-menu > summary { width: 44px; }
+  .field-guide .expedition-segments span { min-height: 44px; }
+}
+
+/* Keep semantic zoom immediate, with only a short opacity fade at the switch. */
+.scalable-atlas .thought { animation: card-appear 120ms ease-out; }
+.scalable-atlas .thought.thought-overview { animation-name: node-appear; }
+@keyframes card-appear { from { opacity: 0; } to { opacity: 1; } }
+@keyframes node-appear { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .scalable-atlas .thought,
+  .scalable-atlas .thought.thought-overview { animation: none; }
+}

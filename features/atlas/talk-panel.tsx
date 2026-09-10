@@ -31,11 +31,6 @@ export default function TalkPanel({ focusedId, open, close, cards, selectedIds, 
   const input = useRef<HTMLTextAreaElement>(null);
   useEffect(() => { if (open && !voiceBusy) input.current?.focus(); }, [open, voiceBusy]);
 
-  function dismiss() {
-    setVoiceBusy(false);
-    close();
-  }
-
   async function send(retry = false) {
     if (running.current || voiceBusy || (!retry && (error || !draft.trim()))) return;
     const request = retry ? pending.current! : {
@@ -94,9 +89,9 @@ export default function TalkPanel({ focusedId, open, close, cards, selectedIds, 
   }
 
   return <aside id="minerva-talk" hidden={!open} className="detail-panel talk-panel" role="dialog" aria-label="Talk to Minerva"
-    onKeyDown={(event) => { if (event.key === "Escape") { event.stopPropagation(); dismiss(); } }}>
+    onKeyDown={(event) => { if (event.key === "Escape") { event.stopPropagation(); close(); } }}>
     <div className="panel-heading talk-heading"><Image className="talk-cameo" src="/images/minerva-engraved-cameo.png" alt="Minerva" width={56} height={56} sizes="56px" />
-      <button aria-label="Close panel" onClick={dismiss}>×</button></div>
+      <button aria-label="Close panel" onClick={close}>×</button></div>
     <div ref={transcript} className="talk-transcript" role="log" aria-live="polite" onScroll={(event) => { const el = event.currentTarget; followReply.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40; setShowLatest(!followReply.current); }}>
       {messages.map((message, index) => <section key={index} className={`talk-message talk-message-${message.role}`}>
         <h3>{message.role === "user" ? "You" : "Minerva"}</h3><MessageContent text={message.content} />

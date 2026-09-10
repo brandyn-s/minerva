@@ -242,6 +242,9 @@ a new constraint. Report acknowledgements, not model intentions.
 Bidirectional voice includes spoken replies, interruption/barge-in, disconnect
 and reconnect, not transcription alone. Talk about one card while moving
 another. Panel/view changes and incoming results do not reset the connection.
+Closing Talk with its close button or Escape hides the window while Voice keeps
+running; reopening restores its controls and mute state. End voice mode is the
+explicit action that ends the session.
 Stopping pending permission/setup disposes late media and cannot reopen it.
 Reconnect resynchronizes context without replaying executed intents or stale
 navigation. Partial speech never mutates. Keep typed fallback and visible

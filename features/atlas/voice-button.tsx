@@ -22,7 +22,9 @@ class VoiceSession extends Experimental_AbstractRealtimeSession {
     if (!this.ready) { this.pendingInstructions = instructions; return; }
     this.sendEvent({ type: "session-update", config: { instructions } });
   }
+  hasCapturedAudio = false;
   override sendAudio(audio: string) {
+    if (audio.length) this.hasCapturedAudio = true;
     if (this.ready) super.sendAudio(audio);
     else this.bufferedAudio.push(audio);
   }
@@ -156,7 +158,8 @@ export default function VoiceButton({ focusedId, cards, selectedIds, messages, o
         if (state.messages.length) onMessages([...history, ...state.messages
           .filter((m) => m.role === "user" || m.role === "assistant")
           .map((m) => ({ role: m.role as "user" | "assistant", content: m.parts
-            .filter((p) => p.type === "text").map((p) => p.text).join("") }))]);
+            .filter((p) => p.type === "text").map((p) => p.text).filter(text => text.trim()).join("\n\n") }))
+          .filter(message => message.content.trim())]);
         if (continuous) setStatus(playing ? "Minerva is speaking…" : mutedRef.current ? "Microphone muted" : state.status === "connected" ? thinking ? "Minerva is thinking…" : "Listening…" : "Connecting…");
         else if (playing) setStatus("Minerva is speaking. Press to interrupt.");
         if (connected && state.status === "disconnected" && (continuous || !responseDone)) fail("Voice disconnected. Please retry.");
@@ -179,7 +182,10 @@ export default function VoiceButton({ focusedId, cards, selectedIds, messages, o
     if (cancel || !turn.capturing || Date.now() - turn.started < 250) {
       stop(); onBusy(false); setStatus("Hold until Listening, then speak and release."); return;
     }
-    turn.session!.stopAudioCapture(); turn.capturing = false;
+    if (!turn.session?.hasCapturedAudio) {
+      stop(); onBusy(false); setStatus("No microphone audio arrived. Please try again."); return;
+    }
+    turn.session.stopAudioCapture(); turn.capturing = false;
     turn.session!.releaseInput();
     setStatus("Minerva is replying…");
   }
