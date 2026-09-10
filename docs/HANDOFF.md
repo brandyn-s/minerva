@@ -31,3 +31,10 @@ Prefix commands with `npx --yes --package=node@24.20.0 --package=npm@12.0.2`.
 Startup: `npm run build`, then `npm run start -- --port 56007`.
 Replay: `MINERVA_VOICE_ONLY=1 MINERVA_URL=http://127.0.0.1:56007 node scripts/verify-atlas.mjs`.
 Next role: owner inspects the local result; no critic requested.
+
+## Live voice focus
+Voice receives updated canvas content, inspection focus and selection during an active session.
+The instructions map "this one" to focus and "these" to selected cards without reconnecting.
+Branch `fix/voice-live-focus`; worktree `/Users/brandyn.schult/code/minerva-voice-canvas`.
+Local startup: `npm run start -- --port 3302`; focused replay uses `MINERVA_VOICE_ONLY=1`.
+Owner authorized commit and merge; final response records integrated verification.

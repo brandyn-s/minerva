@@ -13,9 +13,9 @@ function MessageContent({ text }: { text: string }) {
   return <div className="body-copy talk-markdown"><Markdown remarkPlugins={[remarkGfm]} skipHtml components={{ table: ({ children }) => <div className="talk-table" tabIndex={0} role="region" aria-label="Table"><table>{children}</table></div> }}>{text}</Markdown></div>;
 }
 
-export default function TalkPanel({ open, close, cards, selectedIds, messages, setMessages }: {
+export default function TalkPanel({ focusedId, open, close, cards, selectedIds, messages, setMessages }: {
   messages: TalkRequest["messages"]; setMessages: Dispatch<SetStateAction<TalkRequest["messages"]>>;
-  open: boolean; close: () => void; cards: TalkRequest["cards"]; selectedIds: string[];
+  focusedId: string | null; open: boolean; close: () => void; cards: TalkRequest["cards"]; selectedIds: string[];
 }) {
   const [draft, setDraft] = useState("");
   const [reply, setReply] = useState("");
@@ -109,8 +109,8 @@ export default function TalkPanel({ open, close, cards, selectedIds, messages, s
           }
         }} /></label>
       <div className="talk-actions">
-    {/* Hiding Talk, including Close and Escape, preserves its active voice session. */}
-    {(open || voiceBusy) && <VoiceButton cards={cards} selectedIds={selectedIds} messages={messages} onMessages={setMessages}
+    {/* Canvas navigation may hide Talk without ending its active voice session. */}
+    {(open || voiceBusy) && <VoiceButton focusedId={focusedId} cards={cards} selectedIds={selectedIds} messages={messages} onMessages={setMessages}
       onBusy={setVoiceBusy} disabled={busy || !!error} />}
       <TooltipButton className="composer-icon composer-send" title="Send message" aria-label={busy ? "Replying…" : "Send"} disabled={busy || voiceBusy || !!error || !draft.trim()} type="submit">{busy ? <LoaderCircle className="composer-spinner" size={20} aria-hidden="true" /> : <ArrowUp size={22} aria-hidden="true" />}</TooltipButton>
       </div></div>
