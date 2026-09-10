@@ -707,7 +707,7 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
       })))]);
       setLive(undefined);
       setPanel(null);
-      setSelected(added.map((node) => node.id));
+      // Keep the user’s current selection after generation completes.
     } catch (error) {
       setLive({ feature, sources, move: contextualMove, error: error instanceof Error ? error.message : String(error) });
       if (!contextualMove) focus(sources[0].id);
@@ -752,6 +752,11 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
     setRegroupIds(null);
     setPanel(next);
     setPreview(false);
+  }
+  function clearSelection() {
+    setSelected([]); setVoiceFocusId(null); setFocusedId(null);
+    if (panel === "moves") setPanel(null);
+    field.current?.focus({ preventScroll: true });
   }
   function togglePanel(next: Panel) {
     if (panel === next) close();
@@ -1125,6 +1130,7 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
               );
             }}
             onKeyDown={(event) => {
+              if (event.key === "Escape" && !panel && !regroupIds) { event.preventDefault(); clearSelection(); return; }
               if (
                 (event.target as HTMLElement).closest("button,input,textarea")
               ) {
@@ -1259,22 +1265,26 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
           </div>}
         </div>
         {selected.length > 0 && !regroupIds && (
-          <div className={`selection-bar${" light-selection-dock"}`}>
-            <span className="selection-count">{selected.length} selected</span>
-            {selected.length === 1 && <Button onClick={() => focus(selected[0])}><Crosshair aria-hidden="true" />Focus</Button>}
-            {<>
-              <Button disabled={selected.length !== 1} onClick={() => { setActive(selected[0]); setPanel("develop"); }}>Develop</Button>
-              <Button className="wander-action" disabled={busy || selected.length !== 1} onClick={() => move(selected)} aria-busy={busy && live?.feature === "wander"}>{busy && live?.feature === "wander" ? <span className="generation-spinner" aria-hidden="true" /> : <GitFork aria-hidden="true" />}{busy && live?.feature === "wander" ? "Wandering…" : "Wander"}</Button>
+          <div className="selection-bar light-selection-dock" role="toolbar" aria-label="Selected thoughts" onKeyDown={event => {
+            if (event.key === "Escape" && !panel && !regroupIds) { event.preventDefault(); clearSelection(); }
+          }}>
+            <span className="selection-count" aria-live="polite">{selected.length} selected</span>
+            <Button onClick={() => selected.length === 1 ? focus(selected[0]) : void flow.fitView({ nodes: selected.map(id => ({ id })), padding: .25, maxZoom: 1 })}><Crosshair aria-hidden="true" />{selected.length === 1 ? "Focus" : selected.length === 2 ? "Focus both" : "Focus selection"}</Button>
+            {selected.length === 1 && <>
+              <Button onClick={() => { setActive(selected[0]); setPanel("develop"); }}>Develop</Button>
+              <Button className="wander-action" disabled={busy} onClick={() => move(selected)} aria-busy={busy && live?.feature === "wander"}>{busy && live?.feature === "wander" ? <span className="generation-spinner" aria-hidden="true" /> : <GitFork aria-hidden="true" />}{busy && live?.feature === "wander" ? "Wandering…" : "Wander"}</Button>
+              <Button disabled={busy} onClick={() => open("expedition")}><Compass aria-hidden="true" />Expedition</Button>
+            </>}
+            {selected.length === 2 && <>
               <Button onClick={() => open("compare")}><Copy aria-hidden="true" />Compare</Button>
-              <Button disabled={selected.length !== 1} onClick={() => open("expedition")}><Compass aria-hidden="true" />Expedition</Button>
-              <Button disabled={busy || selected.length < 2} onClick={() => void generate("weave", selected.map((id) => byId.get(id)!))} aria-busy={busy && live?.feature === "weave"}>{busy && live?.feature === "weave" ? <span className="generation-spinner" aria-hidden="true" /> : <Shuffle aria-hidden="true" />}{busy && live?.feature === "weave" ? "Weaving…" : "Weave"}</Button>
+              <Button className="wander-action" disabled={busy} onClick={() => void generate("weave", selected.map((id) => byId.get(id)!))} aria-busy={busy && live?.feature === "weave"}>{busy && live?.feature === "weave" ? <span className="generation-spinner" aria-hidden="true" /> : <Shuffle aria-hidden="true" />}{busy && live?.feature === "weave" ? "Weaving…" : "Weave"}</Button>
             </>}
 
             <Button
               className="selection-close"
               aria-label="Clear selection"
               title="Clear selection"
-              onClick={() => { setSelected([]); setVoiceFocusId(null); setFocusedId(null); if (panel === "moves") setPanel(null); }}
+              onClick={clearSelection}
             >
               {<X aria-hidden="true" />}
             </Button>
