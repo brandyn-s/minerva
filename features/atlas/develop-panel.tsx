@@ -46,14 +46,16 @@ export default function DevelopPanel({ card, intents, remember, commit, close }:
       if (controller.current === request) { controller.current = null; setRunning(false); }
     }
   }
-  return <aside className="detail-panel field-guide develop-panel" role="dialog" aria-label="Develop idea" onKeyDown={e => { if (e.key === "Escape") { e.stopPropagation(); stop(); close(); } }}>
-    <PanelHeader title="Develop" image="/images/expedition-compass.png" close={() => { stop(); close(); }} />
-    <h3>{card.title}</h3><p>Revise this idea in place. Each completed step stays in History.</p>
+  return <aside className="detail-panel develop-panel unified-pane" role="dialog" aria-label="Develop idea" onKeyDown={e => { if (e.key === "Escape") { e.stopPropagation(); stop(); close(); } }}>
+    <PanelHeader title="Develop" close={() => { stop(); close(); }} />
+    <div className="pane-body">
+    <h3 className="pane-title">{card.title}</h3><p>Revise this idea in place. Each completed step stays in History.</p>
     <label>Intent<Input aria-label="Intent" value={intent} maxLength={500} disabled={running} placeholder="Make this cheaper to pilot" onChange={e => setIntent(e.target.value)} /></label>
     <label>Steps<Select aria-label="Steps" value={steps} disabled={running} onChange={e => setSteps(Number(e.target.value))}>{[1, 2, 3].map(n => <option key={n} value={n}>{n}</option>)}</Select></label>
     <div className="develop-actions"><Button variant="primary" disabled={running || !intent.trim()} onClick={() => void run()}>Start development</Button>{running && <Button onClick={stop}>Stop</Button>}</div>
     <p role="status">{status}</p>
     {notes.length > 0 && <section aria-label="Model claims"><h3>What the model says changed</h3>{notes.map((note, i) => <p key={i}>Step {i + 1} · Model claim: {note}</p>)}</section>}
     {intents.length > 0 && <section aria-label="Reusable intents"><h3>Reuse intent</h3>{intents.map(item => <div className="develop-intent" key={item.id}><p>{item.text}</p><Button disabled={running} aria-label={`Reuse intent: ${item.text}`} onClick={() => void run(item.text)}>Reuse intent</Button></div>)}</section>}
+    </div>
   </aside>;
 }

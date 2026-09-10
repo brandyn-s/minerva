@@ -1,9 +1,5 @@
 # Expedition: simple start and hosted execution
 
-Branch: `feat/expedition-simple-start`, integrated main `33402bf`.
-Worktree: `/Users/brandyn.schult/code/minerva-scorebook-transition`.
-The prior population extension is merged in PR #92.
-
 Select ideas, optionally add a direction, then Start. Source revisions and the
 workspace brief are automatic. Policy, execution provider and call accounting
 are system-owned; an optional remembered overall limit remains available.
@@ -30,16 +26,17 @@ Production read-only browser check passes: configured storage, live provider,
 selection-only Start, one optional direction and remembered limit; zero API writes.
 Next role: owner reviews the delivered experience; no new research scope is opened.
 
-Three context-tailored LLM suggestion buttons fill the editable direction;
-custom input remains available. Local checks and live verification pass.
+Three context-tailored LLM suggestions fill the editable direction; custom input remains available.
 
-## Wander pane follow-up
-Local branch `fix/wander-pane` in `/Users/brandyn.schult/code/minerva-revision-labels`.
-Compact title-first Wander uses the shared header, secondary suggestion actions,
-and a scrolling body with an accessible fixed close control on mobile.
-Focused mocked desktop/mobile replay covers suggestions, failure/retry, hide/show,
-free exploration and chosen moves. Repository and desktop/touch UI checks pass.
-No paid calls. Owner authorized commit and merge after required CI.
+## Rectangular loading follow-up
+Release branch `fix/preview-loading` in `/Users/brandyn.schult/code/minerva-development`.
+Rectangular Constellation previews pulse along their bottom edge; circles retain the ring.
+Reduced motion disables animation. Mocked Weave verified the loading state in `next start`.
+`npm run check` (tests/build), `npm run test:ui` (4 tests), and diff checks pass.
+Start with the Node/npm prefix above: `npm run start -- --port 56102`.
+No paid calls or manual deployment. Owner authorized commit and merge after CI.
+Selection toolbar hides unavailable actions for selection size and generation activity.
+Mocked browser checks cover one card, two cards and active Weave; repository/UI checks pass.
 
 ## Weave output contract
 Weave sends an exact one-card schema and one contribution per selected source
@@ -49,9 +46,14 @@ Regression tests cover SDK schema conversion, valid outputs and rejection paths.
 Verification uses synthetic providers; no paid generation calls.
 Worktree: `/Users/brandyn.schult/code/minerva-weave-count`, branch `fix/weave-output-count`.
 
+## Shared pane layout
+Card, Wander, Develop and Expedition share a compact 540px frame; Compare is wider.
+Headers, close controls, typography and scrolling match; Wander toolbar is neutral.
+Card tabs and footer remain. Desktop/touch pane tests and mocked generation replays cover behavior.
+Owner authorized commit and merge on `fix/shared-pane-layout` after required CI.
+
 ## Card footer
 Explore is primary, Develop secondary; the anchored overflow contains Edit and
 Download Markdown. History stays in its tab. Download controls have no tooltip.
 Desktop/touch checks cover menu bounds, targets, download, edit, Escape and History.
-The shared gallery baselines are unchanged. No provider calls are needed.
 Worktree: `/Users/brandyn.schult/code/minerva-card-footer`, branch `fix/card-footer-menu`.
