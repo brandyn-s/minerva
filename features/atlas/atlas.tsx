@@ -201,7 +201,6 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
           style={{ transform: `scale(${1 / ui.zoom})`, ...(preview ? { width: 290 * ui.zoom, height: "auto", minHeight: 44 } : ui.scalable ? { width: diameter, height: diameter, minHeight: diameter } : {}) }}
         >
           {preview ? <><span className="constellation-preview-title">{overviewName(thought)}</span><span className="constellation-preview-summary">{thought.summary}</span></> : ui.scalable ? ui.labels?.has(id) && <span className="overview-name">{overviewName(thought)}</span> : ui.compact ? null : thought.title}
-          {thought.revisions.length > 1 && <span className="revision-badge">{thought.revisions.length} revisions</span>}
         </Button>
       ) : (
         <div className="card-content">
@@ -225,7 +224,6 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
             </Button>
           </div>
           <Button variant="card-title" className="card-title nodrag">{thought.title}</Button>
-          {thought.revisions.length > 1 && <span className="revision-badge">{thought.revisions.length} revisions</span>}
           <p className="card-summary">{thought.summary}</p>
           {ui.live?.sources.some((source) => source.id === id) && (
             <div className="generation-status nodrag nopan" aria-live="polite">
