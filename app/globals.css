@@ -973,7 +973,7 @@ summary {
 /* Root atlas layout and transitive navigation. */
 .scalable-atlas .thought:not(.thought-overview) { position: relative; }
 .scalable-atlas .card-content { height: 100%; overflow: auto; border-radius: 3px; }
-.scalable-atlas .react-flow__resize-control.handle { width: 10px; height: 10px; border-color: var(--card); background: var(--teal); }
+.scalable-atlas .react-flow__resize-control.handle { width: 10px; height: 10px; border-color: transparent; background: transparent; }
 .chain-dimmed { opacity: .18; }
 .fold-marker { pointer-events: all; position: absolute; top: -28px; right: 0; white-space: nowrap; z-index: 3; background: var(--card); }
 .chain-controls { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0; }
