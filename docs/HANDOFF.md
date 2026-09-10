@@ -40,3 +40,13 @@ and a scrolling body with an accessible fixed close control on mobile.
 Focused mocked desktop/mobile replay covers suggestions, failure/retry, hide/show,
 free exploration and chosen moves. Repository and desktop/touch UI checks pass.
 No paid calls. Owner authorized commit and merge after required CI.
+
+## Rectangular loading follow-up
+Local, uncommitted branch `fix/preview-loading` in `/Users/brandyn.schult/code/minerva-development`.
+Rectangular Constellation previews pulse along their bottom edge; circles retain the ring.
+Reduced motion disables animation. Mocked Weave verified the loading state in `next start`.
+`npm run check` (37 tests/build), `npm run test:ui` (4 tests), and diff checks pass.
+Start with the Node/npm prefix above: `npm run start -- --port 56102`.
+No paid calls or deployment. Next role: owner checks the local visual change.
+Selection toolbar hides unavailable actions for selection size and generation activity.
+Mocked browser checks cover one card, two cards and active Weave; repository/UI checks pass.

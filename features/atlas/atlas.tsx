@@ -1262,13 +1262,11 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
           <div className={`selection-bar${" light-selection-dock"}`}>
             <span className="selection-count">{selected.length} selected</span>
             {selected.length === 1 && <Button onClick={() => focus(selected[0])}><Crosshair aria-hidden="true" />Focus</Button>}
-            {<>
-              <Button disabled={selected.length !== 1} onClick={() => { setActive(selected[0]); setPanel("develop"); }}>Develop</Button>
-              <Button className="wander-action" disabled={busy || selected.length !== 1} onClick={() => move(selected)} aria-busy={busy && live?.feature === "wander"}>{busy && live?.feature === "wander" ? <span className="generation-spinner" aria-hidden="true" /> : <GitFork aria-hidden="true" />}{busy && live?.feature === "wander" ? "Wandering…" : "Wander"}</Button>
-              <Button onClick={() => open("compare")}><Copy aria-hidden="true" />Compare</Button>
-              <Button disabled={selected.length !== 1} onClick={() => open("expedition")}><Compass aria-hidden="true" />Expedition</Button>
-              <Button disabled={busy || selected.length < 2} onClick={() => void generate("weave", selected.map((id) => byId.get(id)!))} aria-busy={busy && live?.feature === "weave"}>{busy && live?.feature === "weave" ? <span className="generation-spinner" aria-hidden="true" /> : <Shuffle aria-hidden="true" />}{busy && live?.feature === "weave" ? "Weaving…" : "Weave"}</Button>
-            </>}
+            {selected.length === 1 && <Button onClick={() => { setActive(selected[0]); setPanel("develop"); }}>Develop</Button>}
+            {!busy && selected.length === 1 && <Button className="wander-action" onClick={() => move(selected)}><GitFork aria-hidden="true" />Wander</Button>}
+            <Button onClick={() => open("compare")}><Copy aria-hidden="true" />Compare</Button>
+            {selected.length === 1 && <Button onClick={() => open("expedition")}><Compass aria-hidden="true" />Expedition</Button>}
+            {!busy && selected.length >= 2 && <Button onClick={() => void generate("weave", selected.map((id) => byId.get(id)!))}><Shuffle aria-hidden="true" />Weave</Button>}
 
             <Button
               className="selection-close"
