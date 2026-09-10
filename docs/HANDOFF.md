@@ -22,3 +22,7 @@ the existing dedicated voice key is configured only in Preview and Production.
 Next role: owner reviews voice behavior on the preview/merged deployment.
 Commit and merge authorized; live audio validation is still pending.
 Startup: `npm run dev -- --port 3198` (Node 24.20.0 / npm 12.0.2).
+
+Integrated main: the compact card inspector retains Content, Connections and
+History tabs, editing, session revision history, and draft preservation.
+Voice dismissal, transcript handling, and live focus updates remain intact.
