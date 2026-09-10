@@ -1477,8 +1477,9 @@ label {
 .voice-settings-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: start; }
 .voice-settings-dialog.field-guide label { display: grid; gap: 6px; margin: 0 0 14px; min-width: 0; font: var(--guide-type-label); }
 .voice-settings-dialog.field-guide .voice-settings-grid label { margin: 0; }
-.voice-settings-dialog.field-guide select, .voice-settings-dialog.field-guide input:not([type=checkbox]), .voice-settings-dialog.field-guide textarea { display: block; box-sizing: border-box; width: 100%; min-width: 0; margin: 0; font: var(--guide-type-control); color: var(--ink); }
+.voice-settings-dialog.field-guide select, .voice-settings-dialog.field-guide input:not([type=checkbox]), .voice-settings-dialog.field-guide textarea { display: block; box-sizing: border-box; width: 100%; min-width: 0; margin: 0; font: 400 14px/20px var(--guide-font-content); color: var(--ink); }
 .voice-settings-dialog.field-guide select, .voice-settings-dialog.field-guide input:not([type=range]):not([type=checkbox]), .voice-settings-dialog.field-guide textarea { padding: 8px 10px; min-height: 40px; border: 1px solid var(--guide-line); border-radius: 3px; background: var(--guide-input); }
+.voice-settings-dialog.field-guide select, .voice-settings-dialog.field-guide input:not([type=range]):not([type=checkbox]) { height: 40px; }
 .voice-settings-dialog.field-guide textarea { resize: vertical; }
 .voice-settings-dialog.field-guide input[type=range] { padding: 0; min-height: 32px; accent-color: var(--guide-selected); }
 .voice-settings-dialog.field-guide button { min-height: 36px; font: var(--guide-type-control); }
@@ -1579,3 +1580,5 @@ label {
 .voice-settings-footer-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .voice-settings-dialog.field-guide footer .voice-settings-note { margin: 10px 0 0; }
 @media (max-width: 500px) { .voice-settings-dialog.field-guide .voice-essentials .voice-settings-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } }
+
+@media(pointer: coarse) { .voice-settings-dialog.field-guide select, .voice-settings-dialog.field-guide input:not([type=range]):not([type=checkbox]) { height: 44px; font-size: 16px; } }
