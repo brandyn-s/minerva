@@ -84,19 +84,20 @@ if (process.env.MINERVA_SELECTION_DOCK_ONLY === "1") {
     const dock = page.locator(".light-selection-dock");
     const action = name => dock.getByRole("button", { name, exact: true });
     assert.ok(await action("Wander").isEnabled());
-    assert.ok(await action("Weave").isDisabled());
+    assert.equal(await action("Weave").count(), 0);
     await page.screenshot({ path: `${artifacts}/selection-dock-desktop.png` });
-    await action("Compare").click();
-    await page.getByRole("dialog").waitFor(); await close();
+    assert.equal(await action("Compare").count(), 0);
     await action("Expedition").click();
     await page.getByRole("dialog", { name: "Expedition", exact: true }).waitFor(); await close();
     await page.route("**/api/moves", route => route.fulfill({ status: 500, json: { error: "Prepared moves fixture" } }));
     await action("Wander").click();
     await page.getByRole("dialog").waitFor(); await close();
     await page.getByRole("button", { name: "Select A shared tool library", exact: true }).click();
-    assert.ok(await action("Wander").isDisabled());
-    assert.ok(await action("Expedition").isDisabled());
+    assert.equal(await action("Wander").count(), 0);
+    assert.equal(await action("Expedition").count(), 0);
     assert.ok(await action("Weave").isEnabled());
+    await action("Compare").click();
+    await page.getByRole("dialog").waitFor(); await close();
     await page.setViewportSize({ width: 390, height: 844 });
     assert.ok(await dock.evaluate(el => { const r = el.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth; }));
     await page.screenshot({ path: `${artifacts}/selection-dock-mobile.png` });
@@ -569,7 +570,7 @@ try {
       await page.setViewportSize({ width: 1440, height: 900 });
     }
     const label = feature === "wander" ? "Wander" : "Weave";
-    assert.equal(await button(feature === "wander" ? "Weave" : "Wander").isDisabled(), true);
+    assert.equal(await button(feature === "wander" ? "Weave" : "Wander").count(), 0);
     let attempts = 0;
     let release;
     let pending = new Promise((resolve) => { release = resolve; });
