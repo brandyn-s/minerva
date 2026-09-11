@@ -1,4 +1,5 @@
 "use client";
+import { LoadingStatus } from "../../components/ui/loading-status";
 import ExpeditionLenses from "./expedition-lenses";
 import ExpeditionSuggestions from "./expedition-suggestions";
 import { useEffect, useRef, useState } from "react";
@@ -11,6 +12,7 @@ import type { Run, Candidate, Reading, Operation, Intervention, Assessment } fro
 async function request(body:unknown){const response=await fetch("/api/expedition/runs",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const value=await response.json();if(!response.ok)throw new Error(value.error);return value;}
 type RunSummary=Pick<Run,"id"|"title"|"goal"|"status"|"calls"|"maxCalls"|"provider">;
 export default function ExpeditionPanel({open,close,sources,brief,entries,inspect}:{open:boolean;close:()=>void;sources:Thought[];brief:string;entries:ExpeditionRecord[];inspect:(candidate:Candidate,operation:Operation)=>void}){
+ const [loadedRequest,setLoadedRequest]=useState<string>(),[detailLoading,setDetailLoading]=useState(0),[activity,setActivity]=useState("Updating expedition…");
  const [selectedOperation,setSelectedOperation]=useState<Operation>();
  const [showLenses,setShowLenses]=useState(false);
  const [direction,setDirection]=useState("");
@@ -22,6 +24,7 @@ export default function ExpeditionPanel({open,close,sources,brief,entries,inspec
  const [reading,setReading]=useState<Reading>(),[interventions,setInterventions]=useState<Intervention[]>([]),[error,setError]=useState(""),[transportError,setTransportError]=useState(""),[configured,setConfigured]=useState(false),[busy,setBusy]=useState(false);
  const [candidateTotal,setCandidateTotal]=useState(0),[cursor,setCursor]=useState(0),[next,setNext]=useState(0),[more,setMore]=useState(false),[intent,setIntent]=useState(""),[challenge,setChallenge]=useState(""),[selected,setSelected]=useState<Candidate>(),[assessment,setAssessment]=useState<Assessment>();
  const suggestionContext=JSON.stringify({brief:brief.slice(0,1600),sources:sources.slice(0,8).map(({id,revision,title,summary,body})=>({id,revision,title,summary:summary.slice(0,1000),body:body.slice(0,4000)}))});
+ const requestKey=`${active??"list"}:${cursor}`, loading=loadedRequest!==requestKey;
  const heading=useRef<HTMLElement>(null);
  useEffect(()=>{if(open)heading.current?.focus();},[open]);
  useEffect(()=>{
@@ -31,17 +34,20 @@ export default function ExpeditionPanel({open,close,sources,brief,entries,inspec
     setConfigured(true);setTransportError("");
     if(active){setRun(data.run);setCandidateTotal(data.coverage.candidateCount);setItems(data.items);setNext(data.next);setMore(data.more);setReading(data.readings.at(-1));setInterventions(data.interventions);}
     else {setRuns(data.runs);setLimit(data.limitMicros);try{const saved=Number(localStorage.getItem("minerva-expedition-limit")??6);if(Number.isFinite(saved)&&saved>=1&&saved<=6)setSavedLimit(saved);}catch{}}
-   }catch{if(!disposed){setTransportError("Expedition is temporarily unavailable. Your ideas are still saved.");setConfigured(false);}}finally{inFlight=false;}}
+   }catch{if(!disposed){setTransportError("Expedition is temporarily unavailable. Your ideas are still saved.");setConfigured(false);}}finally{inFlight=false;if(!disposed)setLoadedRequest(requestKey);}}
   void refresh();const timer=setInterval(()=>void refresh(),1000);return()=>{disposed=true;controller.abort();clearInterval(timer);};
- },[open,active,cursor]);
- async function act(body:unknown){setBusy(true);setError("");try{return await request(body);}catch(e){setError(e instanceof Error?e.message:String(e));}finally{setBusy(false);}}
+ },[open,active,cursor,requestKey]);
+ async function act(body:unknown){const labels:Record<string,string>={start:"Starting expedition…",pause:"Pausing expedition…",resume:"Resuming expedition…",stop:"Stopping expedition…",reassess:"Assessing this idea…",analyze:"Reading the expedition…",intervene:"Exploring this direction…",probe:"Running the probe…"};setActivity(labels[(body as {action:string}).action]??"Updating expedition…");setBusy(true);setError("");try{return await request(body);}catch(e){setError(e instanceof Error?e.message:String(e));}finally{setBusy(false);}}
  async function start(){const created=await act({action:"start",input:{id:crypto.randomUUID(),limitMicros:Math.round(savedLimit*1000000),direction,brief:brief.slice(0,1600),sources:sources.slice(0,8).map(({id,revision,title,summary,body,contribution})=>({id,revision,title,summary,body,contribution}))}});if(created){setActive(created.id);setCursor(0);setSelected(undefined);setReading(undefined);setItems([]);setRun(created);}}
- async function detail(c:Candidate){setAssessment(undefined);setSelectedOperation(undefined);try{const response=await fetch(`/api/expedition/runs?id=${active}&candidateId=${c.id}`);const data=await response.json();if(!response.ok)throw new Error(data.error);setSelected(data.candidate);setSelectedOperation(data.operation);setAssessment(data.assessments[0]);}catch(e){setError(e instanceof Error?e.message:String(e));}}
- async function onAtlas(c:Candidate){try{const response=await fetch(`/api/expedition/runs?id=${active}&candidateId=${c.id}`);const data=await response.json();if(!response.ok||!data.operation)throw new Error(data.error??"Operation unavailable");inspect(data.candidate,data.operation);}catch(e){setError(e instanceof Error?e.message:String(e));}}
+ async function detail(c:Candidate){setDetailLoading(n=>n+1);setAssessment(undefined);setSelectedOperation(undefined);try{const response=await fetch(`/api/expedition/runs?id=${active}&candidateId=${c.id}`);const data=await response.json();if(!response.ok)throw new Error(data.error);setSelected(data.candidate);setSelectedOperation(data.operation);setAssessment(data.assessments[0]);}catch(e){setError(e instanceof Error?e.message:String(e));}finally{setDetailLoading(n=>n-1);}}
+ async function onAtlas(c:Candidate){setDetailLoading(n=>n+1);try{const response=await fetch(`/api/expedition/runs?id=${active}&candidateId=${c.id}`);const data=await response.json();if(!response.ok||!data.operation)throw new Error(data.error??"Operation unavailable");inspect(data.candidate,data.operation);}catch(e){setError(e instanceof Error?e.message:String(e));}finally{setDetailLoading(n=>n-1);}}
  return <aside ref={heading} tabIndex={-1} hidden={!open} className="detail-panel expedition-panel unified-pane" role="dialog" aria-label="Expedition" onKeyDown={e=>{if(e.key==="Escape"){e.stopPropagation();close();}}}>
   <FieldGuideHeading title="Expedition" close={close}/>
   <div className="pane-body">
   {error&&<p role="alert">{error}</p>}{transportError&&<p role="alert">{transportError}</p>}
+  {loading&&<LoadingStatus title={active?"Loading expedition…":"Loading expeditions…"} />}
+  {busy&&<LoadingStatus title={activity} />}
+  {detailLoading>0&&<LoadingStatus title="Loading idea evidence…" />}
   {!active?<>
    <h2>Explore further</h2>
    {sources.length>8&&<p className="small-note">Using the first eight selected ideas.</p>}
@@ -58,7 +64,7 @@ export default function ExpeditionPanel({open,close,sources,brief,entries,inspec
    {!!entries.length&&<section><h3>Earlier browser expeditions</h3><p>Historical results remain in the atlas export. These browser runs cannot resume as durable runs.</p>{entries.map((e,i)=><p key={i}>{e.run.goal} · {e.run.steps.length} steps · {e.run.stop??"Interrupted browser run"}</p>)}</section>}
   </>:<>
    <Button onClick={()=>{setActive(null);setRun(undefined);setSelected(undefined);}}>All expeditions</Button>
-   <h2>{run?.title??run?.goal}</h2><p role="status">{run?.status} · {candidateTotal} ideas explored</p>
+   <h2>{run?.title??run?.goal}</h2>{run?.status==="running"?<LoadingStatus title="Expedition is exploring new ideas…" description={`${candidateTotal} ideas explored. You can pause or stop anytime.`} />:<p role="status">{run?.status} · {candidateTotal} ideas explored</p>}
    <p>{run?.reason}</p>{!!run?.constraints.length&&<p>Preserve: {run.constraints.join("; ")}</p>}
    {run?.status==="running"&&<Button disabled={busy} onClick={()=>void act({action:"pause",id:active})}>Pause</Button>}
    {run?.status==="paused"&&<Button disabled={busy} onClick={()=>void act({action:"resume",id:active})}>Resume</Button>}
@@ -74,7 +80,7 @@ export default function ExpeditionPanel({open,close,sources,brief,entries,inspec
     <Field label="Challenge this reading"><Textarea value={challenge} onChange={e=>setChallenge(e.target.value)}/></Field><Field label="Intervention to test on selected candidate"><Textarea value={intent} onChange={e=>setIntent(e.target.value)}/></Field><p>The test preserves the original goal and constraints.{run?.provider==="gateway"?" It adds up to $1 to this expedition’s limit.":""}</p>
     <Button disabled={busy||!selected||!challenge.trim()||!intent.trim()} onClick={()=>void act({action:"intervene",id:active,readingId:reading.id,candidateId:selected?.id,challenge,intent,operationKind:"develop",additionalCalls:2})}>Try this direction</Button>
    </section>}
-   {interventions.map(i=><section key={i.id}><h4>Intervention: {i.status}</h4><p>{i.challenge}</p><p>{i.outcome??"Pending experiment; challenge is not assumed true."}</p></section>)}
+   {interventions.map(i=><section key={i.id}><h4>Intervention: {i.status}</h4>{(i.status==="running"||i.status==="proposed")&&<LoadingStatus title={i.status==="running"?"Testing this direction…":"Preparing this direction…"} />}<p>{i.challenge}</p><p>{i.outcome??"Pending experiment; challenge is not assumed true."}</p></section>)}
   </>}
   </div>
  </aside>;

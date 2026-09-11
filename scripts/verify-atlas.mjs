@@ -112,7 +112,7 @@ if (process.env.MINERVA_SELECTION_DOCK_ONLY === "1") {
       await route.fulfill({ json: { card: { title: "Repair supper", summary: "Share tools and supper.", body: "A repair station beside shared tables." }, contributions: ["Shared tables", "Tools and skills"] } });
     });
     await action("Weave").click();
-    await page.locator(".generation-progress").waitFor();
+    await page.locator(".generation-progress-stack .ui-loading-status").waitFor();
     assert.equal(await action("Weave").count(), 0);
     await page.waitForFunction(() => [...document.querySelectorAll(".thought")].some(el => el.textContent.includes("Repair supper")));
     await action("Clear selection").click();
@@ -569,7 +569,7 @@ try {
         await route.fulfill({ json: output });
       }
     });
-    const progress = page.locator(".generation-progress");
+    const progress = page.locator(".generation-progress-stack .ui-loading-status");
     let response, retryCamera, retrySelection;
     if (feature === "weave") {
       await button(label).click();
@@ -593,15 +593,16 @@ try {
     await progress.waitFor();
     assert.match(await progress.innerText(), feature === "wander" ? /Wander is generating new cards/ : /Weave is combining your cards/);
     assert.equal(await page.locator('.selection-bar button').filter({ hasText: /^(Wander|Weave|Expedition)$/ }).count(), 0, "unavailable generation actions are hidden while busy");
-    const actionSpinner = progress.locator(".generation-spinner");
+    const actionSpinner = progress.locator(".ui-spinner");
     assert.equal(await actionSpinner.isVisible(), true, "active action has a visible spinner");
     const rotationBefore = await actionSpinner.evaluate((el) => getComputedStyle(el).transform);
     await page.waitForTimeout(150);
     assert.notEqual(await actionSpinner.evaluate((el) => getComputedStyle(el).transform), rotationBefore, "loading circle actually rotates");
-    assert.ok(await page.locator('.thought[aria-busy="true"] .generation-spinner').count() > 0, "source cards display loading circles");
+    assert.ok(await page.locator('.thought[aria-busy="true"] .ui-spinner').count() > 0, "source cards display loading circles");
     // Progress survives overview, panning, clearing selection, and a narrow viewport.
     for (let i = 0; i < 15; i++) await cameraKey("-");
-    assert.equal(await page.locator(".thought-generating .overview-target").first().evaluate((el) => getComputedStyle(el, "::after").animationName), "generation-spin", "overview source nodes retain a loading ring");
+    assert.equal(await progress.isVisible(), true, "shared loading banner remains visible in overview");
+    assert.equal(await actionSpinner.evaluate(el => getComputedStyle(el).animationName), "ui-loading-spin", "overview retains the shared animated ring");
     const beforePendingPan = await transform();
     await page.mouse.move(60, 500);
     await page.mouse.down();

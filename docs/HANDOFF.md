@@ -1,45 +1,29 @@
-# User-directed seed and Expedition regression repair
+# Shared loading graphics
 
-State: committed for merge; integrated with current main through PR #104.
-Base: origin/main at ad58c1c (PR #104).
-Branch: `fix/expedition-regressions`.
-Worktree: `/Users/brandyn.schult/code/minerva-expedition-regressions`.
+State: committed for merge, integrated with main through PR #105.
+Branch: `fix/shared-loading-graphics`.
+Worktree: `/Users/brandyn.schult/code/minerva-loading-graphics`.
+Loading implementation: `a559a47`; integration base: `496f650`.
+Owner authorized commit and merge.
 
-Menu → Start fresh replaces the browser atlas with one selected brief card from
-the user’s seed. Replacement is explicit; cancellation preserves the atlas.
-The seed persists across reloads, titles the atlas and supplies the brief context.
-Reset to fixture remains available. Existing server runs are retained.
+Loading and generation use the shared green banner and circular ring from the
+Wander reference. Busy buttons use the same ring. Covers Atlas startup, Wander,
+Weave, Develop, themes/Regroup, Talk, Voice setup/thinking, Expedition and lens
+requests. Completion/error/idle/listening states keep their own semantics.
+Banners reserve space for the selection dock and Talk launcher.
 
-Automatic generation stops after three consecutive near-identical summaries and
-bodies, after the third assessment. Results remain inspectable and explicit
-interventions/reassessments can continue. The guard uses persisted records and
-preserves concurrent controls. It is a textual repetition guard, not a judgment
-of semantic novelty or observed goal completion.
+Preserves main's Start fresh seed flow, persisted repetition guard, sequential
+SQLite worker handling and repaired Expedition regression coverage.
+See `docs/expedition.md` for their implementation and verification boundaries.
 
-The local SQLite worker now processes runs sequentially per connection, fixing
-nested async transactions when several runs were runnable. Separate workers can
-operate concurrently. PostgreSQL continues to use its existing row locks.
+Before integration: full lint/type/unit/build checks and 34 desktop/touch UI
+journeys passed, covering cancellation, completion, errors and reduced motion.
+Integrated checks must pass before merge. Provider routes are intercepted.
+Voice rendering integrated; live microphone/provider behavior not retested here.
+See `docs/product/UI.md` and `docs/product/CAPABILITIES.md`.
 
-The full browser replay follows the current durable API and retains coverage for
-frozen inputs, pause/resume/stop, shared operations, challenge/intervention,
-reading freshness, legacy-history import/export, camera, selection and inspection.
-Other stale selectors now match current Card, toolbar and Merge behavior.
-CI runs the full replay with an isolated production server and synthetic worker,
-worker-process restarts and PostgreSQL controls. Failure evidence is uploaded.
+Preview mode: development server, port 3096; `/dev/ui` shows shared graphics.
+Start from this worktree:
+`npx --yes --package=node@24.20.0 --package=npm@12.0.2 npm run dev -- --port 3096`
 
-Verification: 68 unit tests, lint, typecheck and production build pass. All 24
-desktop/touch UI tests pass, including seed cancellation, replacement, reload
-and fixture restoration. The complete production browser replay, focused
-Voice replay, selection-only start, multi-run worker restart and native PostgreSQL
-17 controls/stagnation checks pass. No paid model runs or hosted changes.
-Artifacts: `evaluation-artifacts/browser`, `evaluation-artifacts/stagnation.png`.
-
-Startup/check: use Node 24.20.0 / npm 12.0.2, run `npm run check`, then
-`npm run test:browser` (starts and cleans up its synthetic server/worker/database).
-Focused journey: `npm run test:expedition`. For a running dev server, use
-`MINERVA_UI_PORT=<port> npm run test:ui` to reuse it.
-Next role: owner reviews the merged interaction. No further product scope opened.
-Implementation and verification boundaries: [Expedition](expedition.md).
-
-Current main’s lenses, selection receipts and cross-group contribution Weave are
-preserved. Explicit group Weaves bypass the automatic stagnation guard.
+Next role: owner reviews the merged change. No further product slice authorized.

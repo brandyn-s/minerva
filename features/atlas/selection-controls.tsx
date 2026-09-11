@@ -1,4 +1,5 @@
 "use client";
+import { LoadingStatus } from "../../components/ui/loading-status";
 import { useEffect, useRef, useState } from "react";
 import { Button, Field, Input, Summary } from "../../components/ui/controls";
 import { currentLens, type Lens, type LensMember } from "../lenses/domain";
@@ -34,7 +35,7 @@ export default function SelectionControls({ runId, lens, members, runStatus }: {
         <p className="small-note">Capacity {state.capacity} · protect up to {state.capacity - 1}. {state.configuration ? `Applied: ${state.configuration.name}, lens revision ${state.configuration.lensRevision}, selection ${state.configuration.revision}.` : "No lens has been applied."}</p>
         {status !== "paused" && <p role="status">{status === "running" ? "Pause the expedition before previewing." : "Selection changes require a paused expedition. This run has ended."}</p>}
         {status === "running" && <Button disabled={busy} onClick={() => void run(async () => { await request("/api/expedition/runs", { action: "pause", id: runId }); await refresh(); })}>Pause expedition</Button>}
-        {state.inFlight && <p role="status">Waiting for the in-flight call to settle. Refresh after it finishes.</p>}
+        {state.inFlight && <LoadingStatus title="Finishing the current generation…" description="Refresh after it finishes." />}
         <Button disabled={busy} onClick={() => void run(() => refresh())}>Refresh run state</Button>
         <details><Summary>Protect candidates · {protectedIds.length} selected</Summary>
           <p className="small-note">Protection retains an eligible candidate. Missing assessments or reported constraint violations prevent retention.</p>
@@ -59,7 +60,7 @@ export default function SelectionControls({ runId, lens, members, runStatus }: {
         {!applied && <Button variant="primary" disabled={busy || !!stale} onClick={() => void run(async () => { const data = await request("/api/expedition/selection", { action: "apply", runId, previewId: preview.id }); setApplied(data.application); await refresh(); })}>Apply preview · stay paused</Button>}
       </section>}
       {applied && <section aria-label="Applied selection"><p role="status">Selection {applied.revision} applied: {applied.active.length} retained. {status === "paused" ? "The expedition stays paused." : `Run status: ${status}.`}</p><Button disabled={busy || status !== "paused"} onClick={() => void run(async () => { await request("/api/expedition/runs", { action: "resume", id: runId }); await refresh(); })}>Resume expedition</Button><p className="small-note">Resume uses the existing call and spending limits.</p></section>}
-      {busy && <p role="status">Updating selection…</p>}{error && <p role="alert">{error}</p>}
+      {busy && <LoadingStatus title="Updating selection…" />}{error && <p role="alert">{error}</p>}
     </>}
   </section>;
 }

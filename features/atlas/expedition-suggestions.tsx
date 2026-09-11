@@ -1,4 +1,5 @@
 "use client";
+import { LoadingStatus } from "../../components/ui/loading-status";
 import {useEffect,useState} from "react";
 import {Button} from "../../components/ui/controls";
 import {suggestionsSchema} from "../experiments/suggestions";
@@ -14,7 +15,7 @@ export default function ExpeditionSuggestions({context,choose,direction}:{contex
  const [result,setResult]=useState<Result>(),[failed,setFailed]=useState(false),[retry,setRetry]=useState(0);
  useEffect(()=>{let active=true;void load(context).then(value=>{if(active)setResult(value);},()=>{if(active)setFailed(true);});return()=>{active=false;};},[context,retry]);
  return <section aria-label="Suggested directions">
-  {!result&&!failed&&<p role="status" className="small-note">Finding three directions…</p>}
+  {!result&&!failed&&<LoadingStatus title="Finding three directions…" />}
   {failed&&<><p className="small-note">Suggestions unavailable. You can still start.</p><Button onClick={()=>{setFailed(false);setRetry(n=>n+1);}}>Retry suggestions</Button></>}
   {result?.suggestions.map(s=><Button key={s.title} type="button" aria-pressed={direction===s.direction} title={s.direction} onClick={()=>choose(s.direction)}>{s.title}</Button>)}
  </section>;

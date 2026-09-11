@@ -188,3 +188,15 @@ heading follows the brief. The seed persists and is available as exploration
 context. Reset to fixture remains available; existing durable runs are retained.
 Desktop and touch browser tests cover cancellation, replacement, reload and
 fixture restoration without provider calls.
+
+## Shared loading and generation feedback
+
+`LoadingStatus` and `Spinner` share the Wander banner's green/cream circular-ring
+pattern across Atlas startup, Wander, Weave, Develop, Constellation/Regroup, Talk,
+Voice setup/thinking, Expedition/suggestions, lens and selection requests.
+Background banners reserve room for the selection dock and Talk launcher.
+The UI gallery includes both banner forms; reduced motion stops ring animation.
+All 34 desktop/touch UI journeys pass with intercepted provider routes, including
+waiting, reply completion, failure, cancellation and mobile overlap checks.
+Voice status rendering is integrated; no live microphone/provider test is claimed.
+Committed for merge; hosted behavior is not yet verified.

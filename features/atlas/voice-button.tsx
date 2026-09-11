@@ -1,4 +1,5 @@
 "use client";
+import { LoadingStatus } from "../../components/ui/loading-status";
 import { boundContext, boundMessages } from "./context";
 
 import { Button } from "../../components/ui/controls";
@@ -218,6 +219,6 @@ export default function VoiceButton({ focusedId, cards, selectedIds, messages, o
       <Button iconOnly type="button" className="composer-icon voice-end" aria-label="End voice mode" title="End voice mode" onClick={end}><PhoneOff aria-hidden="true" /></Button>
     </>}
     </div>
-    <p id="voice-status" className="small-note" role="status">{status}</p>
+    {/^(Preparing|Opening|Connecting|Minerva is thinking|Minerva is replying)/.test(status) ? <LoadingStatus id="voice-status" title={status} /> : <p id="voice-status" className="small-note" role="status">{status}</p>}
   </div>;
 }

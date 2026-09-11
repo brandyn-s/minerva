@@ -21,9 +21,9 @@ test("gallery: control behavior, accessible states and visual contracts", async 
   await focus.press("Escape"); await expect(page.getByRole("tooltip")).toHaveCount(0);
   await page.getByLabel("Title", {exact:true}).fill("Test idea");
   await page.getByRole("button", {name:"Cancel", exact:true}).click();
-  await expect(page.getByRole("status")).toHaveText("Cancel did not submit");
+  await expect(page.getByRole("status", { name: "Control result" })).toHaveText("Cancel did not submit");
   await page.getByRole("button", {name:"Submit", exact:true}).click();
-  await expect(page.getByRole("status")).toHaveText("Form submitted");
+  await expect(page.getByRole("status", { name: "Control result" })).toHaveText("Form submitted");
   await page.getByRole("radio", {name:"2", exact:true}).focus();
   await page.keyboard.press("ArrowRight"); await expect(page.getByRole("radio", {name:"3", exact:true})).toBeChecked();
   await page.getByText("Details", {exact:true}).press("Enter");

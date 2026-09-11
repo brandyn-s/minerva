@@ -630,64 +630,22 @@ label {
 .talk-panel h2, .talk-panel > p { margin: 0; }
 .talk-panel .talk-transcript { flex: 1; min-height: 80px; overflow: auto; }
 .talk-panel form textarea { margin-bottom: 8px; }
-.generation-progress {
+.generation-progress-stack {
   position: absolute;
   bottom: 16px;
   left: 16px;
   z-index: 6;
-  max-width: calc(100% - 32px);
+  max-width: min(440px, calc(100% - 112px));
   display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  border-radius: 5px;
-  background: var(--teal);
-  color: var(--card);
-  box-shadow: 0 4px 20px #273a3525;
+  flex-direction: column;
+  gap: 8px;
   pointer-events: none;
 }
-.generation-progress strong { display: block; font-size: 14px; }
-.generation-progress div > span { display: block; margin-top: 3px; font-size: 12px; }
-.generation-spinner {
-  display: inline-block;
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-  border: 2px solid #ffffff55;
-  border-top-color: currentColor;
-  border-radius: 50%;
-  animation: generation-spin 1s linear infinite;
+.generation-progress-stack .ui-button { pointer-events: auto; }
+.field:has(.generation-progress-stack:not(:empty)) .selection-bar {
+  bottom: max(86px, calc(var(--generation-feedback-height, 0px) + 28px));
 }
-@keyframes generation-spin { to { transform: rotate(360deg); } }
-
-.generation-inline { display: flex; align-items: center; gap: 10px; font-weight: 600; }
-.generation-inline .generation-spinner { border-color: #273a3533; border-top-color: var(--ink); }
 .selection-bar button[aria-busy="true"] { display: inline-flex; align-items: center; gap: 8px; opacity: 1; }
-.selection-bar .generation-spinner { padding: 0; }
-.generation-progress > .generation-spinner { width: 28px; height: 28px; border-width: 3px; }
-.thought-generating .overview-target.scale-target::after {
-  content: "";
-  position: absolute;
-  inset: -7px;
-  border: 3px solid transparent;
-  border-top-color: var(--ink);
-  border-bottom-color: var(--ink);
-  border-radius: 50%;
-  animation: generation-spin 1s linear infinite;
-  pointer-events: none;
-}
-
-/* Rectangular previews keep loading feedback away from their text. */
-.thought-generating .overview-target.constellation-preview::after {
-  content: "";
-  position: absolute;
-  inset: auto 0 0;
-  height: 3px;
-  background: var(--ink);
-  pointer-events: none;
-  animation: preview-loading 1.2s ease-in-out infinite alternate;
-}
-@keyframes preview-loading { from { opacity: .3; } to { opacity: .85; } }
 
 /* Root atlas: semantic overview, with names outside the marker. */
 .overview-target.scale-target { position: relative; border: 2px solid var(--thought-accent); border-radius: 50%; padding: 0; min-width: 0; display: grid; place-items: center; text-align: center; font: 13px ui-monospace, monospace; }
@@ -884,10 +842,7 @@ label {
 .voice-active { padding: 8px; }
 .voice-wave { color: #286d70; animation: voice-breathe 1.3s ease-in-out infinite; margin-right: auto; }
 .voice-wave.muted { animation: none; opacity: .4; }
-.composer-spinner { animation: composer-spin 1s linear infinite; }
-@keyframes composer-spin { to { transform: rotate(360deg); } }
 @keyframes voice-breathe { 50% { opacity: .4; transform: scaleY(.65); } }
-@media (prefers-reduced-motion: reduce) { .voice-wave, .composer-spinner { animation: none; } }
 .brand-owl { mix-blend-mode: multiply; object-fit: contain; }
 /* Browser storage controls share the available height with the atlas. */
 .scalable-atlas.studio { display: flex; flex-direction: column; }
@@ -1183,11 +1138,6 @@ label {
 .wander-suggestions-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .wander-suggestions-heading h3 { font: var(--guide-type-note); text-transform: uppercase; letter-spacing: .08em; margin: 0; }
 .wander-suggestions [hidden] { display: none; }
-.wander-content .wander-loading { display: flex; align-items: center; gap: 8px; font: var(--guide-type-note); }
-.wander-loading svg { flex-shrink: 0; animation: composer-spin 1s linear infinite; }
-.wander-skeleton { padding: 14px 0; border-bottom: 1px solid var(--line); }
-.wander-skeleton > div > span { display: block; height: 12px; width: 88%; background: var(--line); border-radius: 4px; }
-.wander-skeleton > div > span + span { width: 52%; margin-top: 10px; }
 .wander-content .wander-hint { color: var(--muted); font-size: 15px; }
 .wander-toggle { flex-shrink: 0; }
 .wander-move { padding: 14px 0; border-bottom: 1px solid var(--line); }
@@ -1195,7 +1145,6 @@ label {
 .wander-move h4 { margin: 0; font: 21px/1.2 Georgia, serif; overflow-wrap: anywhere; }
 .wander-move p { margin: 8px 0; }
 .wander-move .move-choice { display: inline-flex; align-items: center; gap: 8px; margin-top: 4px; }
-@media(prefers-reduced-motion:reduce) { .wander-loading svg { animation: none; } }
 @media(max-width:600px) { .detail-panel.wander-panel { width: calc(100vw - 24px); right: 12px; top: 68px; bottom: 12px; padding: 8px 18px 0; z-index: 31; } .wander-source h3 { font-size: 26px; } }
 
 
@@ -1247,8 +1196,6 @@ label {
 .layout-popover small { display: block; margin-top: 12px; font-size: 12px; line-height: 1.4; color: var(--muted); }
 
 
-.regroup-loading, .regroup-preview { display: flex; align-items: center; gap: 8px; }
-.regroup-loading svg, .regroup-preview svg { flex-shrink: 0; }
 
 /* Expedition is the shared field-guide template for atlas instruments. */
 .field-guide {
@@ -1639,3 +1586,5 @@ label {
 .selection-controls section { scroll-margin-top: 12px; overflow-wrap: anywhere; }
 .unified-pane .pane-body .lens-member-select { display: flex; align-items: center; justify-content: center; flex: 0 0 44px; min-height: 44px; margin: 0; }
 .lens-fields > legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+.themes-status > .ui-loading-status { flex-basis: 100%; }
