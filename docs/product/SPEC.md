@@ -162,6 +162,12 @@ generation. Unknown records remain visible. Analysis does not silently rearrange
 the user's field. Context membership, ancestry, similarity and real-world causal
 claims must not be conflated.
 
+The current editable-lens increment is specified in
+[Release 2A](../lenses-release-2a.md): named interpretations with exact revision
+membership, split/merge/move, representatives, undo and independent arrangements.
+Atlas lenses are browser-owned; run lenses use complete immutable candidate
+references. Applying a lens to the exploration policy is a later slice.
+
 ### C08: Contextual creative moves
 
 Offer card-specific AI suggestions for divergence, combine, recombine, split,

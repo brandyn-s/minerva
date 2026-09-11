@@ -46,6 +46,9 @@ import { atlasSaveSchema, emptyHistory, recoveryCopies, discardRecovery, fixture
 import TalkPanel from "./talk-panel";
 import RegroupPanel from "./regroup-panel";
 import WeavePanel from "./weave-panel";
+import LensPanel from "./lens-panel";
+import { atlasLens, lensThemes } from "./lenses";
+import { currentLens, editLens, type Lens, type LensEdit } from "../lenses/domain";
 import WeaveComparison from "./weave-comparison";
 import { newWeaveDraft, variantDraft, weaveRequest, acceptWeave, resolveSnapshot, type WeaveDraft } from "./weave";
 import { applyRegroup } from "./regroup-layout";
@@ -64,7 +67,7 @@ type CardNode = Node<{ thought: Thought; geometry?: { width: number; height: num
 // Keep screen-sized overview markers separated at the farthest zoom-out.
 const MIN_ZOOM = 0.03;
 
-type Panel = "weave" | "weave-compare" | "develop" | "guide" | "expedition" | "talk" | "inspect" | "compare" | "moves" | "index" | "text" | null;
+type Panel = "lenses" | "weave" | "weave-compare" | "develop" | "guide" | "expedition" | "talk" | "inspect" | "compare" | "moves" | "index" | "text" | null;
 const Interaction = createContext<{
   live?: { sources: Thought[]; feature: LiveFeature; move?: ContextualMove; error?: string };
   busy?: boolean;
@@ -428,6 +431,40 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
   }
   function clearHistory() { gesture.current = null; setHistory(emptyHistory()); }
   const [themeCache, setThemeCache] = useState<{ groups: ThemeGroup[]; hashes: Record<string, string>; time: string } | undefined>(initial?.themeCache);
+  const [lenses, setLenses] = useState<Lens[]>(initial?.lenses ?? []);
+  const [activeLensId, setActiveLensId] = useState<string | null>(initial?.activeLensId ?? null);
+  const [lensLayouts, setLensLayouts] = useState<NonNullable<AtlasSave["lensLayouts"]>>(initial?.lensLayouts ?? {});
+  const activeLens = lenses.find(l => l.id === activeLensId);
+  const activeLensRef = useRef(activeLensId);
+  useLayoutEffect(() => { activeLensRef.current = activeLensId; }, [activeLensId]);
+  function chooseLens(id: string | null) {
+    if (id === activeLensId) return;
+    const saved = lensLayouts[id ?? "themes"];
+    setLensLayouts(current => ({ ...current, [activeLensId ?? "themes"]: captureLayout() }));
+    setPositions(current => ({ ...current, Constellation: saved?.positions ?? {} }));
+    setSizes(current => ({ ...current, Constellation: saved?.sizes ?? {} }));
+    setHistory(current => ({ ...current, Constellation: { undo: [], redo: [] } }));
+    fitPerspective.current = false;
+    setThemeUndo(undefined); setRegroupedIds([]); setActiveLensId(id);
+  }
+  async function createLens(name: string, seeded: boolean) {
+    const cards = nodes.map(n => n.data.thought);
+    if (seeded && !themeCache) throw new Error("Find themes first, or start with all ideas unassigned.");
+    const valid = seeded ? new Set((await Promise.all(cards.map(async c => ({ id: c.id, hash: await cardHash(c) })))).filter(c => themeCache?.hashes[c.id] === c.hash).map(c => c.id)) : undefined;
+    const themes = seeded ? themeCache!.groups.map(g => ({ ...g, memberIds: g.memberIds.filter(id => valid!.has(id)) })) : undefined;
+    const lens = atlasLens(cards, name, themes);
+    setLenses(current => [...current, lens]); chooseLens(lens.id);
+  }
+  function changeLens(edit: LensEdit) {
+    if (!activeLens) return;
+    const next = editLens(activeLens, edit);
+    setLenses(current => current.map(l => l.id === next.id ? next : l));
+    if (["move", "split", "merge", "include", "undo"].includes(edit.kind)) {
+      setPositions(current => ({ ...current, Constellation: {} }));
+      setHistory(current => ({ ...current, Constellation: { undo: [], redo: [] } }));
+    }
+    fitPerspective.current = false;
+  }
   const [regroupIds, setRegroupIds] = useState<string[] | null>(null);
   const [regroupedIds, setRegroupedIds] = useState<string[]>([]);
   const [themeUndo, setThemeUndo] = useState<{ cache: typeof themeCache; positions: typeof positions; viewport: Viewport }>();
@@ -459,20 +496,22 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
       }
       clearHistory();
       setThemeCache({ groups: groups.filter(g => g.memberIds.length), hashes, time: new Date().toLocaleString() });
-      setPositions(current => ({ ...current, Constellation: {} }));
-      if (perspectiveRef.current === "Constellation") fitPerspective.current = true;
+      if (!activeLensRef.current) {
+        setPositions(current => ({ ...current, Constellation: {} }));
+        if (perspectiveRef.current === "Constellation") fitPerspective.current = true;
+      }
     } catch (error) { setThemeError(error instanceof Error ? error.message : String(error)); }
     finally { themePending.current = false; setThemeBusy(false); }
   }
   function switchPerspective(next: Perspective) {
     if (next === perspective) return;
+    if (panel === "lenses") setPanel(null);
     setRegroupIds(null);
     setCameras(current => ({ ...current, [perspective]: flow.getViewport() }));
     perspectiveRef.current = next;
     setPerspective(next);
     if (cameras[next]) void flow.setViewport(cameras[next]!);
     else fitPerspective.current = true;
-    if (next === "Constellation") void groupThemes();
   }
   const depths = new Map<string, number>();
   function depth(id: string, visiting = new Set<string>()): number {
@@ -484,7 +523,7 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
     depths.set(id, result); return result;
   }
   const rows = new Map<number, number>();
-  const groups = themeCache?.groups ?? [];
+  const groups = activeLens ? lensThemes(activeLens, nodes.map(n => n.data.thought)) : themeCache?.groups ?? [];
   const clustered = constellationLayout(groups, nodes.map(n => n.id));
   const renderedNodes = nodes.map<CardNode>((n) => {
     let position = n.position;
@@ -505,7 +544,7 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
   }) : [];
   const nodesInitialized = useNodesInitialized();
   useLayoutEffect(() => {
-    if (!fitPerspective.current || themeBusy || (perspective === "Constellation" && !themeCache)) return;
+    if (!fitPerspective.current || themeBusy) return;
     if (perspective !== "Constellation" && !nodesInitialized) return;
     if (perspective === "Constellation") {
       const all = [...renderedNodes, ...themeNodes].filter(n => !n.hidden);
@@ -565,10 +604,10 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
     version: 3, intents, sizes, layoutHistory: history, folds, thoughts: nodes.map(n => n.data.thought), relationships,
     positions: { Lineage: Object.fromEntries(nodes.map(n => [n.id, n.position])), Evolution: positions.Evolution ?? {}, Constellation: positions.Constellation ?? {} },
     cameras: { ...cameras, [perspective]: viewport }, perspective, selected, active, focusedId,
-    themeCache, messages, expeditions, activeExpedition,
+    themeCache, lenses, activeLensId, lensLayouts: { ...lensLayouts, [activeLensId ?? "themes"]: { positions: positions.Constellation ?? {}, sizes: sizes.Constellation } }, messages, expeditions, activeExpedition,
   // Relationships derive from the fixture and live edges, which are stable dependencies.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [intents, nodes, fixture, liveEdges, sizes, history, folds, positions, cameras, perspective, viewport, selected, active, focusedId, themeCache, messages, expeditions, activeExpedition]);
+  }), [intents, nodes, fixture, liveEdges, sizes, history, folds, positions, cameras, perspective, viewport, selected, active, focusedId, themeCache, lenses, activeLensId, lensLayouts, messages, expeditions, activeExpedition]);
   const latestSave = useRef(snapshot);
   useLayoutEffect(() => { latestSave.current = snapshot; }, [snapshot]);
   useEffect(() => {
@@ -1274,13 +1313,16 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
         </details>
         </section>}
         {perspective === "Constellation" && !regroupIds && <section className="themes-status" aria-label="Theme grouping">
-          <span>{themeCache ? `${nodes.length} ideas · ${themeCache.groups.filter(g => g.memberIds.length).length} themes` : "Group ideas into themes"}</span>
+          <span>{activeLens ? `${currentLens(activeLens).name} · ${currentLens(activeLens).groups.length} groups` : themeCache ? `${nodes.length} ideas · ${themeCache.groups.filter(g => g.memberIds.length).length} themes` : `${nodes.length} ideas`}</span>
+          {!!lenses.length && <Select aria-label="Constellation lens" value={activeLensId ?? ""} onChange={e => chooseLens(e.target.value || null)}><option value="">Constellation themes</option>{lenses.map(l => <option key={l.id} value={l.id}>{currentLens(l).name}</option>)}</Select>}
+          <Button data-lenses-trigger onClick={() => open("lenses")}>Edit lenses</Button>
+          {!activeLens && !themeCache && <Button disabled={themeBusy} onClick={() => void groupThemes()}>Find themes</Button>}
           {themeBusy && <span role="status">Grouping themes…</span>}
-          {themeError && <><span role="alert">{themeError}</span><Button disabled={themeBusy} onClick={() => void groupThemes(themeRetryFull.current)}>Retry</Button></>}
-          <Button data-regroup-trigger aria-busy={themeBusy} title={themeBusy ? "Finding themes…" : selected.length ? `Regroup ${selected.length} selected ideas` : "Regroup all ideas"} disabled={themeBusy || !themeCache} onClick={() => { setPanel(null); setFocusedId(null); setRegroupIds(selected.length ? selected : nodes.map(n => n.id)); }}><ArrowClockwise className={themeBusy ? "composer-spinner" : undefined} aria-hidden="true" />{themeBusy ? "Finding themes…" : "Regroup"}{!themeBusy && selected.length > 0 ? ` ${selected.length} selected` : ""}</Button>
+          {!activeLens && themeError && <><span role="alert">{themeError}</span><Button disabled={themeBusy} onClick={() => void groupThemes(themeRetryFull.current)}>Retry</Button></>}
+          {!activeLens && <Button data-regroup-trigger aria-busy={themeBusy} title={themeBusy ? "Finding themes…" : selected.length ? `Regroup ${selected.length} selected ideas` : "Regroup all ideas"} disabled={themeBusy || !themeCache} onClick={() => { setPanel(null); setFocusedId(null); setRegroupIds(selected.length ? selected : nodes.map(n => n.id)); }}><ArrowClockwise className={themeBusy ? "composer-spinner" : undefined} aria-hidden="true" />{themeBusy ? "Finding themes…" : "Regroup"}{!themeBusy && selected.length > 0 ? ` ${selected.length} selected` : ""}</Button>}
           {selected.length > 0 && <Button onClick={() => { setSelected([]); setVoiceFocusId(null); }}>Clear selection</Button>}
           {regroupedIds.length > 0 && <><span role="status">Regrouped {regroupedIds.length} ideas</span><Button onClick={() => void flow.fitView({ nodes: [...regroupedIds, ...themeCache!.groups.flatMap((g, i) => g.memberIds.some(id => regroupedIds.includes(id)) ? [`theme-${i}`] : [])].map(id => ({ id })), padding: .3, maxZoom: 1 })}>View regrouped ideas</Button></>}
-          {themeUndo && <Button onClick={() => { clearHistory(); setThemeCache(themeUndo.cache); setPositions(themeUndo.positions); void flow.setViewport(themeUndo.viewport); setThemeUndo(undefined); setRegroupedIds([]); }}>Undo regroup</Button>}
+          {!activeLens && themeUndo && <Button onClick={() => { clearHistory(); setThemeCache(themeUndo.cache); setPositions(themeUndo.positions); void flow.setViewport(themeUndo.viewport); setThemeUndo(undefined); setRegroupedIds([]); }}>Undo regroup</Button>}
         </section>}
         {perspective === "Constellation" && regroupIds && themeCache && <RegroupPanel
           key={regroupIds.join(",")} cards={nodes.map(n => n.data.thought)} ids={regroupIds}
@@ -1369,6 +1411,7 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
       </Button>}
       {<TalkPanel focusedId={voiceFocusId && byId.has(voiceFocusId) ? voiceFocusId : null} messages={messages} setMessages={update => { clearHistory(); setMessages(update); }} open={panel === "talk"} close={close} selectedIds={selected} cards={nodes.map(({ id, data }) => ({ ...data.thought, relationships: relationshipsFor(id, relationships) }))} />}
       <ExpeditionPanel entries={expeditions} open={panel === "expedition"} close={close} sources={selected.map(id=>byId.get(id)).filter((thought): thought is Thought=>!!thought)} brief={[...byId.values()].find(thought=>thought.kind==="brief")?.body??""} inspect={inspectExperiment} />
+      {panel === "lenses" && <LensPanel lenses={lenses} activeId={activeLensId} cards={nodes.map(n => n.data.thought)} choose={chooseLens} create={createLens} edit={changeLens} close={close} />}
       {panel === "weave" && weaveDraft && <WeavePanel draft={weaveDraft} change={setWeaveDraft} cards={nodes.map(n => n.data.thought)} busy={busy} error={weaveError} run={whole => void runWeave(whole)} close={close} />}
       {panel === "weave-compare" && weavePair && <WeaveComparison pair={weavePair} close={() => setPanel("inspect")} />}
       {panel === "inspect" && <CardPane key={thought.id}
@@ -1399,7 +1442,7 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
           latestSave.current = { ...latestSave.current, thoughts: latestSave.current.thoughts.map(c => c.id === next.id ? next : c) };
           setNodes(nodes => nodes.map(n => n.id === next.id ? { ...n, ariaLabel: next.title, data: { ...n.data, thought: next } } : n));
         }} close={close} />}
-      {panel && panel !== "weave" && panel !== "weave-compare" && panel !== "develop" && panel !== "talk" && panel !== "expedition" && (panel !== "inspect") && (
+      {panel && panel !== "lenses" && panel !== "weave" && panel !== "weave-compare" && panel !== "develop" && panel !== "talk" && panel !== "expedition" && (panel !== "inspect") && (
         <aside
           key={panel === "guide" ? "guide" : "detail"}
           id={panel === "guide" ? "atlas-guide" : undefined}

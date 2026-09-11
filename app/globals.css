@@ -1619,3 +1619,21 @@ label {
 
 .weave-notice { position: absolute; z-index: 8; left: 16px; bottom: 130px; max-width: min(440px, calc(100% - 32px)); display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 10px; background: var(--paper, #f1e9d6); border: 1px solid var(--line, #d6cbb1); border-radius: 8px; }
 .weave-notice > span { overflow-wrap: anywhere; min-width: 0; }
+
+/* Lens controls inherit the shared UI; this surface owns layout only. */
+.lens-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.lens-actions > .ui-field { flex: 1; min-width: 140px; }
+.lens-actions > .ui-input { flex: 1; min-width: 140px; }
+.lens-fields { border: 0; margin: 16px 0; padding: 0; min-width: 0; }
+.lens-group { margin: 16px 0; }
+.lens-members { list-style: none; padding: 0; margin: 12px 0; }
+.lens-members li { display: flex; align-items: start; gap: 8px; margin: 6px 0; }
+.lens-members .ui-button { white-space: normal; text-align: left; overflow-wrap: anywhere; }
+.lens-members .ui-input[type="checkbox"], .lens-check .ui-input[type="checkbox"] { width: auto; flex: 0 0 auto; }
+.lens-check { display: flex; align-items: center; gap: 8px; }
+.lens-member-body { white-space: pre-wrap; overflow-wrap: anywhere; }
+.lens-workspace, .lens-editor, .lens-group { min-width: 0; }
+.themes-status > .ui-input { max-width: 220px; }
+.unified-pane .pane-body .lens-check { display: flex; min-height: 44px; }
+.unified-pane .pane-body .lens-member-select { display: flex; align-items: center; justify-content: center; flex: 0 0 44px; min-height: 44px; margin: 0; }
+.lens-fields > legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
