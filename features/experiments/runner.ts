@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { appliedSelection, selectWithLens, selectionReceipt, type SelectionConfiguration, type SelectionDecision } from "./selection";
 import { behaviorSpace } from "./contracts";
 import type { Run, Operation, Candidate, Assessment, Attempt, Intervention } from "./contracts";
+import { stagnantDrafts } from "./stagnation";
 import { executeOperation, assess, planOperation, planAssessment, type Provider } from "./operators";
 import type { Store as ExperimentStore } from "./store-contract";
 import { corpus, selectPopulation, analyze } from "./analysis";
@@ -57,8 +58,18 @@ export async function tick(store: ExperimentStore, runId: string, provider: Prov
     const directed = run.groupWeave ? await groupWeaveProgress(store, run.id, run.groupWeave) : undefined;
     if (directed?.finished) { await settleGroupWeave(store, run.id, directed.request.id); return false; }
     if (directed?.inFlight) return false;
+    const complete = async (reason: string) => store.transaction(async () => {
+        const current = await store.get(run.id);
+        // Preserve concurrent controls, new allowances and an admitted sibling call.
+        if (!current || current.status !== "running" || current.calls !== run.calls || current.maxCalls !== run.maxCalls ||
+            (current.controlVersion ?? 0) !== (run.controlVersion ?? 0) || (current.corpusVersion ?? 0) !== (run.corpusVersion ?? 0) ||
+            (await store.attempts(run.id)).some(attempt => attempt.status === "reserved")) return;
+        current.status = "completed";
+        current.reason = reason;
+        await store.save(current);
+    });
     if (!directed && attempts.length >= 3 && attempts.slice(-3).every(a => ["failed", "uncertain"].includes(a.status))) {
-        (await store.transaction(async () => { const r = (await store.get(run.id))!; r.status = "completed"; r.reason = "Three consecutive failed or uncertain attempts; partial evidence retained"; (await store.save(r)); }));
+        await complete("Three consecutive failed or uncertain attempts; partial evidence retained");
         return false;
     }
     const config = await appliedSelection(store, run);
@@ -70,6 +81,12 @@ export async function tick(store: ExperimentStore, runId: string, provider: Prov
     }>(run.id, "assessment-request")).find(q => !attempts.some(a => a.assessmentRequestId === q.id));
     const pending = directed ? directed.candidate : reassessment ? candidates.find(c => c.id === reassessment.candidateId) : candidates.find(c => !c.assessment && !attempts.some(a => a.candidateId === c.id && a.stage === "assessment"));
     const intervention = directed ? undefined : (await store.interventions(run.id)).find(i => i.status === "proposed");
+    // Finish assessing the retained draft and honor an explicitly funded intervention
+    // or reassessment before considering more automatic generation.
+    if (!directed && !pending && !intervention && stagnantDrafts(candidates)) {
+        await complete("Stagnation: three consecutive drafts have near-identical summaries and bodies; results retained");
+        return false;
+    }
     let op: Operation;
     if (directed) op = directed.request.operation;
     else if (pending)

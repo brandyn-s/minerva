@@ -21,7 +21,7 @@ async function example(count = 8, capacity = 3) {
   for (let n = 0; n < count; n++) {
     const cid = randomUUID(), operationId = randomUUID(); ids.push(cid);
     store.put('operation', operationId, id, { id: operationId, version: 1, kind: 'root', goal: 'Explore coordination', constraints: [], sources: [], exposure: [], intent: '', count: 1, step: 1 });
-    store.put('candidate', cid, id, { id: cid, snapshot: { id: cid, revision: 1, title: `Idea ${n}`, summary: 'Share resources through a queue', body: 'A shared queue coordinates resources.' }, operationId, parents: [], exposure: [], rootIds: [cid], admission: 'eligible', at });
+    store.put('candidate', cid, id, { id: cid, snapshot: { id: cid, revision: 1, title: `Idea ${n}`, summary: 'Share resources through a queue', body: ['A shared queue coordinates resources.', 'Neighbors negotiate exchanges directly with each other.', 'A lottery assigns scarce equipment at random.', 'Rotating stewards decide how to allocate supplies.'][n % 4] }, operationId, parents: [], exposure: [], rootIds: [cid], admission: 'eligible', at });
     store.put('assessment', `assessment-${cid}`, id, { id: `assessment-${cid}`, candidateId: cid, mechanism: `Mechanism ${n % 4}`, constraints: 'preserved', actionability: 'supported', evidence: 'shared queue', changed: 'yes', explanation: 'fixture', level: 'textual', version: 1, at, assessor: 'fixture', sourceOperation: operationId });
   }
   store.control(id, 'pause');

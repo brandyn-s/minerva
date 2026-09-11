@@ -25,10 +25,10 @@
     "typecheck": "tsc --noEmit",
     "test": "node --test",
     "check": "npm run lint && npm run typecheck && npm test && npm run build",
-    "test:browser": "node scripts/verify-atlas.mjs",
+    "test:browser": "node scripts/verify-browser.mjs",
     "test:ui": "playwright test --config playwright.ui.config.ts",
     "expedition:worker": "node scripts/expedition-worker.mjs",
-    "test:expedition": "node scripts/verify-expedition.mjs",
+    "test:expedition": "node scripts/verify-browser.mjs expedition",
     "eval:expedition": "node scripts/evaluate-expeditions.mjs",
     "test:expedition-process": "node scripts/verify-expedition-process.mjs",
     "test:expedition-scale": "node scripts/verify-expedition-scale.mjs"

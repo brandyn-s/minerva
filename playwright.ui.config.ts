@@ -1,5 +1,5 @@
 import { defineConfig } from "@playwright/test";
-const port = process.env.MINERVA_UI_PORT ?? "3077";
+const port = Number(process.env.MINERVA_UI_PORT ?? 3077);
 export default defineConfig({
   snapshotPathTemplate: "{testDir}/snapshots/{projectName}/{arg}{ext}",
   testDir: "./tests/ui", testMatch: "*.spec.ts", fullyParallel: false, workers: 1,

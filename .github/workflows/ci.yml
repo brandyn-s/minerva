@@ -18,6 +18,18 @@ jobs:
     name: Verify repository
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: minerva
+          POSTGRES_PASSWORD: synthetic-only
+          POSTGRES_DB: minerva_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U minerva -d minerva_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -44,3 +56,22 @@ jobs:
 
       - name: Verify UI contracts and accessibility
         run: npm run test:ui
+
+      - name: Verify atlas and durable Expedition journeys
+        run: npm run test:browser
+
+      - name: Verify Expedition worker restart
+        run: npm run test:expedition-process
+
+      - name: Verify PostgreSQL controls and stagnation
+        run: node scripts/verify-expedition-postgres.mjs
+        env:
+          EXPEDITION_DATABASE_URL: postgres://minerva:synthetic-only@127.0.0.1:5432/minerva_test
+
+      - name: Preserve browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: browser-regression-evidence
+          path: evaluation-artifacts/browser
+          retention-days: 7

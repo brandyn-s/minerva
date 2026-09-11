@@ -21,6 +21,15 @@ a lower $1–$6 limit reduces the system's initial 12-call allocation. Generatio
 and assessment share that allocation. Pause/Stop remain available during a run.
 Reassessment and interventions explicitly show their additional maximum allowance.
 
+Automatic generation stops after three consecutive drafts have near-identical
+summaries and bodies (normalized bigram similarity of at least 90% in both).
+Titles do not count as progress. The third draft is assessed before stopping;
+all results and readings remain available. This is a bounded textual repetition
+guard, not a semantic novelty judgment or evidence that the goal was achieved.
+The guard is reconstructed from committed records after restart. Explicitly
+funded interventions and reassessments remain available after this stop.
+
+
 ## Hosted ownership and execution
 
 Expedition data uses the existing Neon integration through
@@ -38,7 +47,8 @@ Postgres row locks serialize call admission and controls. Reservations reject st
 call sequences or budgets so a follow-up cannot fund already planned work. Stop
 rejects late commits; Pause permits an in-flight completion. Expired calls become
 uncertain and retain their allowance instead of being replayed. Workflow retries
-re-read this state. SQLite remains available for the separate local worker.
+re-read this state. SQLite remains available for the separate local worker. Each local worker processes
+runs sequentially on its connection; separate worker processes can run in parallel.
 
 [Lens selection](lenses-release-2b.md) adds an explicit preview/application
 boundary for a settled, paused run, versioned selection receipts and matching
@@ -89,3 +99,26 @@ browser check blocked all POSTs and verified ready storage, live configuration,
 selection-only Start and the remembered limit. No paid model call was made.
 41 unit tests, typecheck, lint, webpack production build, four desktop/touch UI
 tests and PostgreSQL concurrency/control/rollback tests pass.
+
+## Regression verification
+
+After `npm run build`, `npm run test:browser` starts an isolated production server
+and synthetic SQLite worker, runs the full atlas replay, and removes its temporary
+database and processes. `npm run test:expedition` runs the focused durable journey
+with the same setup. `MINERVA_URL` uses an already running server instead; the
+Expedition replay refuses live-provider configurations. No environment file or
+production database is needed. Failure logs and captures go to
+`evaluation-artifacts/browser` (or `MINERVA_ARTIFACTS`).
+
+The durable journey covers frozen inputs, pause/resume/stop, the four operations,
+retained challenge/intervention evidence, reassessment, stale reading coverage,
+reload, camera/selection preservation and idempotent atlas inspection. Historical
+browser steps, exact reading snapshots and notes survive import/reload/export;
+they remain historical records rather than resumable durable runs. Readings of
+durable candidates refer to immutable revisions; editing an inspected atlas copy
+does not rewrite the run's evidence. A generator's success claim is not a stop
+condition; the run's textual repetition and allowance guards make no success claim.
+
+CI runs the full browser replay, worker-process restart and PostgreSQL controls,
+including repeated successful drafts across connections. Shared UI checks can
+reuse a local development port with `MINERVA_UI_PORT`; CI starts its own server.
