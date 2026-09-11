@@ -1,6 +1,6 @@
 "use client";
 import { materialize } from "../experiments/import";
-import { receiptSchema, type Candidate, type Operation } from "../experiments/contracts";
+import { receiptSchema, type Candidate, type Operation, type Snapshot } from "../experiments/contracts";
 
 import { Button, Summary, Input, Select } from "../../components/ui/controls";
 
@@ -45,6 +45,9 @@ import { cardHash, validateThemes, type ThemeGroup } from "./themes";
 import { atlasSaveSchema, emptyHistory, recoveryCopies, discardRecovery, fixtureSave, restoreSave, writeSave, mergeAtlas, interruptSavedRuns, type AtlasSave } from "./local-state";
 import TalkPanel from "./talk-panel";
 import RegroupPanel from "./regroup-panel";
+import WeavePanel from "./weave-panel";
+import WeaveComparison from "./weave-comparison";
+import { newWeaveDraft, variantDraft, weaveRequest, acceptWeave, resolveSnapshot, type WeaveDraft } from "./weave";
 import { applyRegroup } from "./regroup-layout";
 import { constellationLayout, constellationHeading } from "./constellation-layout";
 import CardPane from "./card-pane";
@@ -61,7 +64,7 @@ type CardNode = Node<{ thought: Thought; geometry?: { width: number; height: num
 // Keep screen-sized overview markers separated at the farthest zoom-out.
 const MIN_ZOOM = 0.03;
 
-type Panel = "develop" | "guide" | "expedition" | "talk" | "inspect" | "compare" | "moves" | "index" | "text" | null;
+type Panel = "weave" | "weave-compare" | "develop" | "guide" | "expedition" | "talk" | "inspect" | "compare" | "moves" | "index" | "text" | null;
 const Interaction = createContext<{
   live?: { sources: Thought[]; feature: LiveFeature; move?: ContextualMove; error?: string };
   busy?: boolean;
@@ -333,6 +336,13 @@ function GraphNavigation({ id, chain, chainIds, descendantCount, byId, folds, se
 function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { initial?: AtlasSave; restoreNotice?: string; saveEnabled?: boolean; replace?: (save: AtlasSave, notice?: string) => void }) {
   const fixture = useMemo(() => initial ? { thoughts: initial.thoughts, relationships: initial.relationships, positions: initial.positions.Lineage } : mallFixture(), [initial]);
   const [nodes, setNodes] = useState<CardNode[]>(() => presentNodes(initial && { thoughts: initial.thoughts, relationships: initial.relationships, positions: initial.positions.Lineage }));
+  const [weaveDraft, setWeaveDraft] = useState<WeaveDraft>();
+  const [weaveRunning, setWeaveRunning] = useState(false);
+  const [weaveError, setWeaveError] = useState("");
+  const [weavePair, setWeavePair] = useState<[Snapshot, Snapshot]>();
+  const [weaveOutcome, setWeaveOutcome] = useState<{ id: string; title: string }>();
+  const weaveRequestController = useRef<AbortController | null>(null);
+  useEffect(() => () => { weaveRequestController.current?.abort(); }, []);
   const [cardDrafts, setCardDrafts] = useState<Record<string, CardEdit | undefined>>({});
   const [intents, setIntents] = useState(initial?.intents ?? []);
   const stackingOrder = useRef(0);
@@ -344,6 +354,8 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
   const [voiceFocusId, setVoiceFocusId] = useState<string | null>(null);
   const [active, setActive] = useState(initial?.active ?? "repair");
   const [panel, setPanel] = useState<Panel>(null);
+  const currentPanel = useRef(panel);
+  useLayoutEffect(() => { currentPanel.current = panel; }, [panel]);
   const [moveSources, setMoveSources] = useState<string[]>([]);
   const [preview, setPreview] = useState(false);
   const [showRelationshipLabels, setShowRelationshipLabels] = useState(false);
@@ -714,6 +726,48 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
     } finally {
       generating.current = false;
       setBusy(false);
+    }
+  }
+  function prepareWeave(cards: Thought[]) {
+    if (busy) return;
+    const same = weaveDraft && !weaveDraft.weave.variantOf && cards.length === weaveDraft.sources.length && cards.every(c => weaveDraft.sources.some(s => s.id === c.id));
+    if (!same) { setWeaveDraft(newWeaveDraft(cards)); setWeaveError(""); }
+    open("weave");
+  }
+  async function runWeave(wholeCards: boolean) {
+    if (!weaveDraft || generating.current) return;
+    const requestDraft = structuredClone(weaveDraft);
+    generating.current = true; setBusy(true); setWeaveError(""); setWeaveOutcome(undefined); setWeaveRunning(true);
+    const controller = new AbortController(); weaveRequestController.current = controller;
+    try {
+      const request = weaveRequest(requestDraft, wholeCards);
+      const response = await fetch("/api/weave", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(request), signal: controller.signal });
+      const output = await response.json();
+      if (!response.ok) throw new Error(output.error || "Weave failed.");
+      if (controller.signal.aborted) return;
+      const card = acceptWeave(output, request);
+      const current = latestSave.current;
+      const parents = request.sources.map(source => {
+        const resolved = resolveSnapshot(source, current.thoughts);
+        if (!resolved) throw new Error("The source history changed. Your result could not be attached; restore the source before retrying.");
+        return { id: resolved.id, revision: source.revision };
+      });
+      clearHistory();
+      setNodes(existing => {
+        const parentNodes = existing.filter(n => parents.some(p => p.id === n.id));
+        let x = Math.max(0, ...parentNodes.map(n => n.position.x + (n.measured?.width ?? 290))) + 90;
+        const y = Math.min(0, ...parentNodes.map(n => n.position.y));
+        while (existing.some(n => n.position.x < x + 290 && n.position.x + (n.measured?.width ?? 290) > x && n.position.y < y + 380 && n.position.y + (n.measured?.height ?? 300) > y)) x += 380;
+        return [...existing, { id: card.id, type: "thought", position: { x, y }, dragHandle: ".card-grip", ariaLabel: card.title, data: { thought: card } }];
+      });
+      setLiveEdges(edges => [...edges, ...parents.map((source, index) => ({ id: `${source.id}-${card.id}`, from: source.id, to: card.id, kind: "recombination" as const, label: "Weave", sourceRevision: source.revision, contribution: output.contributions[index] }))]);
+      setWeaveOutcome({ id: card.id, title: card.title });
+      if (currentPanel.current === "weave") { setActive(card.id); setPanel("inspect"); }
+      setWeaveDraft(undefined);
+    } catch (error) {
+      if (!controller.signal.aborted) setWeaveError(error instanceof Error ? error.message : String(error));
+    } finally {
+      weaveRequestController.current = null; setWeaveRunning(false); generating.current = false; setBusy(false);
     }
   }
   function inspectExperiment(candidate: Candidate, operation: Operation) {
@@ -1264,6 +1318,9 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
             </div>
           </div>}
         </div>
+        {panel !== "weave" && (weaveRunning || weaveOutcome || weaveError) && <div className="weave-notice" role="status">
+          {weaveRunning ? <><span className="composer-spinner" aria-hidden="true" />Weaving… <Button onClick={() => open("weave")}>View Weave</Button></> : weaveError ? <>Weave needs attention. <Button onClick={() => open("weave")}>Review selections</Button></> : weaveOutcome && <><span>{weaveOutcome.title}</span><Button onClick={() => { inspect(weaveOutcome.id); setWeaveOutcome(undefined); }}>Open result</Button><Button aria-label="Dismiss Weave result" onClick={() => setWeaveOutcome(undefined)}>×</Button></>}
+        </div>}
         {selected.length > 0 && !regroupIds && (
           <div className="selection-bar light-selection-dock" role="toolbar" aria-label="Selected thoughts" onKeyDown={event => {
             if (event.key === "Escape" && !panel && !regroupIds) { event.preventDefault(); clearSelection(); }
@@ -1275,9 +1332,9 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
               {!busy && <Button className="wander-action" onClick={() => move(selected)}><GitFork aria-hidden="true" />Wander</Button>}
               {!busy && <Button onClick={() => open("expedition")}><Compass aria-hidden="true" />Expedition</Button>}
             </>}
-            {selected.length === 2 && <>
+            {selected.length >= 2 && selected.length <= 8 && <>
               <Button onClick={() => open("compare")}><Copy aria-hidden="true" />Compare</Button>
-              {!busy && <Button className="wander-action" onClick={() => void generate("weave", selected.map((id) => byId.get(id)!))}><Shuffle aria-hidden="true" />Weave</Button>}
+              {!busy && <Button className="wander-action" onClick={() => prepareWeave(selected.map(id => byId.get(id)!))}><Shuffle aria-hidden="true" />Weave</Button>}
             </>}
 
 
@@ -1312,6 +1369,8 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
       </Button>}
       {<TalkPanel focusedId={voiceFocusId && byId.has(voiceFocusId) ? voiceFocusId : null} messages={messages} setMessages={update => { clearHistory(); setMessages(update); }} open={panel === "talk"} close={close} selectedIds={selected} cards={nodes.map(({ id, data }) => ({ ...data.thought, relationships: relationshipsFor(id, relationships) }))} />}
       <ExpeditionPanel entries={expeditions} open={panel === "expedition"} close={close} sources={selected.map(id=>byId.get(id)).filter((thought): thought is Thought=>!!thought)} brief={[...byId.values()].find(thought=>thought.kind==="brief")?.body??""} inspect={inspectExperiment} />
+      {panel === "weave" && weaveDraft && <WeavePanel draft={weaveDraft} change={setWeaveDraft} cards={nodes.map(n => n.data.thought)} busy={busy} error={weaveError} run={whole => void runWeave(whole)} close={close} />}
+      {panel === "weave-compare" && weavePair && <WeaveComparison pair={weavePair} close={() => setPanel("inspect")} />}
       {panel === "inspect" && <CardPane key={thought.id}
         card={thought} cards={nodes.map(n => n.data.thought)} relationships={relationships}
         draft={cardDrafts[thought.id]} setDraft={draft => setCardDrafts(current => ({ ...current, [thought.id]: draft }))}
@@ -1324,6 +1383,9 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
           const revised = revertCard(thought, number);
           setNodes(current => current.map(n => n.id === thought.id ? { ...n, data: { ...n.data, thought: revised } } : n));
         }}
+        reviewWeave={note => setNodes(current => current.map(n => n.id === thought.id ? { ...n, data: { ...n.data, thought: { ...n.data.thought, weaveReviews: [...(n.data.thought.weaveReviews ?? []), note] } } } : n))}
+        variantWeave={revision => { setWeaveDraft(variantDraft(thought, revision)); setWeaveError(""); open("weave"); }}
+        compareWeave={(before, after) => { setWeavePair([before, after]); open("weave-compare"); }}
         develop={() => setPanel("develop")}
         inspect={inspect} focus={focus} explore={() => move([thought.id])} close={close}
         folded={folds.includes(thought.id)} descendantCount={trace(thought.id, "descendants").length}
@@ -1337,7 +1399,7 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
           latestSave.current = { ...latestSave.current, thoughts: latestSave.current.thoughts.map(c => c.id === next.id ? next : c) };
           setNodes(nodes => nodes.map(n => n.id === next.id ? { ...n, ariaLabel: next.title, data: { ...n.data, thought: next } } : n));
         }} close={close} />}
-      {panel && panel !== "develop" && panel !== "talk" && panel !== "expedition" && (panel !== "inspect") && (
+      {panel && panel !== "weave" && panel !== "weave-compare" && panel !== "develop" && panel !== "talk" && panel !== "expedition" && (panel !== "inspect") && (
         <aside
           key={panel === "guide" ? "guide" : "detail"}
           id={panel === "guide" ? "atlas-guide" : undefined}
@@ -1419,8 +1481,8 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
                   </section>
                 ))}
               </div>
-              <Button variant="primary" onClick={() => move(selected)}>
-                Weave selected contributions · preview
+              <Button variant="primary" onClick={() => prepareWeave(selected.map(id => byId.get(id)!))}>
+                Choose contributions
               </Button>
             </div>
           )}

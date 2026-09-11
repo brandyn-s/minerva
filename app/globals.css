@@ -1604,3 +1604,18 @@ label {
 .unified-pane .comparison-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 24px; margin: 20px 0; }
 .unified-pane .comparison-grid section { min-width: 0; border-top: 1px solid var(--line); }
 @media(max-width:600px) { .detail-panel.unified-pane { top: 68px; right: 12px; bottom: 12px; width: calc(100vw - 24px); padding: 8px 18px 0; z-index: 31; } .unified-pane .pane-body h2, .unified-pane .pane-title, .unified-pane .wander-source h3, .unified-pane .card-pane-header > h2 { font-size: 26px; } }
+
+/* Contribution preparation and versioned inspection use the shared pane and controls. */
+.weave-fields > legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.weave-fields { border: 0; padding: 0; margin: 0; min-width: 0; }
+.weave-source { margin-block: 20px; min-width: 0; overflow-wrap: anywhere; }
+.weave-source h3 { margin-block: 0 8px; }
+.weave-source details { margin-block: 10px; }
+.weave-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-block: 16px; }
+.weave-passage { white-space: pre-wrap; overflow-wrap: anywhere; }
+.weave-details { margin-block: 16px; }
+.weave-review { margin-block: 12px; }
+.weave-panel textarea { width: 100%; }
+
+.weave-notice { position: absolute; z-index: 8; left: 16px; bottom: 130px; max-width: min(440px, calc(100% - 32px)); display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 10px; background: var(--paper, #f1e9d6); border: 1px solid var(--line, #d6cbb1); border-radius: 8px; }
+.weave-notice > span { overflow-wrap: anywhere; min-width: 0; }

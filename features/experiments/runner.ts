@@ -20,7 +20,7 @@ function candidateFrom(op: Operation, result: Awaited<ReturnType<typeof executeO
     const id = randomUUID();
     const parents = op.sources.map(s => candidates.findLast(c => c.snapshot.id === s.id && c.snapshot.revision === s.revision)?.id ?? `${s.id}@${s.revision}`);
     const rootIds = parents.length ? [...new Set(parents.flatMap(p => candidates.find(c => c.id === p)?.rootIds ?? [p]))] : [id];
-    return { id, snapshot: { ...result.cards[0], id: op.kind === "develop" ? op.sources[0].id : id, revision: op.kind === "develop" ? op.sources[0].revision + 1 : 1 }, operationId: op.id, parents, exposure: op.exposure.map(s => `${s.id}@${s.revision}`), rootIds, admission: "pending", at: new Date().toISOString() };
+    return { id, snapshot: { ...result.cards[0], id: op.kind === "develop" ? op.sources[0].id : id, revision: op.kind === "develop" ? op.sources[0].revision + 1 : 1 }, ...(result.weaveMappings ? { weaveMappings: result.weaveMappings } : {}), operationId: op.id, parents, exposure: op.exposure.map(s => `${s.id}@${s.revision}`), rootIds, admission: "pending", at: new Date().toISOString() };
 }
 export async function proposeIntervention(store: ExperimentStore, input: {
     runId: string;

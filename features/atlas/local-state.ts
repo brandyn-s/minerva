@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { operationSchema, receiptSchema } from "../experiments/contracts";
+import { weaveMappingsSchema, weaveReviewSchema, validateWeaveMappings } from "../experiments/weave";
 import { stableJson } from "./stable-json";
 import { expeditionStepSchema, readingSchema, validateReading } from "./expedition";
 import { themesSchema, cardHash } from "./themes";
@@ -12,10 +13,12 @@ const view = z.enum(["Lineage", "Evolution", "Constellation"]);
 export const revisionSchema = z.object({ number: z.number().int().positive(), time: z.iso.datetime(), cause: z.string(),
   title: z.string(), summary: z.string(), body: z.string(), contribution: z.string().optional(), prepared: z.boolean().optional(), note: z.string().optional(),
   receipt: receiptSchema.optional(),
+  weaveMappings: weaveMappingsSchema.optional(),
   experiment: z.object({ candidateId: z.string(), operation: operationSchema }).optional(),
   branch: z.object({ intent: z.string(), step: z.number().int().min(1).max(3), runId: z.string() }).optional() });
 const thought = z.object({
   revisions: z.array(revisionSchema).min(1),
+  weaveReviews: z.array(weaveReviewSchema).optional(),
   id, importedFromId: id.optional(), revision: z.number().int().nonnegative(), title: z.string(), summary: z.string(), body: z.string(),
   kind: z.enum(["brief", "proposal", "recombination", "exploration"]),
   contribution: z.string(), move: z.object({ title: z.string(), question: z.string(), preview: z.string() }),
@@ -48,6 +51,14 @@ const saveV3 = z.object({
   for (const card of save.thoughts) {
     const last = card.revisions.at(-1)!;
     if (!last || (last.contribution !== undefined && card.contribution !== last.contribution) || card.revisions.some((r, i) => r.number !== i + 1) || card.revision !== last.number || (["title", "summary", "body"] as const).some(key => card[key] !== last[key])) fail("Invalid card revision history");
+    for (const revision of card.revisions) {
+      const input = (revision.receipt?.operation ?? revision.experiment?.operation)?.weave;
+      if (input || revision.weaveMappings) {
+        try { if (!input) throw new Error("Contribution inputs unavailable"); validateWeaveMappings(input, revision.weaveMappings ?? [], revision); }
+        catch { fail("Invalid saved contribution mappings"); }
+      }
+    }
+    for (const review of card.weaveReviews ?? []) if (!card.revisions.find(r => r.number === review.revision)?.weaveMappings?.some(m => m.selectionId === review.selectionId)) fail("Invalid contribution review reference");
   }
   if (new Set(save.intents.map(i => i.id)).size !== save.intents.length) fail("Duplicate intent ids");
   if (ids.size !== save.thoughts.length) fail("Duplicate card ids");
@@ -164,11 +175,14 @@ export async function mergeAtlas(current: AtlasSave, incoming: AtlasSave) {
     const compatible = candidates.find(c => prefix(c, card) || prefix(card, c));
     let newId = compatible?.id ?? card.id;
     if (compatible) {
+      const reviews = [...(compatible.weaveReviews ?? [])];
+      for (const review of card.weaveReviews ?? []) if (!reviews.some(r => stableJson(r) === stableJson(review))) reviews.push(review);
       if (card.revisions.length > compatible.revisions.length) {
         const index = merged.thoughts.indexOf(compatible);
         merged.thoughts[index] = { ...card, id: compatible.id, importedFromId: compatible.importedFromId };
         updated++;
-      }
+      } else if (reviews.length > (compatible.weaveReviews?.length ?? 0)) updated++;
+      if (reviews.length) merged.thoughts[merged.thoughts.findIndex(c => c.id === compatible.id)].weaveReviews = reviews;
       ids.set(card.id, newId); continue;
     }
     if (merged.thoughts.some(c => c.id === newId)) {

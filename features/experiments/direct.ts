@@ -19,7 +19,7 @@ export async function directOperation(raw: Omit<Operation, "id" | "version">, si
     const output = await executeOperation(op, gatewayProvider, signal, usage=>{if(store&&attempt)store.observeUsage(attempt.id,attempt.owner,usage);});
     const at=new Date().toISOString();
     if(store&&attempt){
-      const candidates:Candidate[]=output.cards.map(card=>{const id=randomUUID();return {id,snapshot:{...card,id:op.kind==="develop"?op.sources[0].id:id,revision:op.kind==="develop"?op.sources[0].revision+1:1},operationId:op.id,parents:op.sources.map(s=>`${s.id}@${s.revision}`),exposure:op.exposure.map(s=>`${s.id}@${s.revision}`),rootIds:op.sources.map(s=>`${s.id}@${s.revision}`),admission:"pending",at};});
+      const candidates:Candidate[]=output.cards.map(card=>{const id=randomUUID();return {id,snapshot:{...card,id:op.kind==="develop"?op.sources[0].id:id,revision:op.kind==="develop"?op.sources[0].revision+1:1},operationId:op.id,...(output.weaveMappings?{weaveMappings:output.weaveMappings}:{}),parents:op.sources.map(s=>`${s.id}@${s.revision}`),exposure:op.exposure.map(s=>`${s.id}@${s.revision}`),rootIds:op.sources.map(s=>`${s.id}@${s.revision}`),admission:"pending",at};});
       if(!store.finish(attempt.id,attempt.owner,candidates))throw new Error("Operation completion expired or cancelled");
       store.transaction(()=>{const run=store.get(attempt!.runId)!;run.status="completed";run.reason="Direct operation completed";store.save(run);});
     }
