@@ -1,4 +1,5 @@
 "use client";
+import ExpeditionLenses from "./expedition-lenses";
 import ExpeditionSuggestions from "./expedition-suggestions";
 import { useEffect, useRef, useState } from "react";
 import { Button, Textarea, Input, Select, Field, Summary } from "../../components/ui/controls";
@@ -10,6 +11,7 @@ import type { Run, Candidate, Reading, Operation, Intervention, Assessment } fro
 async function request(body:unknown){const response=await fetch("/api/expedition/runs",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const value=await response.json();if(!response.ok)throw new Error(value.error);return value;}
 type RunSummary=Pick<Run,"id"|"title"|"goal"|"status"|"calls"|"maxCalls"|"provider">;
 export default function ExpeditionPanel({open,close,sources,brief,entries,inspect}:{open:boolean;close:()=>void;sources:Thought[];brief:string;entries:ExpeditionRecord[];inspect:(candidate:Candidate,operation:Operation)=>void}){
+ const [showLenses,setShowLenses]=useState(false);
  const [direction,setDirection]=useState("");
  const [limit,setLimit]=useState<number>();
  const [savedLimit,setSavedLimit]=useState(6);
@@ -60,6 +62,8 @@ export default function ExpeditionPanel({open,close,sources,brief,entries,inspec
    {run?.status==="running"&&<Button disabled={busy} onClick={()=>void act({action:"pause",id:active})}>Pause</Button>}
    {run?.status==="paused"&&<Button disabled={busy} onClick={()=>void act({action:"resume",id:active})}>Resume</Button>}
    {(run?.status==="running"||run?.status==="paused")&&<Button disabled={busy} onClick={()=>void act({action:"stop",id:active})}>Stop</Button>}
+   <Button aria-expanded={showLenses} onClick={()=>setShowLenses(v=>!v)}>{showLenses?"Close expedition lenses":"Edit expedition lenses"}</Button>
+   {showLenses&&<ExpeditionLenses key={active} runId={active}/>}
    <h3>Ideas explored</h3>
    {items.map(c=><p key={c.id}><Button onClick={()=>void detail(c)}>{c.snapshot.title}</Button> · revision {c.snapshot.revision}</p>)}
    {!!cursor&&<Button onClick={()=>setCursor(0)}>First page</Button>}{more&&<Button onClick={()=>setCursor(next)}>Next page</Button>}

@@ -1,34 +1,33 @@
-# Contribution-based Weave — Release 1
+# Editable lenses — Release 2A
 
-Branch: `feat/contribution-weave`.
+Release 1 merged in PR #101 as `0af336bc93144d4ea752aeb72501741048eb1c80`.
+Its Vercel production status is successful; the stable alias returns HTTP 200.
+Branch: `feat/editable-lenses`.
 Worktree: `/Users/brandyn.schult/code/minerva-contribution-weave`.
-Base: `43581f54f5f0696818259643d9e67ed40552c9d3`.
+HEAD: `8039662c9204f03d538164d63d632d16505e1c70` (integrates Release 1 main).
+The owner authorized commit and merge of Release 2A.
 
-Select two to eight cards → Weave → choose one contribution per source and
-optional exact excerpts → generate → inspect selected contributions in the Card
-pane → Change a contribution → Compare with original.
-Whole-card Weave remains available. Failed requests retain drafts. Background
-completion preserves the current pane; selection and camera stay in place.
+Constellation → Edit lenses → create a named lens → select members → create,
+rename, split, merge or move groups → choose representatives → undo.
+Lenses preserve historical card assignments, exact run candidate/assessment
+references, per-lens arrangements and the camera. New revisions await explicit
+classification. Saved-run Expedition offers the same editor over full membership.
+Find themes/Regroup are explicit; lens edits make no model calls.
 
-Source snapshots, mappings, variant baselines and separate human interpretations
-survive existing JSON save/import and Markdown export paths. Source refresh is
-explicit. Experiment outputs use the same contracts and materialize their mappings.
+Scope and verification: [Release 2A](lenses-release-2a.md).
+Repository check: lint, TypeScript, 55 unit tests and production build pass.
+The full UI suite and focused rechecks cover 18 passing desktop/touch journeys,
+including historical revision inspection and the final touch hit areas.
+The real local HTTP/SQLite check retains 65 members, rejects a stale concurrent
+writer, resolves full candidate text and leaves run/call state unchanged.
+Hosted Neon lens behavior and human grouping usefulness are not verified.
 
-Protocol and scope: [Release 1](weave-release-1.md).
-Focused contract tests and all 12 desktop/touch UI checks pass.
-The repository check passes lint, TypeScript, 51 unit tests and production build.
-Targeted persistence tests and Weave journeys also pass after the final import corrections.
+Start using the documented Node/npm versions: `npm run dev -- --port 3088`.
+UI tests: `MINERVA_UI_PORT=3088 npm run test:ui`.
+The ignored `.env.local` contains a short-lived project-scoped OIDC token.
+Lens editing needs no provider access. The synthetic API server/database are
+separate from the user's atlas and saved runs.
 
-Live formative comparison: nine calls, eight valid results, one provider response
-failure. Inputs span service, software and exhibition briefs. Human review and
-participant effort measurement remain open; no efficacy claim is established.
-Evidence: ignored `evaluation-artifacts/weave/2026-09-11T02-25-51-055Z/`.
-`review.md` hides method labels; `evidence.json` retains prompts, outputs and usage.
-
-Start with documented Node/npm versions: `npm run dev -- --port 3088`.
-The ignored `.env.local` has only a short-lived project-scoped OIDC token.
-UI test isolation: `MINERVA_UI_PORT=3088 npm run test:ui`.
-The owner authorized commit and merge, then implementation of Release 2A.
-Next builder outcome: editable lenses over frozen material, with reversible
-membership changes and persistence; exploration policy follows separately.
-Human usefulness review of Release 1 remains available to the owner.
+Next builder outcome: Release 2B, explicit preview/application of a lens to a
+paused Expedition and versioned population selection. Release 2C follows later.
+Release 1 human usefulness review remains open in the original evaluation pack.
