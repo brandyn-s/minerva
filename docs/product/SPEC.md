@@ -166,7 +166,9 @@ The current editable-lens increment is specified in
 [Release 2A](../lenses-release-2a.md): named interpretations with exact revision
 membership, split/merge/move, representatives, undo and independent arrangements.
 Atlas lenses are browser-owned; run lenses use complete immutable candidate
-references. Applying a lens to the exploration policy is a later slice.
+references. [Release 2B](../lenses-release-2b.md) adds explicit population preview
+and atomic application to a settled, paused Expedition, deterministic selection,
+exact generation receipts and readings under the applied lens. Resume is separate.
 
 ### C08: Contextual creative moves
 

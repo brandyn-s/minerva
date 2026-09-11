@@ -40,6 +40,10 @@ rejects late commits; Pause permits an in-flight completion. Expired calls becom
 uncertain and retain their allowance instead of being replayed. Workflow retries
 re-read this state. SQLite remains available for the separate local worker.
 
+[Lens selection](lenses-release-2b.md) adds an explicit preview/application
+boundary for a settled, paused run, versioned selection receipts and matching
+readings. Its writer guard is a deployment prerequisite for existing databases.
+
 ## Setup and verification
 
 Run once with the correct environment loaded:
@@ -48,8 +52,8 @@ Run once with the correct environment loaded:
 node --env-file=.env.local scripts/setup-expedition-store.mjs
 ```
 
-The setup only creates the isolated schema/tables/indexes. It does not migrate or
-delete older Minerva data. Vercel supplies Gateway OIDC credentials; do not ship
+The setup creates the isolated schema/tables/indexes and the selection writer
+guard. It does not rewrite or delete older Minerva records. Vercel supplies Gateway OIDC credentials; do not ship
 local env files. `.vercelignore` explicitly excludes them.
 
 For synthetic verification, set `MINERVA_EXPERIMENT_PROVIDER=fixture` on a local

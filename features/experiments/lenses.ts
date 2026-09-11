@@ -15,6 +15,8 @@ export async function runLenses(store: Store, runId: string) {
   return [...latest.values()];
 }
 export async function saveRunLens(store: Store, runId: string, command: { id: string; expectedRevision: number; name?: string; seed?: "manual" | "mechanisms"; edit?: LensEdit }) {
+  return store.transaction(async () => {
+  if (!await store.get(runId)) throw new Error("Run unavailable");
   const previous = (await runLenses(store, runId)).find(l => l.id === command.id);
   if ((previous ? currentLens(previous).number : 0) !== command.expectedRevision) throw new Error("This lens changed. Reload lenses before editing again.");
   let next: Lens;
@@ -31,4 +33,5 @@ export async function saveRunLens(store: Store, runId: string, command: { id: st
   // Immutable per-revision identity also rejects two writers editing the same base.
   await store.put("lens", `${runId}:lens:${next.id}:${currentLens(next).number}`, runId, next);
   return next;
+  });
 }

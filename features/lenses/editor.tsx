@@ -1,9 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Button, Field, Input, Select, Summary, Textarea } from "../../components/ui/controls";
 import { currentLens, type Lens, type LensEdit, type LensMember } from "./domain";
 
-type Props = { lenses: Lens[]; activeId: string | null; members: LensMember[]; choose: (id: string) => void; create: (name: string, seeded: boolean) => Promise<void> | void; edit: (edit: LensEdit) => Promise<void> | void; inspect: (member: LensMember) => Promise<string> | string; seededLabel: string; busy?: boolean };
+type Props = { actions?: ReactNode; lenses: Lens[]; activeId: string | null; members: LensMember[]; choose: (id: string) => void; create: (name: string, seeded: boolean) => Promise<void> | void; edit: (edit: LensEdit) => Promise<void> | void; inspect: (member: LensMember) => Promise<string> | string; seededLabel: string; busy?: boolean };
 export default function LensWorkspace(props: Props) {
   const [creating, setCreating] = useState(false), [name, setName] = useState(""), [seeded, setSeeded] = useState(false);
   const [creationError, setCreationError] = useState("");
@@ -16,10 +16,10 @@ export default function LensWorkspace(props: Props) {
       <Button type="submit" variant="primary" disabled={!name.trim() || props.busy}>Create lens</Button>
       {creationError && <p role="alert">{creationError}</p>}
     </form>}
-    {lens && <LensEditor key={lens.id} lens={lens} members={props.members} edit={props.edit} inspect={props.inspect} busy={props.busy} />}
+    {lens && <LensEditor key={lens.id} lens={lens} members={props.members} edit={props.edit} inspect={props.inspect} busy={props.busy} actions={props.actions} />}
   </div>;
 }
-function LensEditor({ lens, members, edit, inspect, busy }: Pick<Props, "members" | "edit" | "inspect" | "busy"> & { lens: Lens }) {
+function LensEditor({ lens, members, edit, inspect, busy, actions }: Pick<Props, "members" | "edit" | "inspect" | "busy" | "actions"> & { lens: Lens }) {
   const r = currentLens(lens), byKey = new Map(lens.members.map(m => [m.key, m]));
   const [selected, setSelected] = useState<string[]>([]), [groupIds, setGroupIds] = useState<string[]>([]), [target, setTarget] = useState(""), [label, setLabel] = useState(""), [query, setQuery] = useState("");
   const [detail, setDetail] = useState<{ member: LensMember; body: string }>(), [error, setError] = useState("");
@@ -32,6 +32,7 @@ function LensEditor({ lens, members, edit, inspect, busy }: Pick<Props, "members
     <h2>{r.name}</h2>{r.description && <p>{r.description}</p>}
     <p className="small-note" role="status">{r.members.length} revisions · {r.members.length - r.unassigned.length} assigned · {r.unassigned.length} unassigned{historical ? ` · ${historical} historical` : ""}</p>
     <p className="small-note">{lens.scope.kind === "atlas" ? "This atlas" : "This expedition"} · revision {r.number} · {r.status}. {lens.origin === "constellation-themes" ? "Started from Constellation themes." : lens.origin === "assessor-mechanisms" ? "Started from normalized assessor mechanisms." : "Started without a grouping."}</p>
+    {actions}
     <div className="lens-actions"><Button disabled={!r.undoTo || busy} onClick={() => void apply({ kind: "undo" })}>Undo lens edit</Button>{r.status === "proposed" && <Button disabled={busy} onClick={() => void apply({ kind: "review" })}>Mark reviewed</Button>}</div>
     {!!additions.length && <p className="small-note">{additions.length} new or updated revisions await classification. <Button disabled={busy} onClick={() => void apply({ kind: "include", members: additions })}>Include {additions.length} revisions</Button></p>}
     <details><Summary>Edit name and description</Summary><form key={`description-${r.number}`} onSubmit={e => { e.preventDefault(); const data = new FormData(e.currentTarget); void apply({ kind: "describe", name: String(data.get("name")), description: String(data.get("description")) }); }}><Field label="Lens name"><Input aria-label="Lens name" name="name" required maxLength={120} defaultValue={r.name} /></Field><Field label="Lens description"><Textarea aria-label="Lens description" name="description" maxLength={2000} defaultValue={r.description} /></Field><Button type="submit" disabled={busy}>Save description</Button></form></details>

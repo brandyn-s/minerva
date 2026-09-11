@@ -1635,5 +1635,7 @@ label {
 .lens-workspace, .lens-editor, .lens-group { min-width: 0; }
 .themes-status > .ui-input { max-width: 220px; }
 .unified-pane .pane-body .lens-check { display: flex; min-height: 44px; }
+.unified-pane .pane-body .selection-controls .lens-check { margin: 0; }
+.selection-controls section { scroll-margin-top: 12px; overflow-wrap: anywhere; }
 .unified-pane .pane-body .lens-member-select { display: flex; align-items: center; justify-content: center; flex: 0 0 44px; min-height: 44px; margin: 0; }
 .lens-fields > legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
