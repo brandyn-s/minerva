@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { selectionReceiptSchema } from "./selection";
 import { weaveInputSchema, weaveMappingsSchema, validateWeaveInput, type WeaveMapping } from "./weave";
 
 export const snapshotSchema = z.object({
@@ -14,10 +15,12 @@ export const operationSchema = z.object({
   step: z.number().int().positive().default(1), count: z.number().int().min(1).max(3).default(1),
   runId: z.string().uuid().optional(),
   weave: weaveInputSchema.optional(),
+  selection: selectionReceiptSchema.optional(),
   strategy: z.object({ policy:z.string(), iteration:z.number().int().nonnegative(), reason:z.string() }).optional(),
 }).superRefine((o, ctx) => {
   const required = o.kind === "root" ? 0 : o.kind === "weave" ? 2 : 1;
   if ((o.kind === "weave" ? o.sources.length < required : o.sources.length !== required) || (o.kind === "root" && o.exposure.length)) ctx.addIssue({ code: "custom", message: "Invalid sources/exposure for operation" });
+  if (o.selection && (o.selection.parentIds.length !== o.sources.length || new Set(o.selection.parentIds).size !== o.selection.parentIds.length)) ctx.addIssue({ code: "custom", message: "Selection parent references must match the exact sources" });
   if (o.weave) {
     try { if (o.kind !== "weave") throw new Error("Contribution selections require Weave."); validateWeaveInput(o.weave, o.sources); }
     catch (error) { ctx.addIssue({ code: "custom", message: error instanceof Error ? error.message : String(error) }); }
@@ -43,7 +46,7 @@ export const assessmentSchema = z.object({
 });
 export type Assessment = z.infer<typeof assessmentSchema> & { id: string; candidateId: string; version: 1; level: "textual" | "simulation" | "external"; assessor: string; at: string; sourceOperation: string };
 export type Candidate = { id: string; snapshot: Snapshot; operationId: string; parents: string[]; exposure: string[]; rootIds: string[]; assessment?: Assessment; weaveMappings?: WeaveMapping[]; admission: "pending" | "eligible" | "rejected"; at: string };
-export type Attempt = { maxCallsAtPlanning?:number; assessmentRequestId?:string; usage?: {inputTokens?:number;outputTokens?:number;totalTokens?:number}; id: string; runId: string; sequence: number; stage: "generation" | "assessment"; candidateId?: string; operation: Operation; status: "reserved" | "committed" | "failed" | "uncertain" | "cancelled"; owner: string; leaseUntil: number; reservedMicros: number; cost: "reserved-upper-bound"; manifest?: { model: string; system: string; prompt: string; schemaVersion: number; maxOutputTokens: number }; error?: string; at: string };
+export type Attempt = { selectionAtPlanning?: string; controlVersionAtPlanning?: number; corpusVersionAtPlanning?: number; maxCallsAtPlanning?:number; assessmentRequestId?:string; usage?: {inputTokens?:number;outputTokens?:number;totalTokens?:number}; id: string; runId: string; sequence: number; stage: "generation" | "assessment"; candidateId?: string; operation: Operation; status: "reserved" | "committed" | "failed" | "uncertain" | "cancelled"; owner: string; leaseUntil: number; reservedMicros: number; cost: "reserved-upper-bound"; manifest?: { model: string; system: string; prompt: string; schemaVersion: number; maxOutputTokens: number }; error?: string; at: string };
 export const runConfigSchema = z.object({
   title: z.string().max(200).optional(), direction: z.string().max(1000).optional(), owner: z.string().optional(),
   id: z.string().uuid(), goal: z.string().trim().min(1).max(2000), constraints: z.array(z.string().max(1000)).max(30).default([]),
@@ -54,8 +57,8 @@ export const runConfigSchema = z.object({
   provider: z.enum(["fixture", "gateway"]).default("fixture"), mode: z.enum(["explore", "goal"]).default("explore"),
 }).superRefine((c, ctx) => { if (c.provider === "gateway" && c.callReservationMicros === 0) ctx.addIssue({ code: "custom", message: "Live runs require an explicit conservative call allowance" }); });
 export type RunConfig = z.infer<typeof runConfigSchema>;
-export type Run = RunConfig & { version: 1; status: "running" | "paused" | "stopped" | "completed"; calls: number; reservedMicros: number; active: string[]; createdAt: string; reason?: string };
-export type Reading = { probes?: {id:string;candidateId:string;capacityPreserved:boolean;model:string}[]; preview?: {totalGroups:number;totalUnusual:number;maxCandidatesPerGroup:number}; id: string; runId: string; version: 1; at: string; through: number; representation: string; coverage: { candidates: number; assessed: number; excluded: number }; groups: { candidateCount?:number; mechanism: string; candidates: string[]; representative: string; roots: string[]; independent: boolean; status: "provisional group" | "candidate recurrence" }[]; unusual: string[]; observations: string[]; hypotheses: string[]; limitations: string[] };
+export type Run = RunConfig & { selection?: { id: string; revision: number }; controlVersion?: number; corpusVersion?: number; version: 1; status: "running" | "paused" | "stopped" | "completed"; calls: number; reservedMicros: number; active: string[]; createdAt: string; reason?: string };
+export type Reading = { selection?: { configurationId: string; revision: number; lensId: string; lensRevision: number; step: number }; probes?: {id:string;candidateId:string;capacityPreserved:boolean;model:string}[]; preview?: {totalGroups:number;totalUnusual:number;maxCandidatesPerGroup:number}; id: string; runId: string; version: 1; at: string; through: number; representation: string; coverage: { candidates: number; assessed: number; excluded: number }; groups: { candidateCount?:number; mechanism: string; candidates: string[]; representative: string; roots: string[]; independent: boolean; status: "provisional group" | "candidate recurrence" | "reviewed group" }[]; unusual: string[]; observations: string[]; hypotheses: string[]; limitations: string[] };
 export type Intervention = { id: string; runId: string; readingId: string; candidateId: string; challenge: string; intent: string; operationKind: "wander" | "develop"; allowance: number; status: "proposed" | "running" | "completed" | "inconclusive"; operationId?: string; resultId?: string; outcome?: string; updatedReadingId?: string };
 
 export const receiptSchema = z.object({ operation: operationSchema, manifest: z.object({ model: z.string(), system: z.string(), prompt: z.string(), schemaVersion: z.number(), maxOutputTokens: z.number() }), status: z.literal("committed"), at: z.string() });

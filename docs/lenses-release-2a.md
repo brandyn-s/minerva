@@ -48,8 +48,8 @@ immutable record keys reject concurrent stale edits. Reload is explicit after a
 conflict or uncertain response. Editing a lens does not change the run's active
 population, admission, limits, status or operation schedule.
 
-Using a lens to select an Expedition population and generating across groups are
-later slices. This release establishes editable interpretations only.
+[Release 2B](lenses-release-2b.md) owns the separate explicit population
+preview/application action. Editing alone still changes interpretation only.
 
 ## Verification
 
@@ -66,8 +66,8 @@ concurrent writes, candidate detail, missing runs, origin rejection and unchange
 run/call state. Set `MINERVA_LENS_TEST_URL` to a loopback production server and
 `MINERVA_LENS_TEST_DB` to that server's isolated `/tmp/minerva-lenses-*` database.
 The verifier creates a stopped fixture run, never dispatches a worker and never
-invokes a provider. Hosted Neon execution has not been exercised for this slice;
-it reuses the existing adapter and immutable insert contract.
+invokes a provider. The Release 2B store verifier also exercises run-lens creation
+and editing against an isolated schema on the existing Neon resource.
 
 Required checks use the Node/npm versions in AGENTS.md: `npm run check`,
 `MINERVA_UI_PORT=3088 npm run test:ui` and `git diff --check`.

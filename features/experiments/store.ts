@@ -11,13 +11,18 @@ export class ExperimentStore {
   constructor(path: string) {
     mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
     this.db = new DatabaseSync(path); chmodSync(path, 0o600);
+    this.db.function("minerva_selection_writer", () => "reviewed-lens-v1");
     this.db.exec(`PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;
       CREATE TABLE IF NOT EXISTS runs(id TEXT PRIMARY KEY, value TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS records(seq INTEGER PRIMARY KEY AUTOINCREMENT, id TEXT UNIQUE NOT NULL, run_id TEXT NOT NULL, kind TEXT NOT NULL, value TEXT NOT NULL);
       CREATE INDEX IF NOT EXISTS records_run ON records(run_id,kind,seq);
       CREATE TABLE IF NOT EXISTS attempts(id TEXT PRIMARY KEY, run_id TEXT NOT NULL, value TEXT NOT NULL);
       CREATE INDEX IF NOT EXISTS attempts_run ON attempts(run_id);
-      CREATE TABLE IF NOT EXISTS interventions(id TEXT PRIMARY KEY, run_id TEXT NOT NULL, value TEXT NOT NULL);`);
+      CREATE TABLE IF NOT EXISTS interventions(id TEXT PRIMARY KEY, run_id TEXT NOT NULL, value TEXT NOT NULL);
+      CREATE TRIGGER IF NOT EXISTS selection_writer BEFORE UPDATE ON runs
+      WHEN json_extract(OLD.value,'$.selection') IS NOT NULL OR json_extract(NEW.value,'$.selection') IS NOT NULL
+      BEGIN SELECT CASE WHEN minerva_selection_writer() != 'reviewed-lens-v1'
+        THEN RAISE(ABORT,'This expedition requires the current selection worker') END; END;`);
   }
   close() { this.db.close(); }
   transaction<T>(fn: () => T): T {
@@ -65,6 +70,7 @@ export class ExperimentStore {
     return this.transaction(() => {
       const r = this.get(id); if (!r) throw new Error("Run unavailable");
       if (["stopped", "completed"].includes(r.status)) return r;
+      r.controlVersion = (r.controlVersion ?? 0) + 1;
       r.status = action === "pause" ? "paused" : action === "resume" ? "running" : "stopped";
       r.reason = action === "stop" ? "Stopped by user; completed results retained" : undefined;
       if (action === "stop") for (const a of this.attempts(id).filter(a => a.status === "reserved")) { a.status = "cancelled"; a.error = "Run stopped; external charge may still occur"; this.saveAttempt(a); }
@@ -75,6 +81,9 @@ export class ExperimentStore {
     return this.transaction(() => {
       const r = this.get(attempt.runId); if (!r || r.status !== "running" || this.attempt(attempt.id)) return false;
       if (attempt.sequence !== r.calls + 1 || (attempt.maxCallsAtPlanning !== undefined && attempt.maxCallsAtPlanning !== r.maxCalls)) return false;
+      if ((attempt.selectionAtPlanning ?? null) !== (r.selection?.id ?? null) || (attempt.controlVersionAtPlanning ?? 0) !== (r.controlVersion ?? 0) || (attempt.corpusVersionAtPlanning ?? 0) !== (r.corpusVersion ?? 0)) return false;
+      if (attempt.stage === "generation" && r.selection && attempt.operation.selection?.configurationId !== r.selection.id) return false;
+      if (attempt.stage === "generation" && attempt.operation.selection) r.active = [...attempt.operation.selection.activeCandidateIds];
       // One in-flight call per run; different runs can execute concurrently.
       if (this.attempts(r.id).some(a => a.status === "reserved")) return false;
       if (r.calls >= r.maxCalls || r.reservedMicros + attempt.reservedMicros > r.maxCostMicros) { r.status = "completed"; r.reason = "Call or conservative spend allowance exhausted"; this.save(r); return false; }
@@ -91,6 +100,7 @@ export class ExperimentStore {
       a.status = error ? "failed" : "committed"; if (error) a.error = error;
       if (candidate) for (const c of Array.isArray(candidate) ? candidate : [candidate]) this.put("candidate", c.id, r.id, c);
       if (assessment) this.put("assessment", assessment.id, r.id, assessment);
+      if (candidate || assessment) { r.corpusVersion = (r.corpusVersion ?? 0) + 1; this.save(r); }
       this.saveAttempt(a); return true;
     });
   }
