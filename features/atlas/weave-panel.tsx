@@ -1,4 +1,5 @@
 "use client";
+import { LoadingStatus } from "../../components/ui/loading-status";
 import { useEffect, useRef, useState } from "react";
 import { Button, Field, Select, Summary, Textarea } from "../../components/ui/controls";
 import PanelHeader from "../../components/ui/panel-header";
@@ -49,6 +50,7 @@ export default function WeavePanel({ draft, change, cards, busy, error, run, clo
       }}>Use current revisions</Button></details>}
       <WeaveFields draft={draft} change={change} cards={cards} busy={busy} />
       {error && <p role="alert">{error} Your selections are kept.</p>}
+      {busy && <LoadingStatus title="Weave is combining your cards…" description="You can keep exploring the atlas." />}
       <div className="weave-actions"><Button variant="primary" busy={busy} disabled={draft.weave.selections.some(s => !s.text.trim())} onClick={() => run(false)}>{busy ? "Weaving…" : error ? "Try Weave again" : "Weave contributions"}</Button>
         <Button disabled={busy} onClick={() => run(true)}>Weave whole cards</Button></div>
     </div>

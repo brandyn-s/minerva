@@ -1,4 +1,5 @@
 "use client";
+import { LoadingStatus } from "../../components/ui/loading-status";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "../../components/ui/controls";
 import SelectionControls from "./selection-controls";
@@ -44,7 +45,7 @@ export default function ExpeditionLenses({ runId, runStatus }: { runId: string; 
   return <section aria-label="Expedition lenses">
     <p className="small-note">Interpret this corpus without changing exploration. Editing and switching lenses make no model calls.</p>
     <Button disabled={busy} onClick={() => void reload()}>Reload lenses</Button>
-    {busy && <p role="status">Loading or saving lens…</p>}{error && <p role="alert">{error}</p>}
+    {busy && <LoadingStatus title={loaded ? "Saving lens…" : "Loading lenses…"} />}{error && <p role="alert">{error}</p>}
     {loaded && <LensWorkspace actions={activeLens && <><SelectionControls key={`selection-${activeId}`} runId={runId} runStatus={runStatus} lens={activeLens} members={members} /><GroupWeaveControls key={`weave-${activeId}`} runId={runId} runStatus={runStatus} lens={activeLens} place={place} /></>} lenses={lenses} members={members} activeId={activeId} choose={setActiveId} busy={busy} seededLabel="Existing assessor mechanism groups"
       create={(name, seeded) => save({ id: crypto.randomUUID(), expectedRevision: 0, name, seed: seeded ? "mechanisms" : "manual" })}
       edit={edit => { const lens = lenses.find(l => l.id === activeId)!; return save({ id: lens.id, expectedRevision: currentLens(lens).number, edit }); }}

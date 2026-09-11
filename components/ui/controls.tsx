@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ComponentPropsWithRef, type ReactNode, type Ref } from "react";
 import { createPortal } from "react-dom";
-import { LoaderCircle } from "./icons";
+import { Spinner } from "./loading-status";
 
 type Variant = "header" | "primary" | "secondary" | "quiet" | "danger" | "content" | "medallion" | "card-title" | "canvas";
 type Appearance = { variant?: Variant; iconOnly?: boolean; busy?: boolean };
@@ -51,7 +51,7 @@ export function Button({ variant = "secondary", iconOnly = false, busy = false, 
     onPointerLeave={e => { hint.leave(); props.onPointerLeave?.(e); }}
     onFocus={e => { hint.show(); props.onFocus?.(e); }} onBlur={e => { hint.hide(); props.onBlur?.(e); }}
     onPointerDown={e => { hint.hide(); props.onPointerDown?.(e); }} onClick={e => { hint.hide(); props.onClick?.(e); }}>
-    {busy && <LoaderCircle className="ui-spin" aria-hidden="true" />}{children}
+    {busy && <Spinner />}{children}
   </button>{hint.tooltip}</>;
 }
 export function IconButton(props: Omit<ButtonProps, "iconOnly"> & { "aria-label": string }) { return <Button {...props} iconOnly />; }

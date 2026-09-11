@@ -1,9 +1,10 @@
 "use client";
+import { LoadingStatus } from "../../components/ui/loading-status";
 
 import { Button } from "../../components/ui/controls";
 
 import { useEffect, useId, useState } from "react";
-import { ArrowRight, LoaderCircle } from "../../components/ui/icons";
+import { ArrowRight } from "../../components/ui/icons";
 import { movesSchema, type ContextualMove, type TalkRequest } from "./generation";
 
 export default function MovesPanel({ source, prepared, busy, error, choose, explore, retryGeneration }: {
@@ -46,10 +47,7 @@ export default function MovesPanel({ source, prepared, busy, error, choose, expl
         <Button variant="quiet" className="wander-toggle" aria-expanded={showSuggestions} aria-controls={suggestionsId} onClick={() => setShowSuggestions(show => !show)}>{showSuggestions ? "Hide suggestions" : "Show suggestions"}</Button>
       </div>
       <div id={suggestionsId} hidden={!showSuggestions} aria-busy={loading}>
-        {loading && <>
-          <p className="wander-loading" role="status"><LoaderCircle aria-hidden="true" /> Finding tailored next steps…</p>
-          <div className="wander-skeletons" aria-hidden="true">{[0, 1].map(index => <div className="wander-skeleton" key={index}><span /><div><span /><span /></div></div>)}</div>
-        </>}
+        {loading && <LoadingStatus title="Finding tailored next steps…" />}
         {failure && <><p role="alert">{failure}</p>
           <Button disabled={busy} onClick={() => { setFailure(""); setLoading(true); setAttempt(n => n + 1); }}>Retry</Button>
           <p className="small-note">Try this starting move, or explore freely.</p></>}
@@ -59,7 +57,7 @@ export default function MovesPanel({ source, prepared, busy, error, choose, expl
         </section>)}
       </div>
     </section>
-    {busy && <p className="wander-loading" role="status"><LoaderCircle aria-hidden="true" /> Developing new directions…</p>}
+    {busy && <LoadingStatus title="Developing new directions…" />}
     {error && <><p role="alert">{error}</p><Button disabled={busy} onClick={retryGeneration}>Retry card</Button></>}
   </div>;
 }

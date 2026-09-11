@@ -26,6 +26,11 @@ while shared defaults are introduced beneath it.
 
 ## Components
 
+- `LoadingStatus`: dark green waiting banner with a cream ring, an action-specific
+  title and optional supporting text. Use for loading, generation and LLM waits;
+  keep completion, error and idle/listening states separate. `Spinner` supplies
+  the same ring in busy buttons. Motion stops with reduced-motion preferences.
+  Atlas background work stacks banners without blocking navigation.
 - `Button`: header (shared masthead framing and open/selected states), primary, secondary, quiet, danger, content, card-title and medallion
   variants. Defaults to `type="button"`; forms opt into submit. `busy` adds a
   spinner, aria-busy and disabled behavior. Existing explicit busy handlers remain.

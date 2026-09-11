@@ -1,4 +1,5 @@
 "use client";
+import { LoadingStatus } from "./loading-status";
 import { useState } from "react";
 import { Button, IconButton, Field, Input, Textarea, Select, Summary, MenuItem, SegmentedControl } from "./controls";
 import PanelHeader from "./panel-header";
@@ -15,6 +16,7 @@ export default function Gallery() {
       <Button disabled>Unavailable</Button><Button busy>Working…</Button>
       <Button aria-pressed={pressed} onClick={() => setPressed(!pressed)}>Toggle selection</Button>
     </div></section>
+    <section aria-label="Loading graphics"><h2>Loading and generation</h2><LoadingStatus title="Wander is generating new cards…" description="You can keep exploring the atlas." /><LoadingStatus title="Finding themes…" /></section>
     <section><h2>Icons and tooltips</h2><div className="ui-gallery-row">{Object.entries(actions).map(([key, action]) => <IconButton key={key} aria-label={action.label} onClick={() => setMessage(action.label)}><action.Icon /></IconButton>)}</div></section>
     <section><PanelHeader title="Expedition" image="/images/expedition-compass.png" close={() => setMessage("Panel close activated")} />
       <form onSubmit={e => { e.preventDefault(); setMessage("Form submitted"); }} className="ui-gallery-fields">
@@ -28,6 +30,6 @@ export default function Gallery() {
     </section>
     <section><h2>Disclosure and menu</h2><details><Summary>Details</Summary><p>Native keyboard disclosure with shared type and focus treatment.</p></details>
       <details><Summary variant="secondary">Menu</Summary><MenuItem onClick={() => setMessage("Menu action completed")}>Open idea</MenuItem><MenuItem disabled>Unavailable action</MenuItem></details>
-    </section><p role="status">{message}</p>
+    </section><p role="status" aria-label="Control result">{message}</p>
   </main>;
 }

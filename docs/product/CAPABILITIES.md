@@ -179,3 +179,15 @@ UI tests pass, including gallery axe, keyboard/form behavior and atlas journeys.
 Focused mocked voice replay passes after preserving Escape propagation through
 tooltips. The full replay stops at its older export expectation for `## Decision`,
 which the unchanged exporter omits. No live-provider or deployment claim.
+
+## Shared loading and generation feedback
+
+`LoadingStatus` and `Spinner` share the Wander banner's green/cream circular-ring
+pattern across Atlas startup, Wander, Weave, Develop, Constellation/Regroup, Talk,
+Voice setup/thinking, Expedition/suggestions, lens and selection requests.
+Background banners reserve room for the selection dock and Talk launcher.
+The UI gallery includes both banner forms; reduced motion stops ring animation.
+All 34 desktop/touch UI journeys pass with intercepted provider routes, including
+waiting, reply completion, failure, cancellation and mobile overlap checks.
+Voice status rendering is integrated; no live microphone/provider test is claimed.
+Local implementation only; no commit, publication or deployment.

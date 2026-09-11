@@ -1,4 +1,5 @@
 "use client";
+import { LoadingStatus, Spinner } from "../../components/ui/loading-status";
 import { materialize } from "../experiments/import";
 import { receiptSchema, type Candidate, type Operation, type Snapshot } from "../experiments/contracts";
 
@@ -233,7 +234,7 @@ function ThoughtCard({ id, data }: NodeProps<CardNode>) {
           <p className="card-summary">{thought.summary}</p>
           {ui.live?.sources.some((source) => source.id === id) && (
             <div className="generation-status nodrag nopan" aria-live="polite">
-              {ui.busy ? <p className="generation-inline"><span className="generation-spinner" aria-hidden="true" />{ui.live.feature === "wander" ? "Wandering…" : "Weaving…"}</p> : ui.live.error && <>
+              {ui.busy ? <LoadingStatus title={ui.live.feature === "wander" ? "Wandering…" : "Weaving…"} /> : ui.live.error && <>
                 <p role="alert">{ui.live.error}</p>
                 <Button onClick={ui.retry}>Retry {ui.live.feature === "wander" ? "Wander" : "Weave"}</Button>
               </>}
@@ -658,6 +659,15 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
   }
   const [live, setLive] = useState<{ sources: Thought[]; feature: LiveFeature; move?: ContextualMove; error?: string }>();
   const [busy, setBusy] = useState(false);
+  const progress = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const element = progress.current, field = element?.parentElement;
+    if (!element || !field) return;
+    const measure = () => field.style.setProperty("--generation-feedback-height", `${element.getBoundingClientRect().height}px`);
+    const observer = new ResizeObserver(measure);
+    observer.observe(element); measure();
+    return () => { observer.disconnect(); field.style.removeProperty("--generation-feedback-height"); };
+  }, []);
   const generating = useRef(false);
   const focusedRelations = focusedId ? relationshipsFor(focusedId, relationships).filter(e => connectionKind === "associations" ? e.kind === "association" : connectionKind === "context" ? e.kind === "context" : e.kind !== "association" && e.kind !== "context" && e.direction === (connectionKind === "parents" ? "incoming" : "outgoing")) : [];
   const relationPage = focusedRelations.slice(connectionPage * 6, connectionPage * 6 + 6);
@@ -1317,9 +1327,9 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
           {!!lenses.length && <Select aria-label="Constellation lens" value={activeLensId ?? ""} onChange={e => chooseLens(e.target.value || null)}><option value="">Constellation themes</option>{lenses.map(l => <option key={l.id} value={l.id}>{currentLens(l).name}</option>)}</Select>}
           <Button data-lenses-trigger onClick={() => open("lenses")}>Edit lenses</Button>
           {!activeLens && !themeCache && <Button disabled={themeBusy} onClick={() => void groupThemes()}>Find themes</Button>}
-          {themeBusy && <span role="status">Grouping themes…</span>}
+          {themeBusy && <LoadingStatus title="Finding themes…" />}
           {!activeLens && themeError && <><span role="alert">{themeError}</span><Button disabled={themeBusy} onClick={() => void groupThemes(themeRetryFull.current)}>Retry</Button></>}
-          {!activeLens && <Button data-regroup-trigger aria-busy={themeBusy} title={themeBusy ? "Finding themes…" : selected.length ? `Regroup ${selected.length} selected ideas` : "Regroup all ideas"} disabled={themeBusy || !themeCache} onClick={() => { setPanel(null); setFocusedId(null); setRegroupIds(selected.length ? selected : nodes.map(n => n.id)); }}><ArrowClockwise className={themeBusy ? "composer-spinner" : undefined} aria-hidden="true" />{themeBusy ? "Finding themes…" : "Regroup"}{!themeBusy && selected.length > 0 ? ` ${selected.length} selected` : ""}</Button>}
+          {!activeLens && <Button data-regroup-trigger aria-busy={themeBusy} title={themeBusy ? undefined : selected.length ? `Regroup ${selected.length} selected ideas` : "Regroup all ideas"} disabled={themeBusy || !themeCache} onClick={() => { setPanel(null); setFocusedId(null); setRegroupIds(selected.length ? selected : nodes.map(n => n.id)); }}>{themeBusy ? <Spinner /> : <ArrowClockwise aria-hidden="true" />}{themeBusy ? "Finding themes…" : "Regroup"}{!themeBusy && selected.length > 0 ? ` ${selected.length} selected` : ""}</Button>}
           {selected.length > 0 && <Button onClick={() => { setSelected([]); setVoiceFocusId(null); }}>Clear selection</Button>}
           {regroupedIds.length > 0 && <><span role="status">Regrouped {regroupedIds.length} ideas</span><Button onClick={() => void flow.fitView({ nodes: [...regroupedIds, ...themeCache!.groups.flatMap((g, i) => g.memberIds.some(id => regroupedIds.includes(id)) ? [`theme-${i}`] : [])].map(id => ({ id })), padding: .3, maxZoom: 1 })}>View regrouped ideas</Button></>}
           {!activeLens && themeUndo && <Button onClick={() => { clearHistory(); setThemeCache(themeUndo.cache); setPositions(themeUndo.positions); void flow.setViewport(themeUndo.viewport); setThemeUndo(undefined); setRegroupedIds([]); }}>Undo regroup</Button>}
@@ -1351,17 +1361,12 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
             Association
           </span>
         </div>
-        <div role="status" aria-live="polite" aria-atomic="true">
-          {busy && live && <div className="generation-progress">
-            <span className="generation-spinner" aria-hidden="true" />
-            <div>
-              <strong>{live.feature === "wander" ? "Wander is generating new cards…" : "Weave is combining your cards…"}</strong>
-              <span>You can keep exploring the atlas.</span>
-            </div>
-          </div>}
+        <div ref={progress} className="generation-progress-stack">
+          {busy && live && !weaveRunning && <LoadingStatus title={live.feature === "wander" ? "Wander is generating new cards…" : "Weave is combining your cards…"} description="You can keep exploring the atlas." />}
+          {panel !== "weave" && weaveRunning && <LoadingStatus title="Weave is combining your cards…" description="You can keep exploring the atlas."><Button onClick={() => open("weave")}>View Weave</Button></LoadingStatus>}
         </div>
-        {panel !== "weave" && (weaveRunning || weaveOutcome || weaveError) && <div className="weave-notice" role="status">
-          {weaveRunning ? <><span className="composer-spinner" aria-hidden="true" />Weaving… <Button onClick={() => open("weave")}>View Weave</Button></> : weaveError ? <>Weave needs attention. <Button onClick={() => open("weave")}>Review selections</Button></> : weaveOutcome && <><span>{weaveOutcome.title}</span><Button onClick={() => { inspect(weaveOutcome.id); setWeaveOutcome(undefined); }}>Open result</Button><Button aria-label="Dismiss Weave result" onClick={() => setWeaveOutcome(undefined)}>×</Button></>}
+        {panel !== "weave" && (!weaveRunning && (weaveOutcome || weaveError)) && <div className="weave-notice" role="status">
+          {weaveError ? <>Weave needs attention. <Button onClick={() => open("weave")}>Review selections</Button></> : weaveOutcome && <><span>{weaveOutcome.title}</span><Button onClick={() => { inspect(weaveOutcome.id); setWeaveOutcome(undefined); }}>Open result</Button><Button aria-label="Dismiss Weave result" onClick={() => setWeaveOutcome(undefined)}>×</Button></>}
         </div>}
         {selected.length > 0 && !regroupIds && (
           <div className="selection-bar light-selection-dock" role="toolbar" aria-label="Selected thoughts" onKeyDown={event => {
@@ -1595,7 +1600,7 @@ function LocalAtlas() {
     });
     return () => { cancelled = true; };
   }, []);
-  if (!loaded) return <main><p role="status">Loading this browser’s atlas…</p></main>;
+  if (!loaded) return <main><LoadingStatus title="Loading this browser’s atlas…" /></main>;
   return <ReactFlowProvider key={loaded.key}><Studio initial={loaded.save} restoreNotice={loaded.notice} saveEnabled={loaded.saveEnabled}
     replace={(save, notice = "") => setLoaded(current => ({ save, notice, saveEnabled: true, key: (current?.key ?? 0) + 1 }))} /></ReactFlowProvider>;
 }

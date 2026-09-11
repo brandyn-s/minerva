@@ -1,4 +1,5 @@
 "use client";
+import { LoadingStatus } from "../../components/ui/loading-status";
 import { useEffect, useRef, useState } from "react";
 import { Button, Field, Select, Summary } from "../../components/ui/controls";
 import { currentLens, type Lens } from "../lenses/domain";
@@ -50,6 +51,7 @@ export default function GroupWeaveControls({ runId, lens, runStatus, place }: { 
     {open && <>
       <p>Choose two approaches, then decide what to carry forward. One Weave and its assessment use two calls from this expedition. It stays paused afterward.</p>
       <Button disabled={busy} onClick={() => void act(reload)}>Refresh group exploration</Button>
+      {!options && !error && <LoadingStatus title="Loading group exploration…" />}
       {options && <>
         <p className="small-note">{options.total} candidates · {options.callsRemaining} calls remaining{options.costLimitMicros ? ` · up to $${(options.costLimitMicros / 1e6).toFixed(2)} from the existing allowance` : " · synthetic fixture"}.</p>
         {options.status !== "paused" && <p role="status">Pause the expedition before preparing a Weave.</p>}
@@ -69,7 +71,7 @@ export default function GroupWeaveControls({ runId, lens, runStatus, place }: { 
         {stale && <p role="alert">The lens or run changed. Prepare again before submitting.</p>}
         <Button variant="primary" busy={busy} disabled={!!stale || draft.weave.selections.some(s => !s.text.trim())} onClick={() => void act(async () => { const data = await request({ action: "submit", runId, previewId: preview.id, weave: draft.weave }); setSubmitted(true); if (!data.dispatchStarted) setNotice("Weave saved. The worker could not start; retry its dispatch below."); await reload(); })}>Weave contributions · 2 calls</Button>
       </section>}
-      {options?.pending && <p role="status">A bounded group Weave is in progress. The expedition remains paused.</p>}
+      {options?.pending && <LoadingStatus title="Weave is combining these groups…" description="The expedition remains paused." />}
       {options?.history.slice().reverse().map(item => <section key={item.request.id} aria-label="Group Weave result">
         <h3>{item.request.operation.groupWeave!.groups.map(g => g.label).join(" × ")}</h3>
         <p role="status">{item.status} · {item.calls} of 2 calls used.</p>
@@ -85,7 +87,7 @@ export default function GroupWeaveControls({ runId, lens, runStatus, place }: { 
           <Button disabled={busy} onClick={() => void act(async () => { await place(item.candidate!.id, destinations[item.request.id] || null); setNotice("Result placed in this lens. Exploration still uses its separately applied configuration."); })}>Place result in lens</Button>
         </>}
       </section>)}
-      {busy && <p role="status">Updating group Weave…</p>}{notice && <p role="status">{notice}</p>}{error && <p role="alert">{error} Contribution drafts are kept.</p>}
+      {busy && <LoadingStatus title="Updating group Weave…" />}{notice && <p role="status">{notice}</p>}{error && <p role="alert">{error} Contribution drafts are kept.</p>}
     </>}
   </section>;
 }

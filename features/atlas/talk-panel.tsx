@@ -1,9 +1,10 @@
 "use client";
+import { LoadingStatus } from "../../components/ui/loading-status";
 import { boundContext } from "./context";
 
 import { Button, Textarea } from "../../components/ui/controls";
 
-import { ArrowUp, ArrowDown, LoaderCircle } from "../../components/ui/icons";
+import { ArrowUp, ArrowDown } from "../../components/ui/icons";
 import PanelHeader from "../../components/ui/panel-header";
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import type { TalkRequest } from "./generation";
@@ -97,8 +98,9 @@ export default function TalkPanel({ focusedId, open, close, cards, selectedIds, 
       {messages.map((message, index) => <section key={index} className={`talk-message talk-message-${message.role}`}>
         <h3>{message.role === "user" ? "You" : "Minerva"}</h3><MessageContent text={message.content} />
       </section>)}
-      {(reply || busy) && <section className="talk-message talk-message-assistant"><h3>Minerva</h3><MessageContent text={reply || "Thinking…"} /></section>}
+      {reply && <section className="talk-message talk-message-assistant"><h3>Minerva</h3><MessageContent text={reply} /></section>}
     </div>
+    {busy && <LoadingStatus title={reply ? "Minerva is replying…" : "Minerva is thinking…"} />}
     {showLatest && <Button className="talk-latest" onClick={() => { followReply.current = true; setShowLatest(false); if (transcript.current) transcript.current.scrollTop = transcript.current.scrollHeight; }}>Latest message <ArrowDown /></Button>}
     {error && <div><p role="alert">{error}</p><Button disabled={busy} onClick={() => void send(true)}>Retry</Button></div>}
     <form onSubmit={(event) => { event.preventDefault(); void send(); }}>
@@ -113,7 +115,7 @@ export default function TalkPanel({ focusedId, open, close, cards, selectedIds, 
     {/* Canvas navigation may hide Talk without ending its active voice session. */}
     {(open || voiceBusy) && <VoiceButton focusedId={focusedId} cards={cards} selectedIds={selectedIds} messages={messages} onMessages={setMessages}
       onBusy={setVoiceBusy} disabled={busy || !!error} />}
-      <Button iconOnly className="composer-icon composer-send" title="Send message" aria-label={busy ? "Replying…" : "Send"} disabled={busy || voiceBusy || !!error || !draft.trim()} type="submit">{busy ? <LoaderCircle className="composer-spinner" aria-hidden="true" /> : <ArrowUp aria-hidden="true" />}</Button>
+      <Button iconOnly className="composer-icon composer-send" title="Send message" aria-label={busy ? "Replying…" : "Send"} busy={busy} disabled={voiceBusy || !!error || !draft.trim()} type="submit">{!busy && <ArrowUp aria-hidden="true" />}</Button>
       </div></div>
     </form>
   </aside>;
