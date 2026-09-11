@@ -1,3 +1,4 @@
+import { canAdvance, groupWeaveProgress, settleGroupWeave } from "./group-weave";
 import { randomUUID } from "node:crypto";
 import { appliedSelection, selectWithLens, selectionReceipt, type SelectionConfiguration, type SelectionDecision } from "./selection";
 import { behaviorSpace } from "./contracts";
@@ -22,7 +23,7 @@ export function chooseOperation(run: Run, candidates: Candidate[], selection?: {
 }
 function candidateFrom(op: Operation, result: Awaited<ReturnType<typeof executeOperation>>, candidates: Candidate[]): Candidate {
     const id = randomUUID();
-    const parents = op.selection?.parentIds ?? op.sources.map(s => candidates.findLast(c => c.snapshot.id === s.id && c.snapshot.revision === s.revision)?.id ?? `${s.id}@${s.revision}`);
+    const parents = op.groupWeave?.groups.map(g => g.candidateId) ?? op.selection?.parentIds ?? op.sources.map(s => candidates.findLast(c => c.snapshot.id === s.id && c.snapshot.revision === s.revision)?.id ?? `${s.id}@${s.revision}`);
     const rootIds = parents.length ? [...new Set(parents.flatMap(p => candidates.find(c => c.id === p)?.rootIds ?? [p]))] : [id];
     return { id, snapshot: { ...result.cards[0], id: op.kind === "develop" ? op.sources[0].id : id, revision: op.kind === "develop" ? op.sources[0].revision + 1 : 1 }, ...(result.weaveMappings ? { weaveMappings: result.weaveMappings } : {}), operationId: op.id, parents, exposure: op.exposure.map(s => `${s.id}@${s.revision}`), rootIds, admission: "pending", at: new Date().toISOString() };
 }
@@ -50,24 +51,28 @@ export async function proposeIntervention(store: ExperimentStore, input: {
 export async function tick(store: ExperimentStore, runId: string, provider: Provider, owner = randomUUID()): Promise<boolean> {
     (await store.recover(Date.now()));
     const run = (await store.get(runId));
-    if (!run || run.status !== "running")
+    if (!run || !canAdvance(run))
         return false;
     const candidates = (await corpus(store, run.id)), attempts = (await store.attempts(run.id));
-    if (attempts.length >= 3 && attempts.slice(-3).every(a => ["failed", "uncertain"].includes(a.status))) {
+    const directed = run.groupWeave ? await groupWeaveProgress(store, run.id, run.groupWeave) : undefined;
+    if (directed?.finished) { await settleGroupWeave(store, run.id, directed.request.id); return false; }
+    if (directed?.inFlight) return false;
+    if (!directed && attempts.length >= 3 && attempts.slice(-3).every(a => ["failed", "uncertain"].includes(a.status))) {
         (await store.transaction(async () => { const r = (await store.get(run.id))!; r.status = "completed"; r.reason = "Three consecutive failed or uncertain attempts; partial evidence retained"; (await store.save(r)); }));
         return false;
     }
     const config = await appliedSelection(store, run);
     const selection = config ? { config, decision: selectWithLens(candidates, config, Math.floor(run.calls / 2)) } : undefined;
-    const reassessment = (await store.all<{
+    const reassessment = directed ? undefined : (await store.all<{
         id: string;
         candidateId: string;
         reason: string;
     }>(run.id, "assessment-request")).find(q => !attempts.some(a => a.assessmentRequestId === q.id));
-    const pending = reassessment ? candidates.find(c => c.id === reassessment.candidateId) : candidates.find(c => !c.assessment && !attempts.some(a => a.candidateId === c.id && a.stage === "assessment"));
-    const intervention = (await store.interventions(run.id)).find(i => i.status === "proposed");
+    const pending = directed ? directed.candidate : reassessment ? candidates.find(c => c.id === reassessment.candidateId) : candidates.find(c => !c.assessment && !attempts.some(a => a.candidateId === c.id && a.stage === "assessment"));
+    const intervention = directed ? undefined : (await store.interventions(run.id)).find(i => i.status === "proposed");
     let op: Operation;
-    if (pending)
+    if (directed) op = directed.request.operation;
+    else if (pending)
         op = (await store.record<Operation>(pending.operationId))!;
     else if (intervention) {
         const candidate = (await store.record<Candidate>(intervention.candidateId))!;
@@ -76,7 +81,7 @@ export async function tick(store: ExperimentStore, runId: string, provider: Prov
     else
         op = chooseOperation(run, candidates, selection);
     const manifest = pending ? planAssessment(pending, op) : planOperation(op);
-    const attempt: Attempt = { selectionAtPlanning: run.selection?.id, controlVersionAtPlanning: run.controlVersion ?? 0, corpusVersionAtPlanning: run.corpusVersion ?? 0, maxCallsAtPlanning:run.maxCalls, assessmentRequestId: reassessment?.id, id: randomUUID(), runId: run.id, sequence: run.calls + 1, stage: pending ? "assessment" : "generation", candidateId: pending?.id, operation: op, status: "reserved", owner, leaseUntil: Date.now() + 120000, reservedMicros: run.callReservationMicros, cost: "reserved-upper-bound", manifest, at: new Date().toISOString() };
+    const attempt: Attempt = { groupWeaveId: directed?.request.id, selectionAtPlanning: run.selection?.id, controlVersionAtPlanning: run.controlVersion ?? 0, corpusVersionAtPlanning: run.corpusVersion ?? 0, maxCallsAtPlanning:run.maxCalls, assessmentRequestId: reassessment?.id, id: randomUUID(), runId: run.id, sequence: run.calls + 1, stage: pending ? "assessment" : "generation", candidateId: pending?.id, operation: op, status: "reserved", owner, leaseUntil: Date.now() + 120000, reservedMicros: run.callReservationMicros, cost: "reserved-upper-bound", manifest, at: new Date().toISOString() };
     if (!(await store.reserve(attempt)))
         return false;
     if (intervention && !pending) {
@@ -121,6 +126,7 @@ export async function tick(store: ExperimentStore, runId: string, provider: Prov
     finally {
         clearTimeout(timer);
         clearInterval(cancellation);
+        if (directed) await settleGroupWeave(store, run.id, directed.request.id);
     }
     return true;
 }

@@ -83,6 +83,11 @@ not configure an Expedition store. Use fixture mode for synthetic local testing.
   connections exercise concurrent application and in-flight reservation races.
 - `git diff --check` verifies patch whitespace.
 
-Synthetic provider responses establish software behavior. This slice has no
-hosted UI deployment, live model comparison or human usefulness acceptance.
-Cross-group contribution Weave is outside this slice.
+Release 2B is merged in [PR #103](https://github.com/brandyn-s/minerva/pull/103)
+as `1e5a90d58a81b25d2268d737277222a8e53dbda3`; CI and production deployment
+passed. The installed application guard and deployed API passed a synthetic
+owned-run check: eight candidates, two applied representatives, still paused,
+zero calls. The check removed its own records afterward.
+Synthetic responses establish software behavior; live model comparison and human
+usefulness acceptance remain open. Cross-group contribution Weave is specified
+separately in [Release 2C](lenses-release-2c.md).

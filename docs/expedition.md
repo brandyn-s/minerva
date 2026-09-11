@@ -43,6 +43,10 @@ re-read this state. SQLite remains available for the separate local worker.
 [Lens selection](lenses-release-2b.md) adds an explicit preview/application
 boundary for a settled, paused run, versioned selection receipts and matching
 readings. Its writer guard is a deployment prerequisite for existing databases.
+[Cross-group Weave](lenses-release-2c.md) adds one explicitly prepared Weave and
+assessment while paused, within the existing allowance. The existing worker
+executes only that request and leaves the run paused. Publishing this increment
+requires the updated writer guard described in its contract.
 
 ## Setup and verification
 

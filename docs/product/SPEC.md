@@ -169,6 +169,10 @@ Atlas lenses are browser-owned; run lenses use complete immutable candidate
 references. [Release 2B](../lenses-release-2b.md) adds explicit population preview
 and atomic application to a settled, paused Expedition, deterministic selection,
 exact generation receipts and readings under the applied lens. Resume is separate.
+[Release 2C](../lenses-release-2c.md) lets the user choose exact candidates from
+two reviewed groups, prepare contributions through the shared Weave editor, and
+execute one Weave plus assessment within the existing allowance while paused.
+Result placement is an explicit lens edit; it does not reapply selection.
 
 ### C08: Contextual creative moves
 

@@ -59,7 +59,7 @@ try {
   if (postgres) await assert.rejects(other.query('UPDATE expedition.runs SET value=$2 WHERE id=$1', [id, { ...beforeLegacy, calls: beforeLegacy.calls + 1 }]), /current selection worker/);
   else {
     const legacy = new DatabaseSync(dir + '/runs.sqlite');
-    try { assert.throws(() => legacy.prepare('UPDATE runs SET value=? WHERE id=?').run(JSON.stringify({ ...beforeLegacy, calls: beforeLegacy.calls + 1 }), id), /minerva_selection_writer/); } finally { legacy.close(); }
+    try { assert.throws(() => legacy.prepare('UPDATE runs SET value=? WHERE id=?').run(JSON.stringify({ ...beforeLegacy, calls: beforeLegacy.calls + 1 }), id), /minerva_(selection|group_weave)_writer/); } finally { legacy.close(); }
   }
   assert.deepEqual(await store.get(id), beforeLegacy);
   await applySelection(other, id, currentPreview.id); assert.equal((await store.get(id)).status, 'running', 'Idempotent replay must not pause a resumed run');

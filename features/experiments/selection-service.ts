@@ -11,6 +11,7 @@ export type SelectionApplication = { id: string; previewId: string; runId: strin
 async function snapshot(store: Store, runId: string, lensId: string) {
   const run = await store.get(runId);
   if (!run || run.status !== "paused") throw new Error("Pause this expedition before previewing or applying a lens.");
+  if (run.groupWeave) throw new Error("Wait for the in-flight group Weave to settle before applying a lens.");
   const attempts = await store.attempts(runId);
   for (const a of attempts) if (a.status === "reserved" && a.leaseUntil < Date.now()) { a.status = "uncertain"; a.error = "Worker lease expired; reservation retained; invocation is not replayed"; await store.saveAttempt(a); }
   if (attempts.some(a => a.status === "reserved")) throw new Error("Wait for the in-flight call to settle before applying a lens.");

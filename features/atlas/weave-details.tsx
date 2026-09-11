@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button, Field, Summary, Textarea } from "../../components/ui/controls";
 import type { Thought, CardRevision } from "./domain";
 import type { Snapshot } from "../experiments/contracts";
-import type { WeaveReview } from "../experiments/weave";
+import { contributionSource, type WeaveReview } from "../experiments/weave";
 import { snapshotOf } from "./weave";
 
 export default function WeaveDetails({ card, revision, review, variant, compare }: {
@@ -20,7 +20,7 @@ export default function WeaveDetails({ card, revision, review, variant, compare 
     <p className="small-note">The explanations below are model claims about this result. Your notes stay separate.</p>
     {input.interaction && <p>Requested interaction: {input.interaction}</p>}
     {input.selections.map(selection => {
-      const source = operation.sources.find(s => s.id === selection.sourceId)!;
+      const source = contributionSource(operation.sources, selection)!;
       const mapping = revision.weaveMappings!.find(m => m.selectionId === selection.id)!;
       return <section key={selection.id} className="weave-source">
         <h3>{source.title}</h3><p>{selection.text}</p>
