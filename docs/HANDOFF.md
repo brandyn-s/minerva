@@ -27,7 +27,7 @@ Other stale selectors now match current Card, toolbar and Merge behavior.
 CI runs the full replay with an isolated production server and synthetic worker,
 worker-process restarts and PostgreSQL controls. Failure evidence is uploaded.
 
-Verification: 48 unit tests, lint, typecheck and production build pass. All ten
+Verification: 68 unit tests, lint, typecheck and production build pass. All 24
 desktop/touch UI tests pass, including seed cancellation, replacement, reload
 and fixture restoration. The complete production browser replay, focused
 Voice replay, selection-only start, multi-run worker restart and native PostgreSQL
