@@ -917,9 +917,7 @@ try {
   await page.getByRole("dialog").getByRole("textbox", { name: /^Body/ }).fill("Edited theme content"); await button("Save changes").click();
   await close();
   await button("Constellation").click(); await settle();
-  assert.equal(themeRequests, 4);
-  assert.equal(themeInputs[3].cards.length, 1, "only edited cards are submitted");
-  assert.ok(themeInputs[3].existingGroups.length);
+  assert.equal(themeRequests, 3, "returning after an edit does not silently request new grouping");
   page.off("request", track);
   await page.screenshot({ path: `${artifacts}/constellation.png` });
   await writeFile(`${artifacts}/perspectives.json`, JSON.stringify({ themeRequests, themeInputs, beforeIds, beforeChosen }, null, 2));
@@ -934,7 +932,7 @@ try {
   await page.reload(); await page.locator(".thought").first().waitFor(); await settle();
   const restoredGroups = await storedSave();
   for (const field of ["themeCache", "positions", "cameras", "selected", "perspective"]) assert.deepEqual(restoredGroups[field], groupedSave[field], `${field} survives a Constellation reload`);
-  assert.equal(themeRequests, 4, "restoring grouping does not call the model");
+  assert.equal(themeRequests, 3, "restoring grouping does not call the model");
   await page.unroute("**/api/themes");
   await writeFile(`${artifacts}/wander-weave.json`, JSON.stringify(evidence, null, 2));
   await resetFixture();
