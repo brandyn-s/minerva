@@ -1,10 +1,13 @@
 import { z } from "zod";
 import { operationSchema, receiptSchema } from "../experiments/contracts";
+import { weaveMappingsSchema, weaveReviewSchema, validateWeaveMappings } from "../experiments/weave";
 import { stableJson } from "./stable-json";
 import { expeditionStepSchema, readingSchema, validateReading } from "./expedition";
 import { themesSchema, cardHash } from "./themes";
 import { firstRevision } from "./card-revisions";
 import { mallFixture } from "./fixture";
+import { lensSchema } from "../lenses/domain";
+import { remapAtlasLens } from "./lenses";
 
 const id = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9_-]*$/, "Invalid atlas id").refine(s => !["__proto__", "constructor", "prototype"].includes(s) && !s.startsWith("theme-"), "Invalid atlas id");
 const point = z.object({ x: z.number(), y: z.number() });
@@ -13,10 +16,12 @@ const view = z.enum(["Lineage", "Evolution", "Constellation"]);
 export const revisionSchema = z.object({ number: z.number().int().positive(), time: z.iso.datetime(), cause: z.string(),
   title: z.string(), summary: z.string(), body: z.string(), contribution: z.string().optional(), prepared: z.boolean().optional(), note: z.string().optional(),
   receipt: receiptSchema.optional(),
+  weaveMappings: weaveMappingsSchema.optional(),
   experiment: z.object({ candidateId: z.string(), operation: operationSchema }).optional(),
   branch: z.object({ intent: z.string(), step: z.number().int().min(1).max(3), runId: z.string() }).optional() });
 const thought = z.object({
   revisions: z.array(revisionSchema).min(1),
+  weaveReviews: z.array(weaveReviewSchema).optional(),
   id, importedFromId: id.optional(), revision: z.number().int().nonnegative(), title: z.string(), summary: z.string(), body: z.string(),
   kind: z.enum(["brief", "proposal", "recombination", "exploration"]),
   contribution: z.string(), move: z.object({ title: z.string(), question: z.string(), preview: z.string() }),
@@ -37,6 +42,8 @@ const saveV3 = z.object({
   sizes: z.record(view, z.record(id, size)),
   layoutHistory: z.record(view, z.object({ undo: z.array(change).max(50), redo: z.array(change).max(50) })),
   folds: z.array(id),
+  lenses: z.array(lensSchema).optional(), activeLensId: z.string().uuid().nullable().optional(),
+  lensLayouts: z.record(z.string(), layout).optional(),
   version: z.literal(3), intents: z.array(z.object({ id, text: z.string().trim().min(1).max(500) })), thoughts: z.array(thought).min(1), relationships: z.array(relationship),
   positions: z.record(view, z.record(id, point)), cameras: z.partialRecord(view, camera),
   perspective: view, selected: z.array(id), active: id, focusedId: id.nullable(),
@@ -49,8 +56,29 @@ const saveV3 = z.object({
   for (const card of save.thoughts) {
     const last = card.revisions.at(-1)!;
     if (!last || (last.contribution !== undefined && card.contribution !== last.contribution) || card.revisions.some((r, i) => r.number !== i + 1) || card.revision !== last.number || (["title", "summary", "body"] as const).some(key => card[key] !== last[key])) fail("Invalid card revision history");
+    for (const revision of card.revisions) {
+      const input = (revision.receipt?.operation ?? revision.experiment?.operation)?.weave;
+      if (input || revision.weaveMappings) {
+        try { if (!input) throw new Error("Contribution inputs unavailable"); validateWeaveMappings(input, revision.weaveMappings ?? [], revision); }
+        catch { fail("Invalid saved contribution mappings"); }
+      }
+    }
+    for (const review of card.weaveReviews ?? []) if (!card.revisions.find(r => r.number === review.revision)?.weaveMappings?.some(m => m.selectionId === review.selectionId)) fail("Invalid contribution review reference");
   }
   if (new Set(save.intents.map(i => i.id)).size !== save.intents.length) fail("Duplicate intent ids");
+  if (new Set(save.lenses?.map(l => l.id)).size !== (save.lenses?.length ?? 0)) fail("Duplicate lens identity");
+  if (save.activeLensId && !save.lenses?.some(l => l.id === save.activeLensId)) fail("Missing active lens");
+  for (const lens of save.lenses ?? []) {
+    if (lens.scope.kind !== "atlas") fail("Run lenses belong to their expedition");
+    for (const member of lens.members) {
+      const revision = save.thoughts.find(c => c.id === member.sourceId)?.revisions.find(r => r.number === member.revision);
+      if (!revision || revision.title !== member.title || revision.summary !== member.summary) fail("Lens references a missing source revision");
+    }
+  }
+  for (const [key, value] of Object.entries(save.lensLayouts ?? {})) {
+    if (key !== "themes" && !save.lenses?.some(l => l.id === key)) fail("Missing lens layout owner");
+    if ([...Object.keys(value.positions), ...Object.keys(value.sizes)].some(id => !ids.has(id))) fail("Lens layout references a missing card");
+  }
   if (ids.size !== save.thoughts.length) fail("Duplicate card ids");
   if (new Set(save.relationships.map(e => e.id)).size !== save.relationships.length) fail("Duplicate edge ids");
   const refs = [...save.selected, save.active, ...(save.focusedId ? [save.focusedId] : []), ...save.relationships.flatMap(e => [e.from, e.to]),
@@ -178,11 +206,14 @@ export async function mergeAtlas(current: AtlasSave, incoming: AtlasSave) {
     const compatible = candidates.find(c => prefix(c, card) || prefix(card, c));
     let newId = compatible?.id ?? card.id;
     if (compatible) {
+      const reviews = [...(compatible.weaveReviews ?? [])];
+      for (const review of card.weaveReviews ?? []) if (!reviews.some(r => stableJson(r) === stableJson(review))) reviews.push(review);
       if (card.revisions.length > compatible.revisions.length) {
         const index = merged.thoughts.indexOf(compatible);
         merged.thoughts[index] = { ...card, id: compatible.id, importedFromId: compatible.importedFromId };
         updated++;
-      }
+      } else if (reviews.length > (compatible.weaveReviews?.length ?? 0)) updated++;
+      if (reviews.length) merged.thoughts[merged.thoughts.findIndex(c => c.id === compatible.id)].weaveReviews = reviews;
       ids.set(card.id, newId); continue;
     }
     if (merged.thoughts.some(c => c.id === newId)) {
@@ -213,6 +244,21 @@ export async function mergeAtlas(current: AtlasSave, incoming: AtlasSave) {
     if (!merged.expeditions.some(e => JSON.stringify(e) === JSON.stringify(next))) merged.expeditions.push(next);
   }
   for (const intent of incoming.intents) if (!merged.intents.some(i => i.text === intent.text)) merged.intents.push({ ...intent, id: crypto.randomUUID() });
+  for (const lens of incoming.lenses ?? []) {
+    const next = remapAtlasLens(lens, ids);
+    const same = (a: typeof next, b: typeof next) => stableJson({ ...a, id: "" }) === stableJson({ ...b, id: "" });
+    if (merged.lenses?.some(l => same(l, next))) continue;
+    const existing = merged.lenses?.find(l => l.id === next.id);
+    const prefix = (a: typeof next, b: typeof next) => a.revisions.length <= b.revisions.length && a.revisions.every((r, i) => stableJson(r) === stableJson(b.revisions[i])) && a.members.every(m => b.members.some(n => stableJson(m) === stableJson(n)));
+    if (existing && prefix(next, existing)) continue;
+    if (existing && prefix(existing, next)) merged.lenses = merged.lenses!.map(l => l.id === existing.id ? next : l);
+    else { if (existing) next.id = crypto.randomUUID(); (merged.lenses ??= []).push(next); }
+    const view = incoming.lensLayouts?.[lens.id];
+    if (view && !merged.lensLayouts?.[next.id]) (merged.lensLayouts ??= {})[next.id] = {
+      positions: Object.fromEntries(Object.entries(view.positions).map(([id, position]) => [ids.get(id)!, position])),
+      sizes: Object.fromEntries(Object.entries(view.sizes).map(([id, size]) => [ids.get(id)!, size])),
+    };
+  }
   merged.layoutHistory = emptyHistory();
   merged.folds = [...new Set([...merged.folds, ...incoming.folds.map(id => ids.get(id)!)])];
   return { save: atlasSaveSchema.parse(merged), added, updated, skipped: incoming.thoughts.length - added - updated };

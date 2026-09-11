@@ -1,0 +1,38 @@
+[
+  {
+    "id": "repair-supper",
+    "brief": "Make a vacant mall unit useful through a small community pilot.",
+    "sources": [
+      { "id": "meal", "revision": 1, "title": "A food hall", "summary": "Independent kitchens share tables and repeat visitors.", "body": "Independent kitchens serve affordable meals around shared tables. Visitors can linger and meet neighbors. Food preparation needs a clean area separate from dusty work. The pilot must fit in one vacant mall unit.", "contribution": "Shared meals and informal social time." },
+      { "id": "repair", "revision": 1, "title": "A tool library", "summary": "Borrow tools and learn practical repair from peers.", "body": "A lending collection reduces the cost of occasional repairs. Volunteer repair sessions let neighbors teach one another. Some repairs generate dust and noise; trained supervision and separate work surfaces are needed.", "contribution": "Borrowing tools and peer repair learning." }
+    ],
+    "contributions": ["Make waiting for a repair useful through shared meals.", "Borrow tools and get peer help completing a repair."],
+    "interaction": "Use the same visit while keeping food preparation separate from dusty repairs.",
+    "replacement": "Make waiting useful through short peer-taught lessons instead of a meal.",
+    "reviewFocus": "Does the result actually connect waiting and social activity, and preserve the practical separation constraint?"
+  },
+  {
+    "id": "offline-planning",
+    "brief": "Help a small team prepare a field visit without dependable connectivity.",
+    "sources": [
+      { "id": "local-plan", "revision": 1, "title": "A pocket field plan", "summary": "A local plan stays available without a network.", "body": "A phone stores the complete visit plan and records observations offline. No essential action requires connectivity. People can revise the plan locally and reconcile changes after returning.", "contribution": "Offline availability and explicit later reconciliation." },
+      { "id": "presence", "revision": 1, "title": "A shared coordination board", "summary": "A visible board lets people claim responsibilities.", "body": "Team members claim tasks and announce handoffs. The online version uses instant presence updates to avoid duplicate work. Responsibility and the last acknowledged handoff are visible to everyone.", "contribution": "Visible ownership and acknowledged handoffs." }
+    ],
+    "contributions": ["All essential work remains possible offline.", "Make responsibility and acknowledged handoffs visible."],
+    "interaction": "Retain useful coordination while exposing uncertainty when updates cannot be shared.",
+    "replacement": "Use a printed plan with handwritten changes, reconciled after the visit.",
+    "reviewFocus": "Does the synthesis quietly assume live connectivity, and does it distinguish an acknowledged handoff from a stale copy?"
+  },
+  {
+    "id": "neighborhood-exhibition",
+    "brief": "Create a small neighborhood exhibition that can change through participation.",
+    "sources": [
+      { "id": "oral-history", "revision": 1, "title": "An oral history cabinet", "summary": "Residents contribute memories with control over attribution.", "body": "Residents record short memories and choose whether to be named. They can withdraw a recording. Multiple accounts of the same event may conflict, and the archive keeps those disagreements visible.", "contribution": "Personal testimony with attribution and withdrawal choices." },
+      { "id": "street-model", "revision": 1, "title": "A changing model street", "summary": "Visitors rearrange a model to propose neighborhood futures.", "body": "Visitors move buildings and public spaces in a small physical model. Each arrangement proposes a possible future. A photograph records the arrangement and its author's explanation before the next visitor changes it.", "contribution": "Reversible proposals expressed through spatial arrangement." }
+    ],
+    "contributions": ["Keep conflicting memories and contributor control visible.", "Let visitors make reversible proposals in a spatial model."],
+    "interaction": "Connect accounts of the past to proposed futures without making one account authoritative.",
+    "replacement": "Let contributors withdraw their material while retaining a visible gap explaining that an account was removed.",
+    "reviewFocus": "Do disagreement and withdrawal survive the synthesis, or does the story become falsely unified?"
+  }
+]

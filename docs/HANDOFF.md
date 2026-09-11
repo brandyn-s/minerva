@@ -1,7 +1,7 @@
 # User-directed seed and Expedition regression repair
 
-State: implemented locally; uncommitted, not deployed.
-Base SHA: 43581f54f5f0696818259643d9e67ed40552c9d3 (PR #100).
+State: committed for merge; integrated with current main through PR #104.
+Base: origin/main at ad58c1c (PR #104).
 Branch: `fix/expedition-regressions`.
 Worktree: `/Users/brandyn.schult/code/minerva-expedition-regressions`.
 
@@ -38,5 +38,8 @@ Startup/check: use Node 24.20.0 / npm 12.0.2, run `npm run check`, then
 `npm run test:browser` (starts and cleans up its synthetic server/worker/database).
 Focused journey: `npm run test:expedition`. For a running dev server, use
 `MINERVA_UI_PORT=<port> npm run test:ui` to reuse it.
-Next role: owner reviews the local diff. Commit, push and deployment are pending.
+Next role: owner reviews the merged interaction. No further product scope opened.
 Implementation and verification boundaries: [Expedition](expedition.md).
+
+Current main’s lenses, selection receipts and cross-group contribution Weave are
+preserved. Explicit group Weaves bypass the automatic stagnation guard.

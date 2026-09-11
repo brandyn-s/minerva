@@ -1,24 +1,36 @@
 import { z } from "zod";
+import { selectionReceiptSchema } from "./selection";
+import { weaveInputSchema, weaveMappingsSchema, validateWeaveInput, type WeaveMapping } from "./weave";
 
 export const snapshotSchema = z.object({
   id: z.string().min(1).max(200), revision: z.number().int().positive(),
   title: z.string().max(1000), summary: z.string().max(8000), body: z.string().max(32000), contribution: z.string().max(8000).optional(),
 });
 export type Snapshot = z.infer<typeof snapshotSchema>;
+export const operationSourceSchema = snapshotSchema.extend({ candidateId: z.string().uuid().optional() });
 export const operationSchema = z.object({
   id: z.string().uuid(), version: z.literal(1), kind: z.enum(["root", "wander", "weave", "develop"]),
   goal: z.string().trim().min(1).max(2000), constraints: z.array(z.string().max(1000)).max(30),
-  sources: z.array(snapshotSchema).max(8), exposure: z.array(snapshotSchema).max(8).default([]),
+  sources: z.array(operationSourceSchema).max(8), exposure: z.array(snapshotSchema).max(8).default([]),
   intent: z.string().max(2000).default(""), intentId: z.string().optional(), intentVersion: z.number().int().positive().optional(),
   step: z.number().int().positive().default(1), count: z.number().int().min(1).max(3).default(1),
   runId: z.string().uuid().optional(),
+  weave: weaveInputSchema.optional(),
+  selection: selectionReceiptSchema.optional(),
+  groupWeave: z.object({ requestId: z.string().uuid(), lensId: z.string().uuid(), lensRevision: z.number().int().positive(), groups: z.array(z.object({ id: z.string(), label: z.string(), candidateId: z.string().uuid() })).length(2) }).optional(),
   strategy: z.object({ policy:z.string(), iteration:z.number().int().nonnegative(), reason:z.string() }).optional(),
 }).superRefine((o, ctx) => {
   const required = o.kind === "root" ? 0 : o.kind === "weave" ? 2 : 1;
   if ((o.kind === "weave" ? o.sources.length < required : o.sources.length !== required) || (o.kind === "root" && o.exposure.length)) ctx.addIssue({ code: "custom", message: "Invalid sources/exposure for operation" });
+  if (o.selection && (o.selection.parentIds.length !== o.sources.length || new Set(o.selection.parentIds).size !== o.selection.parentIds.length)) ctx.addIssue({ code: "custom", message: "Selection parent references must match the exact sources" });
+  if (o.groupWeave && (o.kind !== "weave" || !o.weave || o.sources.length !== 2 || new Set(o.groupWeave.groups.map(g => g.id)).size !== 2 || o.groupWeave.groups.some((g, i) => g.candidateId !== o.sources[i]?.candidateId))) ctx.addIssue({ code: "custom", message: "Group Weave requires two exact candidates from distinct groups" });
+  if (o.weave) {
+    try { if (o.kind !== "weave") throw new Error("Contribution selections require Weave."); validateWeaveInput(o.weave, o.sources); }
+    catch (error) { ctx.addIssue({ code: "custom", message: error instanceof Error ? error.message : String(error) }); }
+  }
 });
 export type Operation = z.infer<typeof operationSchema>;
-export const outputSchema = z.object({ cards: z.array(snapshotSchema.omit({ id: true, revision: true })).min(1).max(3), note: z.string().max(4000), contributions: z.array(z.string().max(2000)).max(8) });
+export const outputSchema = z.object({ cards: z.array(snapshotSchema.omit({ id: true, revision: true })).min(1).max(3), note: z.string().max(4000), contributions: z.array(z.string().max(2000)).max(8), weaveMappings: weaveMappingsSchema.optional() });
 export type OperationOutput = z.infer<typeof outputSchema>;
 export const behaviorSpace = {
   actor: ["individual", "pair", "group", "institution", "environment"],
@@ -36,8 +48,8 @@ export const assessmentSchema = z.object({
   actionability: z.enum(["supported", "unsupported", "unclear"]), explanation: z.string().max(4000),
 });
 export type Assessment = z.infer<typeof assessmentSchema> & { id: string; candidateId: string; version: 1; level: "textual" | "simulation" | "external"; assessor: string; at: string; sourceOperation: string };
-export type Candidate = { id: string; snapshot: Snapshot; operationId: string; parents: string[]; exposure: string[]; rootIds: string[]; assessment?: Assessment; admission: "pending" | "eligible" | "rejected"; at: string };
-export type Attempt = { maxCallsAtPlanning?:number; assessmentRequestId?:string; usage?: {inputTokens?:number;outputTokens?:number;totalTokens?:number}; id: string; runId: string; sequence: number; stage: "generation" | "assessment"; candidateId?: string; operation: Operation; status: "reserved" | "committed" | "failed" | "uncertain" | "cancelled"; owner: string; leaseUntil: number; reservedMicros: number; cost: "reserved-upper-bound"; manifest?: { model: string; system: string; prompt: string; schemaVersion: number; maxOutputTokens: number }; error?: string; at: string };
+export type Candidate = { id: string; snapshot: Snapshot; operationId: string; parents: string[]; exposure: string[]; rootIds: string[]; assessment?: Assessment; weaveMappings?: WeaveMapping[]; admission: "pending" | "eligible" | "rejected"; at: string };
+export type Attempt = { groupWeaveId?: string; selectionAtPlanning?: string; controlVersionAtPlanning?: number; corpusVersionAtPlanning?: number; maxCallsAtPlanning?:number; assessmentRequestId?:string; usage?: {inputTokens?:number;outputTokens?:number;totalTokens?:number}; id: string; runId: string; sequence: number; stage: "generation" | "assessment"; candidateId?: string; operation: Operation; status: "reserved" | "committed" | "failed" | "uncertain" | "cancelled"; owner: string; leaseUntil: number; reservedMicros: number; cost: "reserved-upper-bound"; manifest?: { model: string; system: string; prompt: string; schemaVersion: number; maxOutputTokens: number }; error?: string; at: string };
 export const runConfigSchema = z.object({
   title: z.string().max(200).optional(), direction: z.string().max(1000).optional(), owner: z.string().optional(),
   id: z.string().uuid(), goal: z.string().trim().min(1).max(2000), constraints: z.array(z.string().max(1000)).max(30).default([]),
@@ -48,8 +60,8 @@ export const runConfigSchema = z.object({
   provider: z.enum(["fixture", "gateway"]).default("fixture"), mode: z.enum(["explore", "goal"]).default("explore"),
 }).superRefine((c, ctx) => { if (c.provider === "gateway" && c.callReservationMicros === 0) ctx.addIssue({ code: "custom", message: "Live runs require an explicit conservative call allowance" }); });
 export type RunConfig = z.infer<typeof runConfigSchema>;
-export type Run = RunConfig & { version: 1; status: "running" | "paused" | "stopped" | "completed"; calls: number; reservedMicros: number; active: string[]; createdAt: string; reason?: string };
-export type Reading = { probes?: {id:string;candidateId:string;capacityPreserved:boolean;model:string}[]; preview?: {totalGroups:number;totalUnusual:number;maxCandidatesPerGroup:number}; id: string; runId: string; version: 1; at: string; through: number; representation: string; coverage: { candidates: number; assessed: number; excluded: number }; groups: { candidateCount?:number; mechanism: string; candidates: string[]; representative: string; roots: string[]; independent: boolean; status: "provisional group" | "candidate recurrence" }[]; unusual: string[]; observations: string[]; hypotheses: string[]; limitations: string[] };
+export type Run = RunConfig & { groupWeave?: string; selection?: { id: string; revision: number }; controlVersion?: number; corpusVersion?: number; version: 1; status: "running" | "paused" | "stopped" | "completed"; calls: number; reservedMicros: number; active: string[]; createdAt: string; reason?: string };
+export type Reading = { selection?: { configurationId: string; revision: number; lensId: string; lensRevision: number; step: number }; probes?: {id:string;candidateId:string;capacityPreserved:boolean;model:string}[]; preview?: {totalGroups:number;totalUnusual:number;maxCandidatesPerGroup:number}; id: string; runId: string; version: 1; at: string; through: number; representation: string; coverage: { candidates: number; assessed: number; excluded: number }; groups: { candidateCount?:number; mechanism: string; candidates: string[]; representative: string; roots: string[]; independent: boolean; status: "provisional group" | "candidate recurrence" | "reviewed group" }[]; unusual: string[]; observations: string[]; hypotheses: string[]; limitations: string[] };
 export type Intervention = { id: string; runId: string; readingId: string; candidateId: string; challenge: string; intent: string; operationKind: "wander" | "develop"; allowance: number; status: "proposed" | "running" | "completed" | "inconclusive"; operationId?: string; resultId?: string; outcome?: string; updatedReadingId?: string };
 
 export const receiptSchema = z.object({ operation: operationSchema, manifest: z.object({ model: z.string(), system: z.string(), prompt: z.string(), schemaVersion: z.number(), maxOutputTokens: z.number() }), status: z.literal("committed"), at: z.string() });

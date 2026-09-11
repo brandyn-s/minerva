@@ -141,6 +141,14 @@ interact. Preview selected material and intended interaction. Show each result
 with all parents and compare the actual output against the claimed contribution.
 Concatenated summaries and valid parent IDs do not prove meaningful inheritance.
 
+The current contribution-based Weave increment is specified in
+[Release 1](../weave-release-1.md): one editable contribution per source,
+optional exact excerpt, versioned input/output mappings, separate human
+interpretations, and frozen original/variant comparison. Whole-card Weave
+remains available. Completed evidence is durable; preparation drafts are
+session-only. A changed source is either retained at its saved revision or
+explicitly refreshed before generation.
+
 ### C07: Three perspectives
 
 Lineage, Evolution and Constellation operate on the same IDs, revisions,
@@ -153,6 +161,18 @@ Switching preserves useful selection, comparison and voice without triggering
 generation. Unknown records remain visible. Analysis does not silently rearrange
 the user's field. Context membership, ancestry, similarity and real-world causal
 claims must not be conflated.
+
+The current editable-lens increment is specified in
+[Release 2A](../lenses-release-2a.md): named interpretations with exact revision
+membership, split/merge/move, representatives, undo and independent arrangements.
+Atlas lenses are browser-owned; run lenses use complete immutable candidate
+references. [Release 2B](../lenses-release-2b.md) adds explicit population preview
+and atomic application to a settled, paused Expedition, deterministic selection,
+exact generation receipts and readings under the applied lens. Resume is separate.
+[Release 2C](../lenses-release-2c.md) lets the user choose exact candidates from
+two reviewed groups, prepare contributions through the shared Weave editor, and
+execute one Weave plus assessment within the existing allowance while paused.
+Result placement is an explicit lens edit; it does not reapply selection.
 
 ### C08: Contextual creative moves
 
@@ -167,7 +187,8 @@ cannot overwrite a choice. Pan/zoom does not restart planning; source edits
 do require revalidation. Preview affected sources before admission. A labeled
 generic fallback is not a substitute for contextual intelligence.
 Inspect a card in one activation; open/choose a move in at most two, excluding
-optional editing. After source selection, Weave is one further activation.
+optional editing. After source selection, Weave opens preparation; generating
+selected contributions or whole cards is one explicit further activation.
 
 Opening the chooser is local; planning suggestions and generating creative
 artifacts are distinct operations. Show valid saved suggestions and explicit

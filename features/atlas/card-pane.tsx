@@ -15,7 +15,11 @@ import {
 } from "../../components/ui/icons";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import type { Thought, Relationship } from "./domain";
+import type { Thought, Relationship, CardRevision } from "./domain";
+import type { Snapshot } from "../experiments/contracts";
+import type { WeaveReview } from "../experiments/weave";
+import WeaveDetails from "./weave-details";
+import { weaveRevision } from "./weave";
 import { cardConnections, cardEdit, wordDiff, type CardEdit } from "./card-revisions";
 import PanelHeader from "../../components/ui/panel-header";
 import DownloadButton from "./download-button";
@@ -37,6 +41,9 @@ type Props = {
   toggleFold: () => void;
   descendantCount: number;
   showBranch: () => void;
+  reviewWeave: (note: WeaveReview) => void;
+  variantWeave: (revision: CardRevision) => void;
+  compareWeave: (before: Snapshot, after: Snapshot) => void;
 };
 const tabs = ["Content", "Connections", "History"] as const;
 type Tab = (typeof tabs)[number];
@@ -124,6 +131,7 @@ export default function CardPane(props: Props) {
   const body = card.body.startsWith(card.summary)
     ? card.body.slice(card.summary.length).trimStart()
     : card.body;
+  const woven = weaveRevision(card);
   return (
     <aside
       className="detail-panel card-inspector unified-pane"
@@ -260,6 +268,7 @@ export default function CardPane(props: Props) {
               )}
               <h3>Contribution</h3>
               <p>{card.contribution}</p>
+              {woven && <WeaveDetails card={card} revision={woven} review={props.reviewWeave} variant={props.variantWeave} compare={props.compareWeave} />}
               {card.generation && (
                 <details>
                   <Summary>Generation context and mechanism</Summary>
@@ -388,6 +397,7 @@ export default function CardPane(props: Props) {
               <h3>Revision {item.number}{item.number === card.revision ? " · Current" : ""}</h3>
               <p className="small-note">{item.prepared ? "Prepared" : <time dateTime={item.time}>{new Date(item.time).toLocaleString()}</time>} · {item.cause}</p>
               {item.note && <p>Model claim: {item.note}</p>}
+              {item.weaveMappings && <WeaveDetails card={card} revision={item} review={props.reviewWeave} variant={props.variantWeave} compare={props.compareWeave} />}
               <h4>Title</h4><div className="revision-diff" aria-label="Title changes">{wordDiff(previous?.title ?? "", item.title).map((part, i) => part.kind === "added" ? <ins key={i}>{part.text}</ins> : part.kind === "removed" ? <del key={i}>{part.text}</del> : <span key={i}>{part.text}</span>)}</div>
               <h4>Summary</h4><p>{item.summary}</p>
               <h4>Body</h4><div className="revision-diff" aria-label="Body changes">{wordDiff(previous?.body ?? "", item.body).map((part, i) => part.kind === "added" ? <ins key={i}>{part.text}</ins> : part.kind === "removed" ? <del key={i}>{part.text}</del> : <span key={i}>{part.text}</span>)}</div>
