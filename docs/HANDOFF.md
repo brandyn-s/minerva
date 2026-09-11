@@ -1,45 +1,45 @@
-# Cross-group contribution Weave — Release 2C
+# User-directed seed and Expedition regression repair
 
-Release 2B is merged in PR #103 as
-`1e5a90d58a81b25d2268d737277222a8e53dbda3`; CI and Vercel passed.
-The stable alias and real hosted selection API are verified, with zero calls.
-Release 2C is verified locally and authorized for commit, merge and publication.
-Branch: `feat/cross-group-weave`.
-Worktree: `/Users/brandyn.schult/code/minerva-contribution-weave`.
-HEAD/base: `340ace416a38d993b001932fbb8c8a077e1ce685` (implementation base).
+State: committed for merge; integrated with current main through PR #104.
+Base: origin/main at ad58c1c (PR #104).
+Branch: `fix/expedition-regressions`.
+Worktree: `/Users/brandyn.schult/code/minerva-expedition-regressions`.
 
-Saved Expedition → Edit expedition lenses → reviewed lens → Explore across groups
-→ choose two groups and exact candidates → prepare contributions → submit.
-One Weave and assessment use two calls from the existing allowance. The run stays
-paused. Exact parents, contributions and result mappings survive reload; placing
-the result explicitly edits the lens without reapplying selection configuration.
-Scope, execution and deployment prerequisite: [Release 2C](lenses-release-2c.md).
+Menu → Start fresh replaces the browser atlas with one selected brief card from
+the user’s seed. Replacement is explicit; cancellation preserves the atlas.
+The seed persists across reloads, titles the atlas and supplies the brief context.
+Reset to fixture remains available. Existing server runs are retained.
 
-Verified: lint, TypeScript, 65 unit tests, production build, 22 desktop/touch
-journeys and `git diff --check`. Real production-built browser/API/SQLite checks
-cover 65 candidates, stale/ownership/origin rejection, duplicate submission,
-three separate worker processes, exact sources, result placement and reload.
-SQLite and actual Neon checks cover rollback, concurrent submission/admission,
-previous-writer compatibility, two calls and paused completion. Prior selection
-checks still pass. Synthetic providers only; no new live model efficacy claim.
+Automatic generation stops after three consecutive near-identical summaries and
+bodies, after the third assessment. Results remain inspectable and explicit
+interventions/reassessments can continue. The guard uses persisted records and
+preserves concurrent controls. It is a textual repetition guard, not a judgment
+of semantic novelty or observed goal completion.
 
-The updated 2C writer guard passed isolated Neon tests and is installed in the
-application schema using `scripts/setup-selection-guard.mjs`. Existing 2B writers
-remain compatible outside pending group Weaves. Restart local SQLite workers
-with current code.
+The local SQLite worker now processes runs sequentially per connection, fixing
+nested async transactions when several runs were runnable. Separate workers can
+operate concurrently. PostgreSQL continues to use its existing row locks.
 
-Local fixture demo: http://127.0.0.1:3092/ (production build + fixture worker).
-Open Expedition → “Cross-group Weave demo — synthetic” → Edit expedition lenses.
-Explore across groups shows a completed result; its placement created a new lens
-revision. Mark that revision reviewed before preparing another two-call Weave.
-Atlas-only dev server remains at http://127.0.0.1:3088/.
-Fixture database (ignored):
-`/Users/brandyn.schult/code/minerva-contribution-weave/.local/group-weave-demo-hucUNL/runs.sqlite`.
-Restart from this checkout: `sh .local/run-group-weave-demo.sh`.
-The launcher pins Node/npm and disables Gateway credentials. Stop its app/worker
-before rebuilding; it serves the existing production build. Recreate a separate
-fixture with `node scripts/verify-group-weave-api.mjs --keep-fixture` after build.
+The full browser replay follows the current durable API and retains coverage for
+frozen inputs, pause/resume/stop, shared operations, challenge/intervention,
+reading freshness, legacy-history import/export, camera, selection and inspection.
+Other stale selectors now match current Card, toolbar and Merge behavior.
+CI runs the full replay with an isolated production server and synthetic worker,
+worker-process restarts and PostgreSQL controls. Failure evidence is uploaded.
 
-Next role: owner reviews the 2C interaction and contribution evidence.
-Further product slices are not authorized yet.
-Human comparison of grouping quality and matched-budget exploration remains open.
+Verification: 68 unit tests, lint, typecheck and production build pass. All 24
+desktop/touch UI tests pass, including seed cancellation, replacement, reload
+and fixture restoration. The complete production browser replay, focused
+Voice replay, selection-only start, multi-run worker restart and native PostgreSQL
+17 controls/stagnation checks pass. No paid model runs or hosted changes.
+Artifacts: `evaluation-artifacts/browser`, `evaluation-artifacts/stagnation.png`.
+
+Startup/check: use Node 24.20.0 / npm 12.0.2, run `npm run check`, then
+`npm run test:browser` (starts and cleans up its synthetic server/worker/database).
+Focused journey: `npm run test:expedition`. For a running dev server, use
+`MINERVA_UI_PORT=<port> npm run test:ui` to reuse it.
+Next role: owner reviews the merged interaction. No further product scope opened.
+Implementation and verification boundaries: [Expedition](expedition.md).
+
+Current main’s lenses, selection receipts and cross-group contribution Weave are
+preserved. Explicit group Weaves bypass the automatic stagnation guard.

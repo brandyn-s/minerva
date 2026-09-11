@@ -17,11 +17,13 @@ let running=true;process.on('SIGTERM',()=>{running=false;});process.on('SIGINT',
 try{
  do{
   const runs=store.runnable();
-  await Promise.all(runs.slice(0,4).map(async run=>{
-   if(run.provider==='gateway'&&(process.env.MINERVA_EXPERIMENT_LIVE!=='1'||!(Number(process.env.MINERVA_GATEWAY_CALL_CEILING_MICROS)>0)||run.callReservationMicros<Number(process.env.MINERVA_GATEWAY_CALL_CEILING_MICROS))){store.control(run.id,'pause');console.error('Paused live run: enable live calls and configure a verified conservative per-call ceiling covered by the run allowance');return;}
+  // DatabaseSync has one transaction context. Overlapping async ticks on this
+  // connection can nest transactions; use separate worker processes for parallelism.
+  for(const run of runs.slice(0,4)){
+   if(run.provider==='gateway'&&(process.env.MINERVA_EXPERIMENT_LIVE!=='1'||!(Number(process.env.MINERVA_GATEWAY_CALL_CEILING_MICROS)>0)||run.callReservationMicros<Number(process.env.MINERVA_GATEWAY_CALL_CEILING_MICROS))){store.control(run.id,'pause');console.error('Paused live run: enable live calls and configure a verified conservative per-call ceiling covered by the run allowance');continue;}
    const provider=run.provider==='fixture'?fixtureProvider(run.seed+run.calls):load('features/experiments/gateway.ts').gatewayProvider;
    await tick(store,run.id,provider);
-  }));
+  }
   if(process.argv.includes('--once'))break;
   if(running)await new Promise(r=>setTimeout(r,300));
  }while(running);

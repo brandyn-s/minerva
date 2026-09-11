@@ -19,9 +19,9 @@ backlog.
 | C07 | Three perspectives and editable lenses | works locally | [Release 2B](../lenses-release-2b.md) is hosted at `1e5a90d`: reviewed population application and its installed writer guard pass a zero-call production API check. [Release 2C](../lenses-release-2c.md) works locally: exact cross-group sources, shared contribution preparation, two-call paused execution and explicit result classification. Native, desktop/touch, real browser/API/worker and isolated Neon concurrency checks pass. The updated 2C guard is installed; human usefulness remains open. |
 | C08 | Contextual creative moves | works locally | Root Wander opens three live Sonnet 5 suggestions for one selected card (`feature:moves`); choosing one reuses Wander to create one card and a derivation labelled with its move title. Real planner response, mocked prepared fallback/card Retry, lineage and >=73% zoom/Select checks passed. In memory only. |
 | C09 | Creative instruments | works locally | Wander, Weave and Develop share versioned operator contracts with Expedition; successful browser receipts preserve exact context. Configured local journaling uses shared admission and failed-attempt records. Other historical named instruments are not automatically implemented. |
-| C10 | Wander | works locally | Current Wander creates related directions; historical autonomous C10 requirements are implemented locally under Expedition. Root sampling, active-population policies and bounded worker execution are synthetic-test verified; hosted durability is unavailable. |
+| C10 | Wander | works locally | Current Wander creates related directions; historical autonomous C10 requirements are implemented locally under Expedition. Root sampling, active-population policies and bounded worker execution are synthetic-test verified; hosted storage uses Neon and Workflow; the local replay uses SQLite and a separate worker. |
 | C11 | Navigable interpretation and feedback | works locally | Local Expedition provides versioned provisional groups/recurrence, exact candidate evidence, explicit challenges/interventions, reassessment and bounded simulation probes. Synthetic end-to-end browser check passes; causal attractors and semantic efficacy remain unvalidated. |
-| C12 | Agent Drive | works locally | Expedition supports Neon and Vercel Workflow, plus local SQLite/worker, with pause/resume/stop, atomic reservations and uncertain-call retention. Selection plus an optional direction replaces the configuration form. See [execution](../expedition.md). No model self-report establishes success. Replaces browser-only chaining; old records remain history. |
+| C12 | Agent Drive | works locally | Expedition supports Neon and Vercel Workflow, plus local SQLite/worker, with pause/resume/stop, atomic reservations, uncertain-call retention and a restart-safe stop after three near-identical drafts. Selection plus an optional direction replaces the configuration form. See [execution](../expedition.md). No model self-report establishes success. Replaces browser-only chaining; old records remain history. |
 | C13 | Typed and spoken collaboration | works locally | Typed/voice collaboration uses bounded focused canvas context and discloses omissions; saved transcript remains complete. Context bounds have native tests. No fresh live voice or physical-device acceptance is claimed; see transition handoff for replay results. |
 | C14 | Outputs and reusable results | works locally | Browser v3 JSON and Markdown history exports remain; Merge extends compatible identities and retains divergent histories. Local experiment corpus has paginated, scoped queries and exact evidence lookup; private SQLite backup is separate from atlas export. |
 | C15 | Living-atlas experience | works locally | Original paper/ink atlas, serif cards, screen-space overview targets, explicit dense aggregation, dismissible inspection/comparison. IB01-IB06 exercised locally. Fable approves the M1 candidate; owner accepts the fixture experience with documented orientation/interaction friction. Production capability remains pending. |
@@ -179,3 +179,12 @@ UI tests pass, including gallery axe, keyboard/form behavior and atlas journeys.
 Focused mocked voice replay passes after preserving Escape propagation through
 tooltips. The full replay stops at its older export expectation for `## Decision`,
 which the unchanged exporter omits. No live-provider or deployment claim.
+
+### User-directed starting seed
+
+Menu → Start fresh replaces the browser atlas with one selected brief card from
+the user’s text, with an explicit replacement action and a cancel option. The
+heading follows the brief. The seed persists and is available as exploration
+context. Reset to fixture remains available; existing durable runs are retained.
+Desktop and touch browser tests cover cancellation, replacement, reload and
+fixture restoration without provider calls.

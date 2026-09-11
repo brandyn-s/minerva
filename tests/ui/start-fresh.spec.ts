@@ -1,0 +1,43 @@
+import type { AtlasSave } from "../../features/atlas/local-state";
+import { test, expect } from "@playwright/test";
+
+test("replace the fixture with a user seed, persist it and restore the fixture", async ({ page }, testInfo) => {
+  await page.route("**/api/**", route => route.fulfill({ status: 503, json: { error: "Offline UI verification" } }));
+  await page.goto("/");
+  const menu = page.locator(".atlas-menu > summary");
+  await menu.click();
+  await page.getByRole("button", { name: "Start fresh", exact: true }).click();
+  const form = page.getByRole("form", { name: "Start fresh" });
+  await expect(form.getByRole("button", { name: "Replace atlas with seed" })).toBeDisabled();
+  await form.getByLabel("Your seed").fill("   ");
+  await expect(form.getByRole("button", { name: "Replace atlas with seed" })).toBeDisabled();
+  await form.getByRole("button", { name: "Keep current atlas" }).click();
+  await expect(page.getByRole("button", { name: /^Thoughts 6/ })).toBeVisible();
+  await page.getByRole("button", { name: "Start fresh", exact: true }).click();
+  const seed = "A neighborhood tool library\nExplore ways for neighbors to share tools and practical skills.";
+  await form.getByLabel("Your seed").fill(seed);
+  await page.screenshot({ path: testInfo.outputPath("seed-form.png") });
+  await form.getByRole("button", { name: "Replace atlas with seed" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("A neighborhood tool library");
+  await expect(page.getByRole("button", { name: /^Thoughts 1/ })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("A neighborhood tool library");
+  await expect(page.getByRole("button", { name: /^Thoughts 1/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Wander", exact: true }).first()).toBeVisible();
+  const saved = await page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => { const r = indexedDB.open("minerva-atlas", 1); r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error); });
+    const result = await new Promise<AtlasSave>((resolve, reject) => { const r = db.transaction("saves").objectStore("saves").get("root-atlas"); r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error); });
+    db.close(); return result;
+  });
+  expect(saved.thoughts).toHaveLength(1);
+  expect(saved.thoughts[0].body).toBe(seed);
+  expect(saved.thoughts[0].kind).toBe("brief");
+  expect(saved.thoughts[0].revisions[0].body).toBe(seed);
+  expect(saved.relationships).toEqual([]);
+  expect(saved.messages).toEqual([]);
+  await page.screenshot({ path: testInfo.outputPath("new-seed.png") });
+  await menu.click();
+  await page.getByRole("button", { name: "Reset to fixture", exact: true }).click();
+  await page.getByRole("button", { name: "Confirm Reset", exact: true }).click();
+  await expect(page.getByRole("button", { name: /^Thoughts 6/ })).toBeVisible();
+});

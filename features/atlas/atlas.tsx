@@ -2,7 +2,7 @@
 import { materialize } from "../experiments/import";
 import { receiptSchema, type Candidate, type Operation, type Snapshot } from "../experiments/contracts";
 
-import { Button, Summary, Input, Select } from "../../components/ui/controls";
+import { Button, Summary, Input, Select, Field, Textarea } from "../../components/ui/controls";
 
 import Image from "next/image";
 import { ChevronDown, GitFork, Copy, Compass, Shuffle, Undo2, Redo2, LayoutGrid } from "../../components/ui/icons";
@@ -42,7 +42,7 @@ import { relationshipsFor } from "./domain";
 import { mallFixture } from "./fixture";
 import { wanderSchema, weaveSchema, moveCardSchema, type ContextualMove, type GeneratedCard, type LiveFeature } from "./generation";
 import { cardHash, validateThemes, type ThemeGroup } from "./themes";
-import { atlasSaveSchema, emptyHistory, recoveryCopies, discardRecovery, fixtureSave, restoreSave, writeSave, mergeAtlas, interruptSavedRuns, type AtlasSave } from "./local-state";
+import { atlasSaveSchema, emptyHistory, recoveryCopies, discardRecovery, fixtureSave, seedSave, restoreSave, writeSave, mergeAtlas, interruptSavedRuns, type AtlasSave } from "./local-state";
 import TalkPanel from "./talk-panel";
 import RegroupPanel from "./regroup-panel";
 import WeavePanel from "./weave-panel";
@@ -596,6 +596,9 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
   const [importFile, setImportFile] = useState<AtlasSave>();
   const [importBusy, setImportBusy] = useState(false);
   const [importNotice, setImportNotice] = useState("");
+  const [freshSeed, setFreshSeed] = useState<string | null>(null);
+  const [freshBusy, setFreshBusy] = useState(false);
+  const [freshError, setFreshError] = useState("");
   const [confirmation, setConfirmation] = useState<"reset" | "replace" | null>(null);
   const [recoveries, setRecoveries] = useState<{ key: string; value: unknown }[]>([]);
   useEffect(() => { void recoveryCopies().then(setRecoveries).catch(() => {}); }, []);
@@ -629,6 +632,20 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
     savingPaused.current = true;
     try { await writeSave(null); replace?.(fixtureSave()); }
     catch { savingPaused.current = false; setStorageNotice("The save could not be cleared. Reset was not applied."); }
+  }
+  async function startFresh() {
+    if (freshBusy || !freshSeed?.trim()) return;
+    setFreshBusy(true); setFreshError("");
+    savingPaused.current = true;
+    try {
+      const save = seedSave(freshSeed);
+      await writeSave(save);
+      replace?.(save, "Started from your seed.");
+    } catch {
+      savingPaused.current = false;
+      setFreshError("Your new atlas could not be saved. The current atlas is still open.");
+      setFreshBusy(false);
+    }
   }
   function exportAtlas() {
     let url: string | undefined;
@@ -1097,7 +1114,7 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
         </div>
         <div className="workspace-heading">
           <span className="instrument-label">{"Saved in this browser"}</span>
-          <h1>{"The mall, reconsidered"}</h1>
+          <h1>{nodes.find(node => node.data.thought.kind === "brief")?.data.thought.title ?? "Idea atlas"}</h1>
         </div>
         {<nav className="perspective-switch" aria-label="Atlas perspective">{(["Lineage", "Evolution", "Constellation"] as const).map(view => <Button variant="header" key={view} aria-pressed={perspective === view} onClick={() => switchPerspective(view)}>{view}</Button>)}</nav>}
       {<div className="atlas-header-actions">
@@ -1120,6 +1137,14 @@ function Studio({ initial, restoreNotice = "", saveEnabled = true, replace }: { 
           try { setImportFile(interruptSavedRuns(atlasSaveSchema.parse(JSON.parse(await file.text())))); }
           catch (error) { setImportNotice(`Invalid atlas file: ${error instanceof Error ? error.message : String(error)}`); }
         }} />
+        <Button onClick={() => { setFreshSeed(""); setFreshError(""); setConfirmation(null); }}>Start fresh</Button>
+        {freshSeed !== null && <form aria-label="Start fresh" onSubmit={event => { event.preventDefault(); void startFresh(); }}>
+          <Field label="Your seed"><Textarea autoFocus rows={5} value={freshSeed} disabled={freshBusy} onChange={event => setFreshSeed(event.target.value)} placeholder="An idea, question, or problem you want to explore…" /></Field>
+          <p>This replaces all cards, connections and Talk in this browser with your seed. Export the current atlas first if you want to keep it. Server expedition runs remain available.</p>
+          <Button type="submit" variant="primary" busy={freshBusy} disabled={!freshSeed.trim()}>Replace atlas with seed</Button>
+          <Button disabled={freshBusy} onClick={() => setFreshSeed(null)}>Keep current atlas</Button>
+          {freshError && <p role="alert">{freshError}</p>}
+        </form>}
         <Button onClick={() => setConfirmation("reset")}>Reset to fixture</Button>
         {importFile && <span>{importFile.thoughts.length} cards ready. <Button disabled={importBusy} onClick={() => setConfirmation("replace")}>Replace</Button> <Button disabled={importBusy} onClick={() => void importAtlas(true)}>Merge</Button> <Button onClick={() => setImportFile(undefined)}>Cancel import</Button></span>}
         {confirmation && <div role="group" aria-label="Confirm atlas change"><p>{confirmation === "reset" ? "Reset to fixture? This discards the atlas, Talk and expeditions." : "Replace this atlas with the backup? Current content will be discarded."}</p><Button onClick={() => { const action = confirmation; setConfirmation(null); if (action === "reset") void resetFixture(); else void importAtlas(false); }}>Confirm {confirmation === "reset" ? "Reset" : "Replace"}</Button><Button onClick={() => setConfirmation(null)}>Keep current atlas</Button></div>}

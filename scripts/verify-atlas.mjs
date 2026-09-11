@@ -1,5 +1,10 @@
+import {verifyExpedition, startExpedition, waitForRun} from "./expedition-journey.mjs";
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
+import { loader } from "../tests/helpers/load-ts.mjs";
+const load = loader();
+const { operationSchema } = load("features/experiments/contracts.ts");
+const { planOperation } = load("features/experiments/operators.ts");
+import { createHash, randomUUID } from "node:crypto";
 import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { execFileSync } from "node:child_process";
@@ -46,6 +51,7 @@ if (process.env.MINERVA_WANDER_REGRESSION === "1") {
   await writeFile(`${artifacts}/wander-regression.json`, JSON.stringify({ source, output }, null, 2));
 }
 const button = (name) => page.getByRole("button", { name, exact: true });
+const clearSelection = async () => { if (await button("Clear selection").count()) await button("Clear selection").click(); };
 const transform = () =>
   page.locator(".react-flow__viewport").getAttribute("style");
 const settle = () => page.waitForTimeout(350);
@@ -106,8 +112,8 @@ if (process.env.MINERVA_SELECTION_DOCK_ONLY === "1") {
       await route.fulfill({ json: { card: { title: "Repair supper", summary: "Share tools and supper.", body: "A repair station beside shared tables." }, contributions: ["Shared tables", "Tools and skills"] } });
     });
     await action("Weave").click();
-    await action("Weaving…").waitFor();
-    assert.ok(await action("Weaving…").getAttribute("aria-busy") === "true");
+    await page.locator(".generation-progress").waitFor();
+    assert.equal(await action("Weave").count(), 0);
     await page.waitForFunction(() => [...document.querySelectorAll(".thought")].some(el => el.textContent.includes("Repair supper")));
     await action("Clear selection").click();
     await dock.waitFor({ state: "hidden" });
@@ -117,38 +123,8 @@ if (process.env.MINERVA_SELECTION_DOCK_ONLY === "1") {
   process.exit(0);
 }
 if (process.env.MINERVA_EXPEDITION_ONLY === "1") {
-  try {
-    await page.goto(base);
-    await page.getByRole("button", { name: "Expedition panel", exact: true }).click();
-    assert.ok(await button("Start expedition").isDisabled());
-    await page.getByText("Select one card on the atlas to begin.").waitFor();
-    await close();
-    await page.getByRole("button", { name: "Select A food hall", exact: true }).click();
-    await page.getByRole("button", { name: "Expedition panel", exact: true }).click();
-    await page.getByLabel("Where would you like to take this idea?").fill("Find a practical way to bring people here on weekday evenings.");
-    const steps = page.getByRole("group", { name: "Maximum steps" });
-    await steps.getByRole("radio", { name: "3", exact: true }).check();
-    await page.screenshot({ path: `${artifacts}/expedition-setup-desktop.png` });
-    await page.setViewportSize({ width: 390, height: 844 });
-    assert.equal(await page.locator(".expedition-panel").evaluate(el => el.scrollWidth <= el.clientWidth), true);
-    await button("Start expedition").scrollIntoViewIfNeeded();
-    await page.screenshot({ path: `${artifacts}/expedition-setup-mobile.png` });
-    await page.setViewportSize({ width: 1440, height: 900 });
-    let count = 0;
-    await page.route("**/api/expedition", route => {
-      const input = route.request().postDataJSON(); count++;
-      assert.equal(input.step, count);
-      return route.fulfill({ json: { card: { title: ["", "Repair supper club", "Bookable kitchen lessons", "Neighbourhood maker market"][count], summary: `Explore a different format: ${["", "repairing over dinner", "learning kitchen skills", "selling local crafts"][count]}.`, body: "A staffed table with shared activities." }, rationale: "A practical next step.", reached: false, reason: "More exploration remains." } });
-    });
-    await button("Start expedition").click();
-    await page.getByText("Step budget reached.", { exact: true }).waitFor();
-    assert.equal(count, 3);
-    assert.equal(await page.locator(".expedition-steps > li").count(), 3);
-    await button("New expedition").click();
-    await page.getByLabel("Where would you like to take this idea?").waitFor();
-    assert.deepEqual(errors, []);
-    console.log("Expedition setup: empty state, selection, three steps, completion and responsive layout passed.");
-  } finally { await browser.close(); streamServer.close(); }
+  try { await verifyExpedition(page, base, artifacts); assert.deepEqual(errors, []); }
+  finally { await browser.close(); streamServer.close(); }
   process.exit(0);
 }
 const catalogueRow = (target, title) => target.locator(".catalogue-entry").filter({ has: target.getByText(title, { exact: true }) });
@@ -169,7 +145,7 @@ async function selectCatalogue(target, title, only = false) {
   await target.getByRole("button", { name: "Close panel", exact: true }).click();
 }
 async function focusInspected(target) {
-  const title = await target.getByRole("dialog").getByRole("heading", { level: 2 }).first().innerText();
+  const title = await target.getByRole("dialog").getAttribute("aria-label");
   await target.getByRole("button", { name: "Close panel", exact: true }).click();
   await target.getByRole("button", { name: /^Thoughts / }).click();
   await focusFromIndex(target, title);
@@ -208,7 +184,7 @@ async function verifyDevelopment() {
   const original = card(start, "food");
   await inspectFromIndex(original.title);
   for (let edit = 1; edit <= 2; edit++) {
-    await button("Edit").click();
+    await button("More card actions").click(); await button("Edit").click();
     await page.getByLabel("Title", { exact: true }).fill(`A ${edit === 1 ? "small" : "winter"} food hall`);
     await page.getByLabel("Summary", { exact: true }).fill(`Summary ${edit}`);
     await page.getByLabel("Body", { exact: true }).fill(edit === 1 ? "A small warm hall." : "A small winter hall.");
@@ -518,7 +494,7 @@ try {
   await close();
   assert.equal(await transform(), selectedCamera);
   assert.equal(await page.locator(".thought.chosen").count(), 2);
-  await button("Clear selection").click();
+  await clearSelection();
 
   await page.route("**/api/moves", route => route.fulfill({ json: { moves: [
     { title: "Try a workshop", question: "Who could learn here?", preview: "Host a repair workshop." },
@@ -526,19 +502,20 @@ try {
     { title: "Invite neighbors", question: "Who could join?", preview: "Run an open evening." },
   ] } }));
 
+  console.log("Atlas: Wander and Weave, retry and camera");
   // Wander and Weave: injected failure on the source card, retry and lineage.
-  // MINERVA_LIVE=1 opts into two expedition steps and one reading; voice requires VOICE_ONLY too.
+  // Live direct-operation checks are explicit opt-ins; durable Expedition uses a synthetic worker.
   const live = process.env.MINERVA_LIVE_TALK_MOVES === "1";
   const evidence = { mode: live ? "live Gateway" : "mocked responses", url: base, model: "anthropic/claude-sonnet-5" };
   const card = (title) => ({ title, summary: `${title} summary`, body: `${title} concrete draft.` });
   const mocked = {
     wander: { cards: [card("Repair apprenticeships"), card("Borrow a workshop")] },
-    weave: { card: card("Cook and mend evenings"), contributions: ["Food brings people together.", "Tools enable shared repairs.", "Independent shops provide flexible storefronts."] },
+    weave: { card: card("Cook and mend evenings"), contributions: ["Food brings people together.", "Tools enable shared repairs."] },
   };
-  async function assertGenerationVisible() {
+  async function assertGenerationVisible(camera, selection) {
     await settle();
-    assert.ok(parseInt(await page.getByLabel("Zoom level").textContent(), 10) >= 73, "generation stays above overview zoom");
-    assert.ok(await page.locator(".thought.chosen .select-card").first().isVisible(), "new card Select control is visible");
+    assert.equal(await transform(), camera, "generation completion preserves the camera");
+    assert.deepEqual((await storedSave()).selected, selection, "generation completion preserves deliberate selection");
   }
   async function selectFromIndex(title) {
     await selectCatalogue(page, title);
@@ -547,12 +524,11 @@ try {
   for (const feature of ["wander", "weave"]) {
     if (feature === "wander") await selectFromIndex("A shared tool library");
     else {
-      await button("Clear selection").click();
+      await clearSelection();
       await selectFromIndex("A food hall");
       await selectFromIndex("A shared tool library");
       assert.equal(await button("Weave").isEnabled(), true, "two parents remain supported");
-      await selectFromIndex("Independent retail shops");
-      assert.equal(await button("Weave").isEnabled(), true, "three parents can be woven");
+
     }
     if (feature === "wander") {
       assert.equal(await page.locator(".card-actions").count(), 0, "cards no longer repeat the move action");
@@ -584,15 +560,40 @@ try {
       }
       if (attempts === 1) await route.fulfill({ status: 500, json: { error: `${label} test failure` } });
       else if (live && process.env.MINERVA_LIVE_EXISTING === "1") await route.continue();
-      else await route.fulfill({ json: mocked[feature] });
+      else {
+        const output = { ...mocked[feature] };
+        if (feature === "weave") {
+          const operation = operationSchema.parse({ ...evidence.weaveInput, id: randomUUID(), version: 1, kind: "weave", goal: "Combine these ideas", constraints: [] });
+          output.receipt = { operation, manifest: planOperation(operation), status: "committed", at: new Date().toISOString() };
+        }
+        await route.fulfill({ json: output });
+      }
     });
+    const progress = page.locator(".generation-progress");
+    let response, retryCamera, retrySelection;
+    if (feature === "weave") {
+      await button(label).click();
+      await button("Weave whole cards").click();
+      await button("Weaving…").waitFor();
+      release();
+      await page.getByRole("dialog", { name: "Prepare Weave" }).getByRole("alert").waitFor();
+      assert.equal(await page.locator(".thought").count(), total, "failure adds no cards");
+      pending = new Promise(resolve => { release = resolve; });
+      const responsePromise = page.waitForResponse(r => r.url().endsWith("/api/weave") && r.status() === 200);
+      await button("Weave whole cards").click();
+      await button("Weaving…").waitFor();
+      await close();
+      await settle();
+      retryCamera = await transform(); retrySelection = (await storedSave()).selected;
+      release(); response = await responsePromise;
+    } else {
     await button(label).click();
     if (feature === "wander") await button("Explore freely").click();
-    const progress = page.locator(".generation-progress");
+
     await progress.waitFor();
     assert.match(await progress.innerText(), feature === "wander" ? /Wander is generating new cards/ : /Weave is combining your cards/);
-    assert.equal(await button(feature === "wander" ? "Wandering…" : "Weaving…").isDisabled(), true);
-    const actionSpinner = button(feature === "wander" ? "Wandering…" : "Weaving…").locator(".generation-spinner");
+    assert.equal(await page.locator('.selection-bar button').filter({ hasText: /^(Wander|Weave|Expedition)$/ }).count(), 0, "unavailable generation actions are hidden while busy");
+    const actionSpinner = progress.locator(".generation-spinner");
     assert.equal(await actionSpinner.isVisible(), true, "active action has a visible spinner");
     const rotationBefore = await actionSpinner.evaluate((el) => getComputedStyle(el).transform);
     await page.waitForTimeout(150);
@@ -607,7 +608,7 @@ try {
     await page.mouse.move(260, 550, { steps: 5 });
     await page.mouse.up();
     assert.notEqual(await transform(), beforePendingPan, "the atlas remains usable during generation");
-    await button("Clear selection").click();
+    await clearSelection();
     await page.setViewportSize({ width: 390, height: 844 });
     await settle();
     assert.equal(await progress.isVisible(), true);
@@ -628,8 +629,10 @@ try {
     await sourceCard.getByRole("button", { name: `Retry ${label}`, exact: true }).click();
     await progress.waitFor();
     assert.equal(await progress.isVisible(), true, "retry restores progress without a selection");
+    retryCamera = await transform(); retrySelection = (await storedSave()).selected;
     release();
-    const response = await responsePromise;
+    response = await responsePromise;
+    }
     const output = await response.json();
     evidence[feature] = output;
     await writeFile(`${artifacts}/wander-weave.json`, JSON.stringify(evidence, null, 2));
@@ -638,10 +641,10 @@ try {
     total += cards.length;
     await page.waitForFunction((count) => document.querySelectorAll(".thought").length === count, total);
     await settle();
-    await assertGenerationVisible();
+    await assertGenerationVisible(retryCamera, retrySelection);
     assert.equal(await progress.count(), 0, "progress clears on success");
     assert.equal(attempts, 2, "only the explicit retry makes the next request");
-    assert.equal(await page.locator(".react-flow__edge").count(), 7 + (feature === "wander" ? cards.length : evidence.wander.cards.length + 3));
+    assert.equal(await page.locator(".react-flow__edge").count(), 7 + (feature === "wander" ? cards.length : evidence.wander.cards.length + 2));
     for (const result of cards) {
       assert.ok(result.title && result.summary && result.body);
       await inspectFromIndex(result.title);
@@ -649,20 +652,20 @@ try {
       assert.equal(await inspection.locator(".card-pane-markdown").innerText(), result.body);
       await inspection.getByRole("tab", { name: /^Connections/ }).click();
       const links = inspection.locator(".card-pane-lineage > section").first().locator(".card-pane-relation");
-      assert.equal(await links.count(), feature === "wander" ? 1 : 3);
+      assert.equal(await links.count(), feature === "wander" ? 1 : 2);
       assert.match(await links.first().innerText(), /derived from revision 1/i);
       if (feature === "weave") {
-        assert.equal(evidence.weaveInput.length, 3);
-        assert.equal(output.contributions.length, 3);
+        assert.equal(evidence.weaveInput.sources.length, 2);
+        assert.equal(output.contributions.length, 2);
         for (const contribution of output.contributions) assert.ok((await links.allInnerTexts()).join(" ").includes(contribution));
         await focusInspected(page);
         const navigation = page.getByRole("region", { name: "Focused card connections" });
         await navigation.locator(".focus-connections > summary").click();
         await navigation.getByRole("button", { name: "Show ancestors", exact: true }).click();
         const wovenId = (await storedSave()).thoughts.find(c => c.title === result.title).id;
-        assert.deepEqual((await page.locator(".react-flow__node.chain-highlighted").evaluateAll(nodes => nodes.map(n => n.dataset.id))).sort(), [wovenId, "food", "tools", "retail"].sort());
-        assert.deepEqual(await navigation.getByRole("list", { name: "ancestors chain" }).getByRole("button").allTextContents(), ["A food hall", "A shared tool library", "Independent retail shops"]);
-        assert.equal(await page.locator(".react-flow__node.chain-dimmed").count(), total - 4);
+        assert.deepEqual((await page.locator(".react-flow__node.chain-highlighted").evaluateAll(nodes => nodes.map(n => n.dataset.id))).sort(), [wovenId, "food", "tools"].sort());
+        assert.deepEqual(await navigation.getByRole("list", { name: "ancestors chain" }).getByRole("button").allTextContents(), ["A food hall", "A shared tool library"]);
+        assert.equal(await page.locator(".react-flow__node.chain-dimmed").count(), total - 3);
         await navigation.getByRole("button", { name: "Clear", exact: true }).click();
         assert.equal(await page.locator(".chain-highlighted").count(), 0);
         await button("Open card").click();
@@ -673,7 +676,7 @@ try {
     await page.unroute(`**/api/${feature}`);
   }
   // Typed conversation: failure, retry, streamed response, selected context and follow-up history.
-  await button("Clear selection").click();
+  await clearSelection();
   let talkAttempts = 0;
   const talkInputs = [];
   await page.route("**/api/talk", async (route) => {
@@ -781,10 +784,11 @@ try {
   });
   await button(`Try ${chosenMove.title}`).click();
   await page.getByRole("dialog").getByRole("alert").waitFor();
+  const moveCamera = await transform(), moveSelection = (await storedSave()).selected;
   await button("Retry card").click();
   total++;
   await page.waitForFunction((count) => document.querySelectorAll(".thought").length === count, total);
-  await assertGenerationVisible();
+  await assertGenerationVisible(moveCamera, moveSelection);
   await inspectFromIndex("Morning repair table");
   await page.getByRole("tab", { name: /^Connections/ }).click();
   assert.match(await page.locator(".card-pane-relation").innerText(), /derived from revision 1/i);
@@ -853,10 +857,11 @@ try {
   });
   const cardIds = () => page.locator(".react-flow__node:has(.thought)").evaluateAll(elements => elements.map(e => e.dataset.id).sort());
   const chosenIds = () => page.locator(".react-flow__node:has(.thought.chosen)").evaluateAll(elements => elements.map(e => e.dataset.id).sort());
+  await clearSelection(); await selectFromIndex("A food hall"); await selectFromIndex("A shared tool library");
   const beforeIds = await cardIds(), beforeChosen = await chosenIds();
   assert.ok(beforeChosen.length);
   const requests = [];
-  const track = request => requests.push(request.url());
+  const track = request => { if (new URL(request.url()).pathname.startsWith("/api/")) requests.push(request.url()); };
   page.on("request", track);
   await button("Compare").click();
   const comparison = await page.locator(".comparison-grid").innerText();
@@ -865,6 +870,7 @@ try {
   for (const view of ["Evolution", "Lineage", "Constellation", "Evolution", "Constellation", "Lineage"]) {
     const start = requests.length;
     await button(view).click(); await settle();
+    if (view === "Constellation" && await button("Find themes").count()) await button("Find themes").click();
     if (view === "Constellation") await page.getByText(/\d+ ideas · \d+ themes/).waitFor({ timeout: 90000 });
     await settle();
     assert.equal(await page.locator(".comparison-grid").innerText(), comparison);
@@ -885,7 +891,7 @@ try {
     }
     assert.deepEqual(await cardIds(), beforeIds);
     assert.deepEqual(await chosenIds(), beforeChosen);
-    if (view !== "Constellation") assert.deepEqual(requests.slice(start), [], `${view} must not request the network`);
+    if (view !== "Constellation") assert.deepEqual(requests.slice(start), [], `${view} must not call application APIs`);
   }
   assert.equal(themeRequests, 1);
   await close();
@@ -911,9 +917,7 @@ try {
   await page.getByRole("dialog").getByRole("textbox", { name: /^Body/ }).fill("Edited theme content"); await button("Save changes").click();
   await close();
   await button("Constellation").click(); await settle();
-  assert.equal(themeRequests, 4);
-  assert.equal(themeInputs[3].cards.length, 1, "only edited cards are submitted");
-  assert.ok(themeInputs[3].existingGroups.length);
+  assert.equal(themeRequests, 3, "returning after an edit does not silently request new grouping");
   page.off("request", track);
   await page.screenshot({ path: `${artifacts}/constellation.png` });
   await writeFile(`${artifacts}/perspectives.json`, JSON.stringify({ themeRequests, themeInputs, beforeIds, beforeChosen }, null, 2));
@@ -928,7 +932,7 @@ try {
   await page.reload(); await page.locator(".thought").first().waitFor(); await settle();
   const restoredGroups = await storedSave();
   for (const field of ["themeCache", "positions", "cameras", "selected", "perspective"]) assert.deepEqual(restoredGroups[field], groupedSave[field], `${field} survives a Constellation reload`);
-  assert.equal(themeRequests, 4, "restoring grouping does not call the model");
+  assert.equal(themeRequests, 3, "restoring grouping does not call the model");
   await page.unroute("**/api/themes");
   await writeFile(`${artifacts}/wander-weave.json`, JSON.stringify(evidence, null, 2));
   await resetFixture();
@@ -942,131 +946,12 @@ try {
   assert.equal(await page.locator(".reader-contents button").count(), 6);
   await close();
 
-  // C12/C11: expedition lifecycle and navigable interpretations.
-  const expeditionEvidence = [];
-  const frozenGoal = "  Find a testable evening repair service for the mall.  ";
-  const expPanel = page.getByRole("dialog", { name: "Expedition", exact: true });
-  const readingFixture = {
-    groups: [{ mechanism: "Shared repair sessions", steps: [1, 2] }],
-    changes: [{ step: 2, why: "The second step adds a timed booking mechanism." }],
-    observations: [{ kind: "observation", text: "Both cards describe staffed sessions.", steps: [1, 2] }],
-    hypotheses: [{ kind: "hypothesis", text: "Bookings may reduce idle staff time.", steps: [2] }],
-    experiments: [{ text: "Invite six residents to a one-hour repair table.", steps: [1] }, { text: "Offer two booking windows and measure attendance.", steps: [2] }],
-    coverage: { text: "No pricing, accessibility or weekend schedule was tried.", steps: [1, 2] },
-  };
-  for (const condition of ["budget", "claim", "stagnation", "stop", ...(process.env.MINERVA_LIVE === "1" ? ["live"] : [])]) {
-    await resetFixture(); await page.locator(".thought").first().waitFor();
-    await selectFromIndex("A shared tool library");
-    const calls = [], outputs = [];
-    let releaseStop;
-    const held = new Promise(resolve => { releaseStop = resolve; });
-    await page.route("**/api/expedition", async route => {
-      const input = route.request().postDataJSON(); calls.push(input);
-      if (condition === "stop" && input.step === 2) await held;
-      if (condition === "live") {
-        const response = await route.fetch({ timeout: 90000 });
-        const output = await response.json();
-        outputs.push(output);
-        await writeFile(`${artifacts}/expedition-live.json`, JSON.stringify({ calls, outputs }, null, 2));
-        assert.equal(response.status(), 200, JSON.stringify(output));
-        return route.fulfill({ response, json: output });
-      }
-      const title = condition === "stagnation" ? ["", "Evening repair table", "Evening repair table!", "Evening repair table."][input.step] : `Expedition ${condition} card ${input.step}`;
-      const output = { card: { ...card(title), summary: condition === "stagnation" ? "A staffed repair table in the mall." : `${title} summary` },
-        rationale: `Rationale for step ${input.step}`, reached: condition === "claim", reason: condition === "claim" ? "This draft describes the requested service." : "Further exploration remains." };
-      outputs.push(output);
-      await route.fulfill({ json: output }).catch(() => {});
-    });
-    await button("Expedition").click();
-    const goal = condition === "live" ? "Develop two distinct, connected drafts toward a testable evening repair service, first defining a session format and then a booking experiment." : frozenGoal;
-    await page.getByLabel("Where would you like to take this idea?").fill(goal);
-    await page.getByRole("group", { name: "Maximum steps" }).getByRole("radio", { name: condition === "stagnation" ? "5" : "2", exact: true }).check();
-    await button("Start expedition").click();
-    assert.equal(await page.getByLabel("Where would you like to take this idea?").count(), 0, "goal cannot be edited after start");
-    if (condition === "stop") {
-      await page.waitForFunction(() => document.querySelector(".expedition-steps")?.children.length === 1);
-      while (calls.length < 2) await page.waitForTimeout(25);
-      await button("Close panel").click();
-      await button("Clear selection").click();
-      await button("Expedition panel").click();
-      await button("Stop").click(); releaseStop(); await settle();
-    }
-    await page.locator(".expedition-stop").waitFor({ timeout: 180000 });
-    await settle(); // React Flow measures new cards before rendering their edges.
-    const count = condition === "claim" || condition === "stop" ? 1 : condition === "stagnation" ? 3 : 2;
-    assert.equal(calls.length, condition === "stop" ? 2 : count, "one request per step, no retries or extra steps");
-    assert.equal(await page.locator(".expedition-steps > li").count(), count);
-    assert.equal(await page.locator(".thought").count(), 6 + count, "all completed work remains on atlas");
-    await page.waitForFunction(expected => document.querySelectorAll(".react-flow__edge").length === expected, 7 + count, { timeout: 5000 });
-    assert.equal(await page.locator(".react-flow__edge").count(), 7 + count, "each step has one derivation edge");
-    assert.equal(await page.locator(".expedition-goal").textContent(), goal, "frozen goal is unchanged at the end");
-    const stopReason = await page.locator(".expedition-stop").innerText();
-    if (condition === "stop") assert.match(stopReason, /Step 2 was cancelled/);
-    assert.match(stopReason, condition === "claim" ? /Model claims/ : condition === "stop" ? /Stopped by you/ : condition === "stagnation" ? /Stagnation/ : /Step budget reached|Model claims/);
-    for (let i = 0; i < calls.length; i++) {
-      assert.equal(calls[i].goal, goal);
-      assert.equal(calls[i].step, i + 1);
-      assert.equal(calls[i].cards.length, i);
-      assert.equal(calls[i].frontier.title, i ? outputs[i - 1].card.title : "A shared tool library");
-    }
-    if (condition === "budget" || condition === "live") {
-      let readingCalls = 0;
-      await page.route("**/api/reading", async route => {
-        readingCalls++;
-        const input = route.request().postDataJSON();
-        assert.equal(input.goal, goal);
-        assert.deepEqual(input.cards.map(c => c.step), [1, 2]);
-        if (condition === "live") {
-          const response = await route.fetch({ timeout: 90000 });
-          const output = await response.json();
-          await writeFile(`${artifacts}/reading-live.json`, JSON.stringify({ input, output }, null, 2));
-          assert.equal(response.status(), 200, JSON.stringify(output));
-          return route.fulfill({ response, json: output });
-        }
-        return route.fulfill({ json: readingFixture });
-      });
-      await button("What this expedition suggests").click();
-      const reading = page.getByRole("region", { name: "What this expedition suggests" });
-      await reading.waitFor({ timeout: 90000 });
-      assert.equal(readingCalls, 1);
-      assert.ok(await reading.getByText("observation", { exact: true }).count());
-      assert.ok(await reading.getByText("hypothesis", { exact: true }).count());
-      const beforeChallenge = await page.locator(".thought").allTextContents();
-      await reading.getByRole("button", { name: "Challenge group 1" }).click();
-      await page.getByRole("region", { name: "User notes" }).getByText(/User note: I disagree/).waitFor();
-      assert.equal(readingCalls, 1, "Challenge never calls the model");
-      assert.deepEqual(await page.locator(".thought").allTextContents(), beforeChallenge);
-      for (const link of await reading.locator(".expedition-links button").all()) {
-        await link.click();
-        const step = Number((await link.innerText()).match(/Step (\d+)/)[1]);
-        assert.equal(await page.getByRole("region", { name: "Focused card connections" }).locator(".focus-heading strong").innerText(), outputs[step - 1].card.title, "every reading reference focuses its actual card");
-        const id = calls[1].cards[0].id;
-        if (step === 1) {
-          const rect = await page.locator(`[data-id="${id}"]`).boundingBox();
-          assert.ok(rect.x >= 0 && rect.y >= 0, "reading link focuses the actual card");
-        }
-      }
-      await button("Close panel").click();
-      await inspectFromIndex(outputs[0].card.title);
-      await button("More card actions").click(); await page.getByRole("dialog").getByRole("button", { name: "Edit", exact: true }).click();
-      await page.getByRole("dialog").getByRole("textbox", { name: /^Body/ }).fill("Edited expedition card after the reading."); await button("Save changes").click();
-      await close(); await button("Expedition panel").click();
-      await expPanel.getByText(/Stale reading/).waitFor();
-      if (condition === "budget") {
-        await button("Re-read").click();
-        await page.getByText(/Stale reading/).waitFor({ state: "hidden" });
-        assert.equal(readingCalls, 2);
-        assert.ok(await page.getByRole("region", { name: "User notes" }).isVisible(), "re-reading preserves user notes");
-      }
-      await page.screenshot({ path: `${artifacts}/expedition-${condition}.png` });
-      await page.unroute("**/api/reading");
-    }
-    expeditionEvidence.push({ condition, calls, outputs, stopReason });
-    await page.unroute("**/api/expedition");
-  }
-  await writeFile(`${artifacts}/expedition-replay.json`, JSON.stringify(expeditionEvidence, null, 2));
-  await resetFixture(); await page.locator(".thought").first().waitFor(); await settle(); await fit();
+  // C12/C11: use the durable API and worker, retaining behavioral guarantees.
+  await resetFixture();
+  await verifyExpedition(page, base, artifacts);
+  await close(); await resetFixture(); await settle(); await fit();
 
+  console.log("Atlas: backup and recovery");
   // C01/C14: one versioned backup carries the complete browser atlas.
   await page.route("**/api/wander", route => route.fulfill({ json: mocked.wander }));
   await selectFromIndex("A shared tool library"); await button("Wander").click(); await button("Explore freely").click();
@@ -1081,18 +966,16 @@ try {
   const positionBefore = await durableNode.getAttribute("style");
   await durableNode.locator(".card-grip").focus(); await page.keyboard.press("ArrowRight"); await page.keyboard.press("ArrowDown");
   assert.notEqual(await durableNode.getAttribute("style"), positionBefore, "generated card moves");
-  await button("Clear selection").click(); await selectFromIndex("Durable repair apprenticeships");
-  await page.route("**/api/expedition", route => {
-    const input = route.request().postDataJSON();
-    return route.fulfill({ json: { card: card(`Durable expedition ${input.step}`), rationale: `Durable rationale ${input.step}`, reached: false, reason: "Continue exploring." } });
-  });
-  await page.route("**/api/reading", route => route.fulfill({ json: readingFixture }));
-  await button("Expedition").click(); await page.getByLabel("Where would you like to take this idea?").fill("Preserve this expedition"); await button("Start expedition").click();
-  await page.locator(".expedition-stop").waitFor(); await button("What this expedition suggests").click();
-  await page.getByRole("button", { name: "Challenge group 1" }).click();
-  await button("New expedition").click();
-  await page.getByLabel("Expedition history").selectOption("0");
-  await page.getByRole("region", { name: "User notes" }).waitFor();
+  await clearSelection(); await selectFromIndex("Durable repair apprenticeships");
+  const backupRun = await startExpedition(page, base, "Preserve this expedition");
+  const backupRunView = await waitForRun(page, base, backupRun.id, v => v.run.status === 'completed');
+  const expPanel = page.getByRole("dialog", { name: "Expedition", exact: true });
+  for (const candidate of backupRunView.items.slice(0, 2)) {
+    await expPanel.getByRole("button", { name: candidate.snapshot.title, exact: true }).click();
+    await expPanel.getByRole("button", { name: "Inspect on atlas", exact: true }).click();
+    await page.getByRole("dialog", { name: candidate.snapshot.title, exact: true }).waitFor();
+    await close(); await button("Expedition panel").click();
+  }
   await close();
   await page.route("**/api/talk", route => route.fulfill({ contentType: "application/x-ndjson", body: JSON.stringify({ text: "Durable mocked reply." }) + "\n" + JSON.stringify({ done: true }) + "\n" }));
   await button("Talk to Minerva").click(); await page.getByRole("textbox", { name: "Message Minerva" }).fill("Remember this Talk turn.");
@@ -1102,14 +985,15 @@ try {
   assert.equal(beforeReload.thoughts.length, 10);
   assert.equal(beforeReload.messages.length, 2);
   assert.ok(beforeReload.thoughts.find(c => c.id === durableId).provenance);
-  assert.equal(beforeReload.expeditions[0].notes.length, 1);
+  assert.equal(beforeReload.thoughts.filter(c => c.revisions.some(r => r.experiment)).length, 2, "Materialized evidence is in the browser backup");
   await page.reload(); await page.locator(".thought").first().waitFor(); await settle();
   const restored = await storedSave();
   for (const field of ["thoughts", "relationships", "positions", "selected", "messages", "expeditions", "activeExpedition", "cameras"]) assert.deepEqual(restored[field], beforeReload[field], `${field} survives reload`);
   await button("Talk to Minerva").click(); await page.getByText("Durable mocked reply.", { exact: true }).waitFor(); await close();
-  await button("Expedition panel").click(); await page.getByRole("region", { name: "User notes" }).waitFor();
-  await page.getByRole("region", { name: "What this expedition suggests" }).waitFor();
-  assert.equal(await page.getByText(/Stale reading/).count(), 0, "restoring unchanged cards does not stale the reading"); await close();
+  await button("Expedition panel").click(); await expPanel.getByRole("button", { name: "Preserve this expedition", exact: true }).click();
+  await expPanel.getByLabel("Challenge this reading", { exact: true }).waitFor();
+  assert.equal(await page.getByText('Reading may exclude recent or unassessed revisions.', { exact: true }).count(), 0);
+  await close();
   const backupDownload = page.waitForEvent("download").catch(() => null);
   try { await openAtlasMenu(); await button("Export atlas").click({ timeout: 5000 }); }
   catch (error) { await page.screenshot({ path: `${artifacts}/export-failure.png` }); throw error; }
@@ -1123,8 +1007,8 @@ try {
   const replacedSave = await storedSave();
   for (const field of ["thoughts", "relationships", "positions", "cameras", "messages", "expeditions", "selected", "activeExpedition"]) assert.deepEqual(replacedSave[field], backupState[field], `Replace restores ${field}`);
   await upload(backupBytes); await button("Merge").click(); await settle();
-  assert.equal(await page.locator(".thought").count(), 10, "Merge skips duplicate content hashes");
-  await page.getByText("Merge complete: 0 added, 10 skipped.", { exact: true }).waitFor();
+  assert.equal(await page.locator(".thought").count(), 10, "Merge does not duplicate unchanged revision histories");
+  await page.getByText("Merge complete: 0 added, 0 updated, 10 unchanged. Divergent histories are retained separately.", { exact: true }).waitFor();
   assert.deepEqual((await storedSave()).relationships, backupState.relationships, "Merge skips duplicate edges");
   assert.deepEqual((await storedSave()).expeditions, backupState.expeditions, "Merge skips duplicate expedition history");
   const uniqueImport = structuredClone(backupState);
@@ -1132,10 +1016,10 @@ try {
   incomingCard.title = "Imported distinct repair card"; incomingCard.revisions.at(-1).title = incomingCard.title;
   await upload(Buffer.from(JSON.stringify(uniqueImport))); await button("Merge").click();
   await page.waitForFunction(() => document.querySelectorAll(".thought").length === 11); await settle();
-  await page.getByText("Merge complete: 1 added, 9 skipped.", { exact: true }).waitFor();
+  await page.getByText("Merge complete: 1 added, 0 updated, 9 unchanged. Divergent histories are retained separately.", { exact: true }).waitFor();
   const mergedSave = await storedSave();
   const importedCard = mergedSave.thoughts.find(c => c.title === "Imported distinct repair card");
-  assert.notEqual(importedCard.id, durableId, "Merge gives new content a new id");
+  assert.notEqual(importedCard.id, durableId, "Merge retains divergent history with a separate id");
   assert.ok(mergedSave.relationships.some(e => e.from === importedCard.id || e.to === importedCard.id), "Merge remaps edge endpoints");
   assert.deepEqual(mergedSave.messages, backupState.messages, "Merge keeps the local conversation");
   const beforeBad = await storedSave();

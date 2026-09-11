@@ -1,31 +1,22 @@
-import {previewAccess,mockDirections} from "./expedition-browser-context.mjs";
 import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
-import {mkdirSync} from 'node:fs';
-const base=process.env.MINERVA_URL??'http://127.0.0.1:3012';
-const browser=await chromium.launch({headless:true});
-const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage();
-const errors=[];page.on('pageerror',e=>errors.push(e.message));
-try{
- await previewAccess(context);await mockDirections(page);
- const settings=await (await context.request.get(base+"/api/expedition/runs")).json();assert.equal(settings.limitMicros,0,"This replay requires a synthetic deployment");
- await page.goto(base);await page.getByRole('button',{name:'Expedition panel',exact:true}).first().click();
- const panel=page.getByRole('dialog',{name:'Expedition',exact:true});await panel.getByLabel('Direction (optional)',{exact:true}).fill('Synthetic population verification');
- await panel.getByRole('button',{name:'Start expedition',exact:true}).click();
- await page.waitForFunction(()=>document.querySelector('[aria-label="Expedition"]')?.textContent?.includes('completed · 6 ideas explored'),{},{timeout:60000});
- await panel.getByRole('button',{name:/Synthetic proposal/}).first().click();
- await panel.getByLabel('Challenge this reading',{exact:true}).fill('The grouping may hide different mechanisms');await panel.getByLabel('Intervention to test on selected candidate').fill('Use direct peer negotiation');
- await panel.getByRole('button',{name:'Try this direction'}).click();
- await page.waitForFunction(()=>document.querySelector('[aria-label="Expedition"]')?.textContent?.includes('Intervention: completed'),{},{timeout:60000});
- await panel.getByRole('button',{name:'Run allocation probe — no model calls'}).click();await panel.getByText(/Observed 5 allocated/).waitFor();
- await panel.getByRole('button',{name:'Assess again'}).click();
- await page.waitForFunction(()=>document.querySelector('[aria-label="Expedition"]')?.textContent?.includes('completed · 7 ideas explored'),{},{timeout:60000});
- mkdirSync('evaluation-artifacts/transition',{recursive:true});await panel.screenshot({path:'evaluation-artifacts/transition/expedition-panel.png'});
- await page.setViewportSize({width:390,height:844});await panel.screenshot({path:'evaluation-artifacts/transition/expedition-touch.png'});await page.setViewportSize({width:1440,height:1000});
- await page.reload();await page.getByRole('button',{name:'Expedition panel',exact:true}).first().click();await page.getByRole('button',{name:'Synthetic population verification',exact:true}).first().click();
- await panel.getByRole('button',{name:/Synthetic proposal/}).first().click();await panel.getByRole('button',{name:'Inspect on atlas',exact:true}).click();
- await page.getByRole('dialog',{name:/Synthetic proposal/}).waitFor();
- assert.equal(errors.length,0,errors.join('\n'));
- mkdirSync('evaluation-artifacts/transition',{recursive:true});await page.screenshot({path:'evaluation-artifacts/transition/expedition.png'});
- console.log('PASS: durable synthetic run, intervention, simulation probe, reload and materialization; no model calls.');
-}finally{await browser.close();}
+import { previewAccess } from './expedition-browser-context.mjs';
+import { verifyExpedition } from './expedition-journey.mjs';
+import { mkdir, writeFile } from 'node:fs/promises';
+const browser = await chromium.launch();
+let page;
+const artifacts = process.env.MINERVA_ARTIFACTS ?? 'evaluation-artifacts/expedition';
+try {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await previewAccess(context);
+  page = await context.newPage();
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await verifyExpedition(page, process.env.MINERVA_URL ?? 'http://127.0.0.1:3012', artifacts);
+  assert.deepEqual(errors, []);
+} catch (error) {
+  await mkdir(artifacts, { recursive: true });
+  await page?.screenshot({ path: `${artifacts}/failure.png` }).catch(() => {});
+  await writeFile(`${artifacts}/failure.txt`, await page?.locator('body').innerText() ?? '').catch(() => {});
+  throw error;
+} finally { await browser.close(); }

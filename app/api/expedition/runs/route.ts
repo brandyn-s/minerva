@@ -36,7 +36,8 @@ export async function GET(request: Request) {
         const { initial, ...runView } = run;
         return Response.json({ run: runView, initialCount: initial.length, ...page, items: projected, interventions: (await store.interventions(id)).slice(-30), readings: [readingPreview((await store.last<Reading>(id, "reading")))].filter(Boolean), coverage: { kind, limit, after, truncated: page.more, omitted: ["run.initial", "page bodies and full operation context; use candidateId for exact detail"], candidateCount: (await store.count(id, "candidate")) } });
     }
-    catch {
+    catch (error) {
+        console.error("Expedition read failed", error);
         return Response.json({ configured: false, error: "Expedition is temporarily unavailable" }, { status: 503 });
     }
     finally {
