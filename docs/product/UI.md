@@ -13,6 +13,7 @@ language. UI ownership lives in `components/ui`, not in individual features.
 | Browse / Read as text | PanelHeader, Input, Button, Summary | Search, selection, disclosure, reader navigation |
 | Talk / Voice | PanelHeader, Textarea, icon buttons | Existing voice lifetime and composer handlers |
 | Wander / Regroup / inspection / comparison / Guide | Button, Summary, PanelHeader | Existing source and proposal flows |
+| Contribution-based Weave | Field, Textarea, Select, Summary, Button, PanelHeader | Exact excerpts, preparation/retry, source inspection, interpretations and variant comparison |
 | Card pane / Voice preferences | Button, Input, Textarea, Select, Summary | Current content editing and voice preference behavior |
 
 All feature-owned raw buttons, inputs, textareas, selects and summaries have

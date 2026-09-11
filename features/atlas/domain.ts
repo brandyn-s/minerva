@@ -1,10 +1,12 @@
 import type { Operation, OperationReceipt } from "../experiments/contracts";
+import type { WeaveMapping, WeaveReview } from "../experiments/weave";
 export type CardRevision = {
   number: number; time: string; cause: string;
   title: string; summary: string; body: string;
   contribution?: string; // Absent on legacy revisions: unknown, never inferred.
   prepared?: boolean;
   receipt?: OperationReceipt;
+  weaveMappings?: WeaveMapping[];
   experiment?: { candidateId: string; operation: Operation };
   note?: string;
   branch?: { intent: string; step: number; runId: string };
@@ -15,6 +17,7 @@ export type Thought = {
   importedFromId?: string;
   revision: number;
   revisions: CardRevision[];
+  weaveReviews?: WeaveReview[];
   title: string;
   summary: string;
   body: string;

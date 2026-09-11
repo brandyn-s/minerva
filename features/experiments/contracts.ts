@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { weaveInputSchema, weaveMappingsSchema, validateWeaveInput, type WeaveMapping } from "./weave";
 
 export const snapshotSchema = z.object({
   id: z.string().min(1).max(200), revision: z.number().int().positive(),
@@ -12,13 +13,18 @@ export const operationSchema = z.object({
   intent: z.string().max(2000).default(""), intentId: z.string().optional(), intentVersion: z.number().int().positive().optional(),
   step: z.number().int().positive().default(1), count: z.number().int().min(1).max(3).default(1),
   runId: z.string().uuid().optional(),
+  weave: weaveInputSchema.optional(),
   strategy: z.object({ policy:z.string(), iteration:z.number().int().nonnegative(), reason:z.string() }).optional(),
 }).superRefine((o, ctx) => {
   const required = o.kind === "root" ? 0 : o.kind === "weave" ? 2 : 1;
   if ((o.kind === "weave" ? o.sources.length < required : o.sources.length !== required) || (o.kind === "root" && o.exposure.length)) ctx.addIssue({ code: "custom", message: "Invalid sources/exposure for operation" });
+  if (o.weave) {
+    try { if (o.kind !== "weave") throw new Error("Contribution selections require Weave."); validateWeaveInput(o.weave, o.sources); }
+    catch (error) { ctx.addIssue({ code: "custom", message: error instanceof Error ? error.message : String(error) }); }
+  }
 });
 export type Operation = z.infer<typeof operationSchema>;
-export const outputSchema = z.object({ cards: z.array(snapshotSchema.omit({ id: true, revision: true })).min(1).max(3), note: z.string().max(4000), contributions: z.array(z.string().max(2000)).max(8) });
+export const outputSchema = z.object({ cards: z.array(snapshotSchema.omit({ id: true, revision: true })).min(1).max(3), note: z.string().max(4000), contributions: z.array(z.string().max(2000)).max(8), weaveMappings: weaveMappingsSchema.optional() });
 export type OperationOutput = z.infer<typeof outputSchema>;
 export const behaviorSpace = {
   actor: ["individual", "pair", "group", "institution", "environment"],
@@ -36,7 +42,7 @@ export const assessmentSchema = z.object({
   actionability: z.enum(["supported", "unsupported", "unclear"]), explanation: z.string().max(4000),
 });
 export type Assessment = z.infer<typeof assessmentSchema> & { id: string; candidateId: string; version: 1; level: "textual" | "simulation" | "external"; assessor: string; at: string; sourceOperation: string };
-export type Candidate = { id: string; snapshot: Snapshot; operationId: string; parents: string[]; exposure: string[]; rootIds: string[]; assessment?: Assessment; admission: "pending" | "eligible" | "rejected"; at: string };
+export type Candidate = { id: string; snapshot: Snapshot; operationId: string; parents: string[]; exposure: string[]; rootIds: string[]; assessment?: Assessment; weaveMappings?: WeaveMapping[]; admission: "pending" | "eligible" | "rejected"; at: string };
 export type Attempt = { maxCallsAtPlanning?:number; assessmentRequestId?:string; usage?: {inputTokens?:number;outputTokens?:number;totalTokens?:number}; id: string; runId: string; sequence: number; stage: "generation" | "assessment"; candidateId?: string; operation: Operation; status: "reserved" | "committed" | "failed" | "uncertain" | "cancelled"; owner: string; leaseUntil: number; reservedMicros: number; cost: "reserved-upper-bound"; manifest?: { model: string; system: string; prompt: string; schemaVersion: number; maxOutputTokens: number }; error?: string; at: string };
 export const runConfigSchema = z.object({
   title: z.string().max(200).optional(), direction: z.string().max(1000).optional(), owner: z.string().optional(),
