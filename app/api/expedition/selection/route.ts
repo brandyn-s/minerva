@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     store = await experimentStore(request);
     const runId = z.string().uuid().parse(new URL(request.url).searchParams.get("runId")), run = await store.get(runId);
     if (!run || run.owner !== await expeditionOwner()) return Response.json({ error: "Run unavailable" }, { status: 404 });
-    return Response.json({ status: run.status, capacity: run.capacity, inFlight: (await store.attempts(runId)).some(a => a.status === "reserved" && a.leaseUntil >= Date.now()), active: run.active, configuration: await appliedSelection(store, run) ?? null });
+    return Response.json({ status: run.status, capacity: run.capacity, inFlight: !!run.groupWeave || (await store.attempts(runId)).some(a => a.status === "reserved" && a.leaseUntil >= Date.now()), active: run.active, configuration: await appliedSelection(store, run) ?? null });
   } catch { return Response.json({ error: "Selection is temporarily unavailable." }, { status: 503 }); }
   finally { await store?.close(); }
 }

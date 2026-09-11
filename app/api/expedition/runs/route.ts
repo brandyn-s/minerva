@@ -32,7 +32,7 @@ export async function GET(request: Request) {
         const limit = z.coerce.number().int().min(1).max(100).parse(url.searchParams.get("limit") ?? 30);
         const query = z.string().max(200).parse(url.searchParams.get("q") ?? "");
         const page = query ? (await store.search(id, query, after, limit)) : (await store.page(id, kind, after, limit));
-        const projected = kind === "reading" ? page.items.map(item => readingPreview(item as Reading)) : kind === "operation" ? page.items.map(item => { const o = item as Operation; return { id: o.id, kind: o.kind, step: o.step, strategy: o.strategy, selection: o.selection, sources: o.sources.map(s => ({ id: s.id, revision: s.revision })), exposure: o.exposure.map(s => ({ id: s.id, revision: s.revision })) }; }) : kind === "candidate" ? page.items.map(item => { const c = item as Candidate; return { ...c, rootIds: undefined, snapshot: { id: c.snapshot.id, revision: c.snapshot.revision, title: c.snapshot.title, summary: c.snapshot.summary } }; }) : page.items;
+        const projected = kind === "reading" ? page.items.map(item => readingPreview(item as Reading)) : kind === "operation" ? page.items.map(item => { const o = item as Operation; return { id: o.id, kind: o.kind, step: o.step, strategy: o.strategy, selection: o.selection, groupWeave: o.groupWeave, sources: o.sources.map(s => ({ id: s.id, revision: s.revision })), exposure: o.exposure.map(s => ({ id: s.id, revision: s.revision })) }; }) : kind === "candidate" ? page.items.map(item => { const c = item as Candidate; return { ...c, rootIds: undefined, snapshot: { id: c.snapshot.id, revision: c.snapshot.revision, title: c.snapshot.title, summary: c.snapshot.summary } }; }) : page.items;
         const { initial, ...runView } = run;
         return Response.json({ run: runView, initialCount: initial.length, ...page, items: projected, interventions: (await store.interventions(id)).slice(-30), readings: [readingPreview((await store.last<Reading>(id, "reading")))].filter(Boolean), coverage: { kind, limit, after, truncated: page.more, omitted: ["run.initial", "page bodies and full operation context; use candidateId for exact detail"], candidateCount: (await store.count(id, "candidate")) } });
     }
@@ -65,6 +65,7 @@ export async function POST(request: Request) {
         if(command.action!=="create"){
           const id=command.action==='probe'?command.input.runId:command.id;
           const owned=await store.get(id);if(!owned||owned.owner!==owner)return Response.json({error:'Run unavailable'},{status:404});
+          if(owned.groupWeave&&['resume','reassess','intervene'].includes(command.action))return Response.json({error:'Wait for the bounded group Weave to finish before starting more exploration.'},{status:409});
         }
 
         if (command.action === "probe") {

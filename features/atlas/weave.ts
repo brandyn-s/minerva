@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { receiptSchema, snapshotSchema, type Snapshot } from "../experiments/contracts";
-import { weaveInputSchema, weaveMappingsSchema, validateWeaveInput, validateWeaveMappings, type WeaveInput } from "../experiments/weave";
+import { receiptSchema, snapshotSchema, operationSourceSchema, type Operation, type Snapshot } from "../experiments/contracts";
+import { weaveInputSchema, weaveMappingsSchema, validateWeaveInput, validateWeaveMappings, contributionSource, type WeaveInput } from "../experiments/weave";
 import type { Thought, CardRevision } from "./domain";
 import { stableJson } from "./stable-json";
 import { firstRevision } from "./card-revisions";
 
-export type WeaveDraft = { sources: Snapshot[]; weave: WeaveInput };
+export type WeaveDraft = { sources: Operation["sources"]; weave: WeaveInput };
 export function snapshotOf(card: Thought, revision = card.revision): Snapshot {
   const source = card.revisions.find(r => r.number === revision);
   if (!source) throw new Error("Source revision unavailable.");
@@ -29,7 +29,7 @@ export function resolveSnapshot(source: Snapshot, cards: Thought[]) {
     r.number === source.revision && r.title === source.title && r.summary === source.summary && r.body === source.body));
 }
 export function weaveRequest(draft: WeaveDraft, wholeCards = false) {
-  const sources = z.array(snapshotSchema).min(2).max(8).parse(draft.sources);
+  const sources = z.array(operationSourceSchema).min(2).max(8).parse(draft.sources);
   const weave = wholeCards ? undefined : validateWeaveInput(weaveInputSchema.parse(draft.weave), sources);
   return { sources, ...(weave ? { weave } : {}) };
 }
@@ -51,7 +51,7 @@ export function weaveMarkdown(card: Thought, level: number) {
     const op = revision.receipt?.operation ?? revision.experiment?.operation;
     if (!op?.weave) return "";
     return `\n${heading}# Selected contributions · revision ${revision.number}\n\nRequested interaction: ${op.weave.interaction || "Unspecified"}\n` + op.weave.selections.map(selection => {
-      const source = op.sources.find(s => s.id === selection.sourceId)!;
+      const source = contributionSource(op.sources, selection)!;
       const mapping = revision.weaveMappings!.find(m => m.selectionId === selection.id)!;
       const notes = (card.weaveReviews ?? []).filter(n => n.revision === revision.number && n.selectionId === selection.id);
       return `\n${heading}## ${source.title}\n\nSource: ${source.id}, revision ${source.revision}\n\nCarry forward: ${selection.text}\n${selection.excerpt ? `\nExact ${selection.excerpt.field} excerpt (${selection.excerpt.start}–${selection.excerpt.end}):\n\n${selection.excerpt.text}\n` : ""}\nModel claim (${mapping.status}): ${mapping.explanation}\n${mapping.output ? `\nResult ${mapping.output.field} quotation: ${mapping.output.text}\n` : ""}${notes.map(n => `\nYour interpretation (${n.at}): ${n.text}\n`).join("")}\nSource summary: ${source.summary}\n\nSource body:\n\n${source.body}\n`;

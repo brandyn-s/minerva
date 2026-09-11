@@ -16,6 +16,7 @@ language. UI ownership lives in `components/ui`, not in individual features.
 | Contribution-based Weave | Field, Textarea, Select, Summary, Button, PanelHeader | Exact excerpts, preparation/retry, source inspection, interpretations and variant comparison |
 | Editable lenses | PanelHeader, Field, Input, Textarea, Select, Summary, Button | Exact membership, full-group selection, historical inspection, undo and lens switching |
 | Lens selection | Field, Input, Summary, Button | Protection, full-corpus population preview, explicit paused application/resume and generation selection context |
+| Cross-group Weave | Shared WeaveFields, Field, Select, Summary, Button | Complete candidate choices, exact contribution drafts, bounded submission/retry, result evidence and explicit lens placement |
 | Card pane / Voice preferences | Button, Input, Textarea, Select, Summary | Current content editing and voice preference behavior |
 
 All feature-owned raw buttons, inputs, textareas, selects and summaries have

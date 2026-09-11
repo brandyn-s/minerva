@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button, Field, Select, Summary, Textarea } from "../../components/ui/controls";
 import PanelHeader from "../../components/ui/panel-header";
 import type { Thought } from "./domain";
-import type { ContributionSelection } from "../experiments/weave";
+import { contributionSource, type ContributionSelection } from "../experiments/weave";
 import { resolveSnapshot, newWeaveDraft, type WeaveDraft } from "./weave";
 
 function ExcerptPicker({ source, value, change }: {
@@ -33,11 +33,8 @@ export default function WeavePanel({ draft, change, cards, busy, error, run, clo
 }) {
   const root = useRef<HTMLElement>(null);
   useEffect(() => { root.current?.focus(); }, []);
-  const currentSources = draft.sources.map(s => resolveSnapshot(s, cards));
+  const currentSources = draft.sources.map(s => s.candidateId ? undefined : resolveSnapshot(s, cards));
   const newer = currentSources.some((c, i) => c && c.revision !== draft.sources[i].revision);
-  function update(id: string, patch: Partial<ContributionSelection>) {
-    change({ ...draft, weave: { ...draft.weave, selections: draft.weave.selections.map(s => s.id === id ? { ...s, ...patch } : s) } });
-  }
   return <aside ref={root} tabIndex={-1} className="detail-panel weave-panel unified-pane" role="dialog" aria-label="Prepare Weave" onKeyDown={e => { if (e.key === "Escape") { e.stopPropagation(); close(); } }}>
     <PanelHeader title={draft.weave.variantOf ? "Weave a variant" : "Weave"} close={close} />
     <div className="pane-body">
@@ -50,9 +47,22 @@ export default function WeavePanel({ draft, change, cards, busy, error, run, clo
         next.weave.selections = next.weave.selections.map((s, i) => ({ ...s, text: draft.weave.selections.find(old => old.sourceId === draft.sources[i].id)!.text }));
         change(next);
       }}>Use current revisions</Button></details>}
+      <WeaveFields draft={draft} change={change} cards={cards} busy={busy} />
+      {error && <p role="alert">{error} Your selections are kept.</p>}
+      <div className="weave-actions"><Button variant="primary" busy={busy} disabled={draft.weave.selections.some(s => !s.text.trim())} onClick={() => run(false)}>{busy ? "Weaving…" : error ? "Try Weave again" : "Weave contributions"}</Button>
+        <Button disabled={busy} onClick={() => run(true)}>Weave whole cards</Button></div>
+    </div>
+  </aside>;
+}
+
+export function WeaveFields({ draft, change, cards = [], busy }: { draft: WeaveDraft; change: (draft: WeaveDraft) => void; cards?: Thought[]; busy: boolean }) {
+  function update(id: string, patch: Partial<ContributionSelection>) {
+    change({ ...draft, weave: { ...draft.weave, selections: draft.weave.selections.map(s => s.id === id ? { ...s, ...patch } : s) } });
+  }
+  return <>
       <fieldset disabled={busy} className="weave-fields"><legend className="sr-only">Selected contributions</legend>
       {draft.weave.selections.map(selection => {
-        const source = draft.sources.find(s => s.id === selection.sourceId)!;
+        const source = contributionSource(draft.sources, selection)!;
         const current = resolveSnapshot(source, cards);
         return <section key={selection.id} className="weave-source">
           <h3>{source.title}</h3><p className="small-note">Source revision {source.revision}{current && current.revision !== source.revision ? ` · current revision is ${current.revision}; this Weave uses the saved source` : !current ? " · saved source snapshot" : ""}</p>
@@ -63,9 +73,5 @@ export default function WeavePanel({ draft, change, cards, busy, error, run, clo
       <Field label="How should they interact? (optional)"><Textarea aria-label="How should they interact? (optional)" rows={2} maxLength={2000} value={draft.weave.interaction} placeholder="Let waiting for a repair become time for a shared meal" onChange={e => change({ ...draft, weave: { ...draft.weave, interaction: e.target.value } })} /></Field>
       </fieldset>
       <details><Summary>Context used</Summary><p>Contribution statements and selected excerpts are sent in full. Surrounding sources are bounded to the first 400 bytes of each title, 600 of each summary, 3,000 of each body and 400 of each existing contribution. Full source revisions stay with the result.</p></details>
-      {error && <p role="alert">{error} Your selections are kept.</p>}
-      <div className="weave-actions"><Button variant="primary" busy={busy} disabled={draft.weave.selections.some(s => !s.text.trim())} onClick={() => run(false)}>{busy ? "Weaving…" : error ? "Try Weave again" : "Weave contributions"}</Button>
-        <Button disabled={busy} onClick={() => run(true)}>Weave whole cards</Button></div>
-    </div>
-  </aside>;
+  </>;
 }
