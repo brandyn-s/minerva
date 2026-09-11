@@ -3,6 +3,7 @@ import { operationSchema, receiptSchema } from "../experiments/contracts";
 import { stableJson } from "./stable-json";
 import { expeditionStepSchema, readingSchema, validateReading } from "./expedition";
 import { themesSchema, cardHash } from "./themes";
+import { firstRevision } from "./card-revisions";
 import { mallFixture } from "./fixture";
 
 const id = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9_-]*$/, "Invalid atlas id").refine(s => !["__proto__", "constructor", "prototype"].includes(s) && !s.startsWith("theme-"), "Invalid atlas id");
@@ -96,6 +97,19 @@ export type ExpeditionRecord = z.infer<typeof expeditionRecordSchema>;
 export function fixtureSave(): AtlasSave {
   const fixture = mallFixture();
   return { version: 3, intents: [], sizes: { Lineage: {}, Evolution: {}, Constellation: {} }, layoutHistory: emptyHistory(), folds: [], thoughts: fixture.thoughts, relationships: fixture.relationships, positions: { Lineage: fixture.positions, Evolution: {}, Constellation: {} }, cameras: {}, perspective: "Lineage", selected: [], active: "repair", focusedId: null, messages: [], expeditions: [], activeExpedition: null };
+}
+export function seedSave(seed: string): AtlasSave {
+  const body = seed.trim();
+  if (!body) throw new Error("Write a seed before starting fresh.");
+  const title = body.split("\n")[0].slice(0, 100);
+  const card = {
+    id: `seed-${crypto.randomUUID()}`, title, body, summary: body.slice(0, 240),
+    kind: "brief" as const, contribution: "User-directed starting seed", revision: 1,
+    move: { title: "Explore this seed", question: "What possibilities does this seed open?", preview: "Develop a concrete direction from your starting idea." },
+  };
+  return atlasSaveSchema.parse({ ...fixtureSave(), thoughts: [{ ...card, revisions: [firstRevision(card, "user-directed seed")] }],
+    relationships: [], positions: { Lineage: { [card.id]: { x: 0, y: 0 } }, Evolution: {}, Constellation: {} },
+    active: card.id, selected: [card.id] });
 }
 export function interruptSavedRuns(save: AtlasSave): AtlasSave {
   return { ...save, expeditions: save.expeditions.map(entry => entry.run.stop ? entry : { ...entry, run: { ...entry.run, stop: `Step ${entry.run.steps.length + 1} was interrupted by leaving the atlas. Completed cards remain.` } }) };

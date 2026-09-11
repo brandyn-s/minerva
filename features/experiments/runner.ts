@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { behaviorSpace } from "./contracts";
 import type { Run, Operation, Candidate, Assessment, Attempt, Intervention } from "./contracts";
+import { stagnantDrafts } from "./stagnation";
 import { executeOperation, assess, planOperation, planAssessment, type Provider } from "./operators";
 import type { Store as ExperimentStore } from "./store-contract";
 import { corpus, selectPopulation, analyze } from "./analysis";
@@ -49,8 +50,17 @@ export async function tick(store: ExperimentStore, runId: string, provider: Prov
     if (!run || run.status !== "running")
         return false;
     const candidates = (await corpus(store, run.id)), attempts = (await store.attempts(run.id));
+    const complete = async (reason: string) => store.transaction(async () => {
+        const current = await store.get(run.id);
+        // Preserve concurrent controls, new allowances and an admitted sibling call.
+        if (!current || current.status !== "running" || current.calls !== run.calls || current.maxCalls !== run.maxCalls ||
+            (await store.attempts(run.id)).some(attempt => attempt.status === "reserved")) return;
+        current.status = "completed";
+        current.reason = reason;
+        await store.save(current);
+    });
     if (attempts.length >= 3 && attempts.slice(-3).every(a => ["failed", "uncertain"].includes(a.status))) {
-        (await store.transaction(async () => { const r = (await store.get(run.id))!; r.status = "completed"; r.reason = "Three consecutive failed or uncertain attempts; partial evidence retained"; (await store.save(r)); }));
+        await complete("Three consecutive failed or uncertain attempts; partial evidence retained");
         return false;
     }
     const reassessment = (await store.all<{
@@ -60,6 +70,12 @@ export async function tick(store: ExperimentStore, runId: string, provider: Prov
     }>(run.id, "assessment-request")).find(q => !attempts.some(a => a.assessmentRequestId === q.id));
     const pending = reassessment ? candidates.find(c => c.id === reassessment.candidateId) : candidates.find(c => !c.assessment && !attempts.some(a => a.candidateId === c.id && a.stage === "assessment"));
     const intervention = (await store.interventions(run.id)).find(i => i.status === "proposed");
+    // Finish assessing the retained draft and honor an explicitly funded intervention
+    // or reassessment before considering more automatic generation.
+    if (!pending && !intervention && stagnantDrafts(candidates)) {
+        await complete("Stagnation: three consecutive drafts have near-identical summaries and bodies; results retained");
+        return false;
+    }
     let op: Operation;
     if (pending)
         op = (await store.record<Operation>(pending.operationId))!;
