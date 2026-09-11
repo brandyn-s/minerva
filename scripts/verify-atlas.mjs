@@ -870,6 +870,7 @@ try {
   for (const view of ["Evolution", "Lineage", "Constellation", "Evolution", "Constellation", "Lineage"]) {
     const start = requests.length;
     await button(view).click(); await settle();
+    if (view === "Constellation" && await button("Find themes").count()) await button("Find themes").click();
     if (view === "Constellation") await page.getByText(/\d+ ideas · \d+ themes/).waitFor({ timeout: 90000 });
     await settle();
     assert.equal(await page.locator(".comparison-grid").innerText(), comparison);
