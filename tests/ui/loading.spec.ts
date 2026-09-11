@@ -104,7 +104,9 @@ test("Constellation and Regroup share the same waiting feedback", async ({ page 
   pending = new Promise<void>(resolve => { finish = resolve; });
   await page.getByRole("button", { name: "Preview themes", exact: true }).click();
   await expect(page.locator(".regroup-panel .ui-loading-status")).toContainText("Finding themes for 6 ideas");
-  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  // Next's development badge can cover this bottom-left control on Linux.
+  // Keyboard activation still exercises the real Cancel handler.
+  await page.getByRole("button", { name: "Cancel", exact: true }).press("Enter");
   finish();
   await expect(page.locator(".regroup-panel")).toHaveCount(0);
 });
