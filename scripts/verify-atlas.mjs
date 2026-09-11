@@ -1,6 +1,10 @@
 import {verifyExpedition, startExpedition, waitForRun} from "./expedition-journey.mjs";
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
+import { loader } from "../tests/helpers/load-ts.mjs";
+const load = loader();
+const { operationSchema } = load("features/experiments/contracts.ts");
+const { planOperation } = load("features/experiments/operators.ts");
+import { createHash, randomUUID } from "node:crypto";
 import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { execFileSync } from "node:child_process";
@@ -556,11 +560,36 @@ try {
       }
       if (attempts === 1) await route.fulfill({ status: 500, json: { error: `${label} test failure` } });
       else if (live && process.env.MINERVA_LIVE_EXISTING === "1") await route.continue();
-      else await route.fulfill({ json: mocked[feature] });
+      else {
+        const output = { ...mocked[feature] };
+        if (feature === "weave") {
+          const operation = operationSchema.parse({ ...evidence.weaveInput, id: randomUUID(), version: 1, kind: "weave", goal: "Combine these ideas", constraints: [] });
+          output.receipt = { operation, manifest: planOperation(operation), status: "committed", at: new Date().toISOString() };
+        }
+        await route.fulfill({ json: output });
+      }
     });
+    const progress = page.locator(".generation-progress");
+    let response, retryCamera, retrySelection;
+    if (feature === "weave") {
+      await button(label).click();
+      await button("Weave whole cards").click();
+      await button("Weaving…").waitFor();
+      release();
+      await page.getByRole("dialog", { name: "Prepare Weave" }).getByRole("alert").waitFor();
+      assert.equal(await page.locator(".thought").count(), total, "failure adds no cards");
+      pending = new Promise(resolve => { release = resolve; });
+      const responsePromise = page.waitForResponse(r => r.url().endsWith("/api/weave") && r.status() === 200);
+      await button("Weave whole cards").click();
+      await button("Weaving…").waitFor();
+      await close();
+      await settle();
+      retryCamera = await transform(); retrySelection = (await storedSave()).selected;
+      release(); response = await responsePromise;
+    } else {
     await button(label).click();
     if (feature === "wander") await button("Explore freely").click();
-    const progress = page.locator(".generation-progress");
+
     await progress.waitFor();
     assert.match(await progress.innerText(), feature === "wander" ? /Wander is generating new cards/ : /Weave is combining your cards/);
     assert.equal(await page.locator('.selection-bar button').filter({ hasText: /^(Wander|Weave|Expedition)$/ }).count(), 0, "unavailable generation actions are hidden while busy");
@@ -600,9 +629,10 @@ try {
     await sourceCard.getByRole("button", { name: `Retry ${label}`, exact: true }).click();
     await progress.waitFor();
     assert.equal(await progress.isVisible(), true, "retry restores progress without a selection");
-    const retryCamera = await transform(), retrySelection = (await storedSave()).selected;
+    retryCamera = await transform(); retrySelection = (await storedSave()).selected;
     release();
-    const response = await responsePromise;
+    response = await responsePromise;
+    }
     const output = await response.json();
     evidence[feature] = output;
     await writeFile(`${artifacts}/wander-weave.json`, JSON.stringify(evidence, null, 2));
@@ -625,7 +655,7 @@ try {
       assert.equal(await links.count(), feature === "wander" ? 1 : 2);
       assert.match(await links.first().innerText(), /derived from revision 1/i);
       if (feature === "weave") {
-        assert.equal(evidence.weaveInput.length, 2);
+        assert.equal(evidence.weaveInput.sources.length, 2);
         assert.equal(output.contributions.length, 2);
         for (const contribution of output.contributions) assert.ok((await links.allInnerTexts()).join(" ").includes(contribution));
         await focusInspected(page);

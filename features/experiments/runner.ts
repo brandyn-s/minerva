@@ -62,6 +62,7 @@ export async function tick(store: ExperimentStore, runId: string, provider: Prov
         const current = await store.get(run.id);
         // Preserve concurrent controls, new allowances and an admitted sibling call.
         if (!current || current.status !== "running" || current.calls !== run.calls || current.maxCalls !== run.maxCalls ||
+            (current.controlVersion ?? 0) !== (run.controlVersion ?? 0) || (current.corpusVersion ?? 0) !== (run.corpusVersion ?? 0) ||
             (await store.attempts(run.id)).some(attempt => attempt.status === "reserved")) return;
         current.status = "completed";
         current.reason = reason;
